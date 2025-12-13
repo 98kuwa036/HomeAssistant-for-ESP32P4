@@ -1,0 +1,105 @@
+# Common base configuration for ESP32-P4 Voice Assistant devices
+# Include this in your device configuration with:
+#   packages:
+#     base: !include common/base.yaml
+
+esphome:
+  on_boot:
+    priority: -100
+    then:
+      - logger.log:
+          level: INFO
+          format: "ESP32-P4 Voice Assistant booted successfully"
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: !secret api_encryption_key
+  reboot_timeout: 0s  # Disable auto-reboot when disconnected
+
+# Enable OTA updates
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+# WiFi configuration
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  fast_connect: true
+  power_save_mode: none  # Critical for low-latency audio
+  output_power: 20dB
+  ap:
+    ssid: "${device_name}-fallback"
+    password: !secret ap_password
+  on_connect:
+    - logger.log:
+        level: INFO
+        format: "WiFi connected"
+  on_disconnect:
+    - logger.log:
+        level: WARN
+        format: "WiFi disconnected"
+
+# Captive portal for WiFi setup
+captive_portal:
+
+# Logger configuration
+logger:
+  level: INFO
+  logs:
+    component: ERROR
+    sensor: WARN
+    binary_sensor: WARN
+
+# Common diagnostic sensors
+sensor:
+  - platform: wifi_signal
+    name: "${friendly_name} WiFi Signal"
+    update_interval: 60s
+    entity_category: diagnostic
+    device_class: signal_strength
+    unit_of_measurement: "dBm"
+
+  - platform: uptime
+    name: "${friendly_name} Uptime"
+    entity_category: diagnostic
+    unit_of_measurement: "s"
+    device_class: duration
+
+# Common diagnostic text sensors
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: "${friendly_name} IP Address"
+      entity_category: diagnostic
+      icon: "mdi:ip-network"
+    ssid:
+      name: "${friendly_name} WiFi SSID"
+      entity_category: diagnostic
+      icon: "mdi:wifi"
+    mac_address:
+      name: "${friendly_name} MAC Address"
+      entity_category: diagnostic
+      icon: "mdi:ethernet"
+
+  - platform: version
+    name: "${friendly_name} ESPHome Version"
+    entity_category: diagnostic
+
+# Common buttons
+button:
+  - platform: restart
+    name: "${friendly_name} Restart"
+    entity_category: config
+    icon: "mdi:restart"
+
+  - platform: safe_mode
+    name: "${friendly_name} Safe Mode"
+    entity_category: config
+    icon: "mdi:shield-bug"
+
+  - platform: factory_reset
+    name: "${friendly_name} Factory Reset"
+    entity_category: config
+    icon: "mdi:factory"

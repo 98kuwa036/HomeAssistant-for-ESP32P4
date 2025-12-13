@@ -1,0 +1,129 @@
+# ESP32-P4 Voice Assistant - Minimal Configuration
+# Use this as a starting point for custom boards
+#
+# This configuration includes only the essential components
+# for a basic voice assistant setup.
+
+substitutions:
+  device_name: esp32p4-voice
+  friendly_name: "ESP32-P4 Voice"
+  # Customize these pins for your board
+  i2s_bclk_pin: GPIO12
+  i2s_ws_pin: GPIO13
+  i2s_din_pin: GPIO14
+  i2s_dout_pin: GPIO15
+
+esphome:
+  name: ${device_name}
+  friendly_name: ${friendly_name}
+
+esp32:
+  board: esp32-p4-generic
+  variant: esp32p4
+  framework:
+    type: esp-idf
+    version: "5.3.1"
+    platform_version: 6.8.1
+    sdkconfig_options:
+      CONFIG_SPIRAM: y
+      CONFIG_ESP32P4_DEFAULT_CPU_FREQ_400: y
+
+logger:
+  level: INFO
+
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  power_save_mode: none
+  ap:
+    ssid: "${device_name}-fallback"
+    password: !secret ap_password
+
+captive_portal:
+
+# I2S Audio
+i2s_audio:
+  - id: i2s_main
+    i2s_lrclk_pin: ${i2s_ws_pin}
+    i2s_bclk_pin: ${i2s_bclk_pin}
+
+microphone:
+  - platform: i2s_audio
+    id: mic_i2s
+    i2s_audio_id: i2s_main
+    i2s_din_pin: ${i2s_din_pin}
+    adc_type: external
+    pdm: false
+    channel: left
+    bits_per_sample: 32bit
+    sample_rate: 16000
+
+speaker:
+  - platform: i2s_audio
+    id: speaker_i2s
+    i2s_audio_id: i2s_main
+    dac_type: external
+    i2s_dout_pin: ${i2s_dout_pin}
+    mode: mono
+    sample_rate: 16000
+    bits_per_sample: 16bit
+
+# Voice Assistant
+voice_assistant:
+  id: voice_assist
+  microphone: mic_i2s
+  speaker: speaker_i2s
+  use_wake_word: true
+  noise_suppression_level: 2
+  auto_gain: 31dBFS
+
+  on_end:
+    - if:
+        condition:
+          switch.is_on: wake_word_enabled
+        then:
+          - voice_assistant.start_continuous:
+
+  on_error:
+    - delay: 1s
+    - if:
+        condition:
+          switch.is_on: wake_word_enabled
+        then:
+          - voice_assistant.start_continuous:
+
+micro_wake_word:
+  models:
+    - model: okay_nabu
+  on_wake_word_detected:
+    - voice_assistant.start:
+        wake_word: !lambda return wake_word;
+
+switch:
+  - platform: template
+    id: wake_word_enabled
+    name: "${friendly_name} Wake Word"
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_ON
+    on_turn_on:
+      - voice_assistant.start_continuous:
+      - micro_wake_word.start:
+    on_turn_off:
+      - voice_assistant.stop:
+      - micro_wake_word.stop:
+
+  - platform: restart
+    name: "${friendly_name} Restart"
+
+sensor:
+  - platform: wifi_signal
+    name: "${friendly_name} WiFi Signal"
+    update_interval: 60s
