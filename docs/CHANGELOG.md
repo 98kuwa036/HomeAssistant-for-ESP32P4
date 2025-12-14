@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1-beta] - 2025-12-14
+
+### Added
+
+- Raspberry Pi 4B + Google AI Studio 構成ガイド
+- `esp32p4-lightweight.yaml`: クラウドオフロード向け軽量設定
+- Google Cloud STT/TTS 統合ドキュメント
+- Gemma 3 / Gemini API 設定手順
+
+### Changed
+
+- README に推奨構成（Raspberry Pi 4B + Google AI）を追加
+- ドキュメント構成を更新
+
+### Fixed
+
+- `esp32p4-voice-assistant.yaml`: `on_client_connected` インデント修正
+
 ## [1.0.0-beta] - 2025-12-13
 
 ### Added
