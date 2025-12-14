@@ -21,6 +21,25 @@ ESP32-P4ベースのHome Assistant音声アシスタント実装です。ESPHome
 | Smart 86 Box 4" Panel | Supported | Touch display, wall-mount |
 | Generic ESP32-P4 | Template | Customizable |
 
+## Recommended Setup (Raspberry Pi 4B + Google AI)
+
+クラウドオフロード構成で、Raspberry Pi 4Bでも快適に動作します。
+
+```
+ESP32-P4 (Voice Satellite)
+    ↓ WiFi
+Raspberry Pi 4B (Home Assistant)
+    ↓ Internet
+Google Cloud Services
+  ├─ Google AI Studio (Gemma 3 / Gemini)
+  ├─ Cloud Speech-to-Text (日本語対応)
+  └─ Cloud Text-to-Speech (Neural2音声)
+```
+
+**設定ファイル**: `esp32p4-lightweight.yaml` を使用
+
+詳細は [Raspberry Pi 4B + Google AI Studio 構成ガイド](docs/raspberry-pi-setup.md) を参照。
+
 ## Requirements
 
 - **ESPHome** 2025.6.0以降（ESP32-P4サポート）
@@ -82,6 +101,7 @@ HomeAssistant-for-ESP32P4/
 ├── esphome/
 │   ├── configs/
 │   │   ├── esp32p4-voice-assistant.yaml  # Full featured config
+│   │   ├── esp32p4-lightweight.yaml      # Raspberry Pi 4B optimized
 │   │   ├── esp32p4-waveshare-nano.yaml   # Waveshare board
 │   │   ├── esp32p4-smart86box.yaml       # Smart 86 Box panel
 │   │   └── esp32p4-minimal.yaml          # Minimal template
@@ -157,6 +177,7 @@ micro_wake_word:
 
 ## Documentation
 
+- [Raspberry Pi 4B + Google AI Setup](docs/raspberry-pi-setup.md) - **推奨構成ガイド**
 - [Home Assistant Setup Guide](docs/home-assistant-setup.md) - 詳細なセットアップ手順
 - [Hardware Guide](docs/hardware-guide.md) - ピン配置とハードウェア情報
 - [Changelog](docs/CHANGELOG.md) - 変更履歴
@@ -207,6 +228,9 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 - [ESPHome 2025.6.0 Changelog](https://esphome.io/changelog/2025.6.0/) - ESP32-P4 support
 - [ESPHome 2025.11.0 Changelog](https://esphome.io/changelog/2025.11.0/) - BLE via ESP-Hosted
 - [Home Assistant Voice Control](https://www.home-assistant.io/voice_control/)
+- [Google AI Studio](https://aistudio.google.com/) - Gemma 3 / Gemini API
+- [Google Cloud Speech-to-Text](https://cloud.google.com/speech-to-text)
+- [Google Cloud Text-to-Speech](https://cloud.google.com/text-to-speech)
 - [ESP32-P4 Datasheet](https://www.espressif.com/sites/default/files/documentation/esp32-p4_datasheet_en.pdf)
 
 ## Acknowledgments

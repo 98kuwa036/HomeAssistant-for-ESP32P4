@@ -1,0 +1,277 @@
+# ESP32-P4 Voice Assistant - Lightweight Configuration
+# Raspberry Pi 4B + クラウドオフロード向け最適化版
+#
+# 特徴:
+#   - メモリ使用量を最小化
+#   - ウェイクワード検出のみローカル
+#   - STT/TTS/LLMはクラウドで処理
+#   - 日本語対応
+
+substitutions:
+  device_name: esp32p4-voice-lite
+  friendly_name: "ESP32-P4 Voice Lite"
+  # Pin definitions (adjust for your board)
+  i2s_bclk_pin: GPIO12
+  i2s_ws_pin: GPIO13
+  i2s_din_pin: GPIO14
+  i2s_dout_pin: GPIO15
+  i2c_sda_pin: GPIO7
+  i2c_scl_pin: GPIO8
+  led_pin: GPIO47
+  button_pin: GPIO0
+
+esphome:
+  name: ${device_name}
+  friendly_name: ${friendly_name}
+  comment: "Lightweight voice assistant for Raspberry Pi 4B setup"
+  project:
+    name: "homeassistant.esp32p4-voice-lite"
+    version: "1.0.0-beta"
+  platformio_options:
+    board_build.flash_mode: dio
+    board_build.flash_size: 16MB
+  on_boot:
+    priority: 600
+    then:
+      - light.turn_on:
+          id: status_led
+          brightness: 30%
+          red: 100%
+          green: 50%
+          blue: 0%
+      - delay: 1s
+      - light.turn_off: status_led
+
+esp32:
+  board: esp32-p4-function-ev-board
+  variant: esp32p4
+  framework:
+    type: esp-idf
+    version: "5.3.1"
+    platform_version: 6.8.1
+    sdkconfig_options:
+      # PSRAM設定
+      CONFIG_SPIRAM: y
+      CONFIG_SPIRAM_MODE_OCT: y
+      CONFIG_SPIRAM_SPEED_80M: y
+      # CPU周波数（省電力モード）
+      CONFIG_ESP32P4_DEFAULT_CPU_FREQ_400: y
+      # タスクウォッチドッグ
+      CONFIG_ESP_TASK_WDT_TIMEOUT_S: "30"
+      # WiFiバッファ最適化
+      CONFIG_ESP32_WIFI_STATIC_RX_BUFFER_NUM: "6"
+      CONFIG_ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM: "12"
+
+# ログ設定（本番用に削減）
+logger:
+  level: WARN
+  logs:
+    component: ERROR
+    wifi: WARN
+    api: WARN
+
+# Home Assistant API
+api:
+  encryption:
+    key: !secret api_encryption_key
+  reboot_timeout: 0s
+
+# OTA更新
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+# WiFi設定（低遅延用）
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  fast_connect: true
+  power_save_mode: none
+  output_power: 20dB
+  ap:
+    ssid: "${device_name}-fallback"
+    password: !secret ap_password
+
+captive_portal:
+
+# I2C（オーディオコーデック用）
+i2c:
+  sda: ${i2c_sda_pin}
+  scl: ${i2c_scl_pin}
+  scan: false  # スキャン無効化でメモリ節約
+  frequency: 400kHz
+
+# I2S Audio
+i2s_audio:
+  - id: i2s_main
+    i2s_lrclk_pin: ${i2s_ws_pin}
+    i2s_bclk_pin: ${i2s_bclk_pin}
+
+# マイク設定
+microphone:
+  - platform: i2s_audio
+    id: mic_i2s
+    i2s_audio_id: i2s_main
+    i2s_din_pin: ${i2s_din_pin}
+    adc_type: external
+    pdm: false
+    channel: left
+    bits_per_sample: 32bit
+    sample_rate: 16000
+
+# スピーカー設定
+speaker:
+  - platform: i2s_audio
+    id: speaker_i2s
+    i2s_audio_id: i2s_main
+    dac_type: external
+    i2s_dout_pin: ${i2s_dout_pin}
+    mode: mono
+    sample_rate: 16000
+    bits_per_sample: 16bit
+
+# Voice Assistant（クラウド処理前提）
+voice_assistant:
+  id: voice_assist
+  microphone: mic_i2s
+  speaker: speaker_i2s
+  use_wake_word: true
+  noise_suppression_level: 2
+  auto_gain: 31dBFS
+  volume_multiplier: 2.5
+
+  on_listening:
+    - light.turn_on:
+        id: status_led
+        brightness: 100%
+        red: 0%
+        green: 0%
+        blue: 100%
+
+  on_stt_vad_end:
+    - light.turn_on:
+        id: status_led
+        brightness: 100%
+        red: 100%
+        green: 100%
+        blue: 0%
+
+  on_tts_start:
+    - light.turn_on:
+        id: status_led
+        brightness: 100%
+        red: 100%
+        green: 0%
+        blue: 100%
+
+  on_tts_end:
+    - light.turn_off: status_led
+
+  on_end:
+    - light.turn_off: status_led
+    - if:
+        condition:
+          switch.is_on: wake_word_enabled
+        then:
+          - voice_assistant.start_continuous:
+
+  on_error:
+    - light.turn_on:
+        id: status_led
+        brightness: 100%
+        red: 100%
+        green: 0%
+        blue: 0%
+    - delay: 1s
+    - light.turn_off: status_led
+    - if:
+        condition:
+          switch.is_on: wake_word_enabled
+        then:
+          - voice_assistant.start_continuous:
+
+# ウェイクワード（ローカル検出）
+micro_wake_word:
+  models:
+    - model: okay_nabu
+  on_wake_word_detected:
+    - voice_assistant.start:
+        wake_word: !lambda return wake_word;
+
+# 物理ボタン
+binary_sensor:
+  - platform: gpio
+    id: button_main
+    pin:
+      number: ${button_pin}
+      mode: INPUT_PULLUP
+      inverted: true
+    name: "${friendly_name} Button"
+    on_press:
+      - if:
+          condition:
+            voice_assistant.is_running:
+          then:
+            - voice_assistant.stop:
+            - light.turn_off: status_led
+          else:
+            - voice_assistant.start:
+    on_multi_click:
+      - timing:
+          - ON for at least 3s
+        then:
+          - switch.toggle: wake_word_enabled
+
+# ステータスLED
+light:
+  - platform: esp32_rmt_led_strip
+    id: status_led
+    name: "${friendly_name} LED"
+    pin: ${led_pin}
+    num_leds: 1
+    rmt_channel: 0
+    rgb_order: GRB
+    chipset: WS2812
+
+# スイッチ
+switch:
+  - platform: template
+    id: wake_word_enabled
+    name: "${friendly_name} Wake Word"
+    icon: "mdi:microphone"
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_ON
+    on_turn_on:
+      - voice_assistant.start_continuous:
+      - micro_wake_word.start:
+    on_turn_off:
+      - voice_assistant.stop:
+      - micro_wake_word.stop:
+      - light.turn_off: status_led
+
+  - platform: restart
+    name: "${friendly_name} Restart"
+    entity_category: diagnostic
+
+# 最小限のセンサー
+sensor:
+  - platform: wifi_signal
+    name: "${friendly_name} WiFi"
+    update_interval: 300s  # 5分間隔で更新頻度削減
+    entity_category: diagnostic
+
+  - platform: uptime
+    name: "${friendly_name} Uptime"
+    update_interval: 300s
+    entity_category: diagnostic
+
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: "${friendly_name} IP"
+      entity_category: diagnostic
+
+button:
+  - platform: restart
+    name: "${friendly_name} Restart"
+    entity_category: config
