@@ -1,0 +1,233 @@
+# ESP32-P4 Voice Assistant - Smart 86 Box 4" Touch Panel
+# Wall-mounted touch panel with integrated audio hardware
+#
+# Hardware Features:
+#   - 4" IPS Display (720x720)
+#   - 5-point capacitive touch
+#   - Wi-Fi 6 + BLE 5 via ESP32-C6 companion
+#   - Integrated microphone and speaker
+#   - 170 viewing angle
+
+substitutions:
+  device_name: esp32p4-smart86box
+  friendly_name: "Smart 86 Box Voice Panel"
+  # Pin definitions for Smart 86 Box
+  i2s_bclk_pin: GPIO45
+  i2s_ws_pin: GPIO46
+  i2s_din_pin: GPIO47
+  i2s_dout_pin: GPIO48
+  i2c_sda_pin: GPIO7
+  i2c_scl_pin: GPIO8
+  display_bl_pin: GPIO38
+  touch_int_pin: GPIO40
+
+esphome:
+  name: ${device_name}
+  friendly_name: ${friendly_name}
+  comment: "ESP32-P4 Smart 86 Box Voice Panel"
+  project:
+    name: "homeassistant.esp32p4-smart86box"
+    version: "1.0.0-beta"
+  platformio_options:
+    board_build.flash_mode: dio
+    board_build.flash_size: 32MB
+  on_boot:
+    priority: 600
+    then:
+      - output.turn_on: display_backlight
+      - delay: 1s
+
+esp32:
+  board: esp32p4-smart86box
+  variant: esp32p4
+  framework:
+    type: esp-idf
+    version: "5.3.1"
+    platform_version: 6.8.1
+    sdkconfig_options:
+      CONFIG_SPIRAM: y
+      CONFIG_SPIRAM_MODE_OCT: y
+      CONFIG_SPIRAM_SPEED_80M: y
+      CONFIG_ESP32P4_DEFAULT_CPU_FREQ_400: y
+      CONFIG_ESP_TASK_WDT_TIMEOUT_S: "30"
+      # Display buffer in PSRAM
+      CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP: y
+
+logger:
+  level: INFO
+
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  fast_connect: true
+  power_save_mode: none
+  ap:
+    ssid: "${device_name}-fallback"
+    password: !secret ap_password
+
+captive_portal:
+
+# I2C for touch controller and audio codec
+i2c:
+  sda: ${i2c_sda_pin}
+  scl: ${i2c_scl_pin}
+  scan: true
+  frequency: 400kHz
+
+# I2S Audio
+i2s_audio:
+  - id: i2s_main
+    i2s_lrclk_pin: ${i2s_ws_pin}
+    i2s_bclk_pin: ${i2s_bclk_pin}
+
+microphone:
+  - platform: i2s_audio
+    id: mic_i2s
+    i2s_audio_id: i2s_main
+    i2s_din_pin: ${i2s_din_pin}
+    adc_type: external
+    pdm: false
+    channel: left
+    bits_per_sample: 32bit
+    sample_rate: 16000
+
+speaker:
+  - platform: i2s_audio
+    id: speaker_i2s
+    i2s_audio_id: i2s_main
+    dac_type: external
+    i2s_dout_pin: ${i2s_dout_pin}
+    mode: mono
+    sample_rate: 16000
+    bits_per_sample: 16bit
+
+# Voice Assistant
+voice_assistant:
+  id: voice_assist
+  microphone: mic_i2s
+  speaker: speaker_i2s
+  use_wake_word: true
+  noise_suppression_level: 2
+  auto_gain: 31dBFS
+  volume_multiplier: 2.0
+
+  on_listening:
+    - lambda: |-
+        id(voice_state) = "Listening...";
+
+  on_stt_vad_end:
+    - lambda: |-
+        id(voice_state) = "Processing...";
+
+  on_tts_start:
+    - lambda: |-
+        id(voice_state) = "Speaking...";
+
+  on_tts_end:
+    - lambda: |-
+        id(voice_state) = "Ready";
+
+  on_end:
+    - lambda: |-
+        id(voice_state) = "Ready";
+    - if:
+        condition:
+          switch.is_on: wake_word_enabled
+        then:
+          - voice_assistant.start_continuous:
+
+  on_error:
+    - lambda: |-
+        id(voice_state) = "Error";
+    - delay: 2s
+    - lambda: |-
+        id(voice_state) = "Ready";
+
+micro_wake_word:
+  models:
+    - model: okay_nabu
+  on_wake_word_detected:
+    - voice_assistant.start:
+        wake_word: !lambda return wake_word;
+
+# Display backlight control
+output:
+  - platform: ledc
+    id: display_backlight
+    pin: ${display_bl_pin}
+    frequency: 1000Hz
+
+# Display brightness control
+light:
+  - platform: monochromatic
+    id: backlight_brightness
+    output: display_backlight
+    name: "${friendly_name} Backlight"
+    restore_mode: RESTORE_DEFAULT_ON
+
+# Global variables
+globals:
+  - id: voice_state
+    type: std::string
+    restore_value: no
+    initial_value: '"Ready"'
+
+# Switches
+switch:
+  - platform: template
+    id: wake_word_enabled
+    name: "${friendly_name} Wake Word"
+    icon: "mdi:microphone"
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_ON
+    on_turn_on:
+      - voice_assistant.start_continuous:
+      - micro_wake_word.start:
+    on_turn_off:
+      - voice_assistant.stop:
+      - micro_wake_word.stop:
+
+  - platform: restart
+    name: "${friendly_name} Restart"
+    entity_category: diagnostic
+
+# Touch button for voice activation (virtual button on display)
+binary_sensor:
+  - platform: gpio
+    id: touch_interrupt
+    pin:
+      number: ${touch_int_pin}
+      mode: INPUT
+    internal: true
+
+# Sensors
+sensor:
+  - platform: wifi_signal
+    name: "${friendly_name} WiFi Signal"
+    update_interval: 60s
+    entity_category: diagnostic
+
+  - platform: uptime
+    name: "${friendly_name} Uptime"
+    entity_category: diagnostic
+
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: "${friendly_name} IP Address"
+      entity_category: diagnostic
+
+  - platform: template
+    name: "${friendly_name} Voice State"
+    id: voice_state_sensor
+    lambda: |-
+      return id(voice_state);
+    update_interval: 500ms

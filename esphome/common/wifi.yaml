@@ -1,0 +1,39 @@
+# WiFi configuration for ESP32-P4 devices
+# Include this in your device configuration with:
+#   packages:
+#     wifi: !include common/wifi.yaml
+#
+# Note: WiFi 6 support requires ESP32-C6 companion chip
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Fast connect skips scanning for faster connection
+  fast_connect: true
+
+  # Disable power saving for low-latency audio streaming
+  power_save_mode: none
+
+  # Maximum transmission power
+  output_power: 20dB
+
+  # Fallback Access Point
+  ap:
+    ssid: "${device_name}-fallback"
+    password: !secret ap_password
+
+  # Connection events
+  on_connect:
+    - logger.log:
+        level: INFO
+        format: "WiFi connected to %s"
+        args: ['id(wifi_ssid_sensor).state.c_str()']
+
+  on_disconnect:
+    - logger.log:
+        level: WARN
+        format: "WiFi disconnected"
+
+# Captive portal for WiFi setup when in AP mode
+captive_portal:

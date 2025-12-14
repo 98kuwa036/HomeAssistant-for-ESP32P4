@@ -1,0 +1,117 @@
+# Common Voice Assistant configuration for ESP32-P4 devices
+# Include this in your device configuration with:
+#   packages:
+#     voice: !include common/voice.yaml
+#
+# Prerequisites:
+#   - Microphone component must be defined as 'mic_i2s'
+#   - Speaker component must be defined as 'speaker_i2s'
+#   - Status LED must be defined as 'status_led'
+#   - Switch 'wake_word_enabled' must be defined
+
+# Voice Assistant configuration
+voice_assistant:
+  id: voice_assist
+  microphone: mic_i2s
+  speaker: speaker_i2s
+  use_wake_word: true
+  noise_suppression_level: 2
+  auto_gain: 31dBFS
+  volume_multiplier: 2.0
+
+  on_listening:
+    - logger.log:
+        level: DEBUG
+        format: "Voice Assistant: Listening"
+    - light.turn_on:
+        id: status_led
+        brightness: 100%
+        red: 0%
+        green: 0%
+        blue: 100%
+        effect: "Pulse"
+
+  on_stt_vad_start:
+    - logger.log:
+        level: DEBUG
+        format: "Voice Assistant: Speech detected"
+    - light.turn_on:
+        id: status_led
+        brightness: 100%
+        red: 0%
+        green: 100%
+        blue: 100%
+
+  on_stt_vad_end:
+    - logger.log:
+        level: DEBUG
+        format: "Voice Assistant: Speech ended"
+    - light.turn_on:
+        id: status_led
+        brightness: 100%
+        red: 100%
+        green: 100%
+        blue: 0%
+
+  on_stt_end:
+    - logger.log:
+        level: DEBUG
+        format: "Voice Assistant: STT complete"
+
+  on_tts_start:
+    - logger.log:
+        level: DEBUG
+        format: "Voice Assistant: TTS starting"
+    - light.turn_on:
+        id: status_led
+        brightness: 100%
+        red: 100%
+        green: 0%
+        blue: 100%
+
+  on_tts_end:
+    - logger.log:
+        level: DEBUG
+        format: "Voice Assistant: TTS complete"
+    - light.turn_off: status_led
+
+  on_end:
+    - logger.log:
+        level: DEBUG
+        format: "Voice Assistant: Session ended"
+    - light.turn_off: status_led
+    - if:
+        condition:
+          switch.is_on: wake_word_enabled
+        then:
+          - voice_assistant.start_continuous:
+
+  on_error:
+    - logger.log:
+        level: ERROR
+        format: "Voice Assistant: Error occurred"
+    - light.turn_on:
+        id: status_led
+        brightness: 100%
+        red: 100%
+        green: 0%
+        blue: 0%
+        effect: "Fast Pulse"
+    - delay: 2s
+    - light.turn_off: status_led
+    - if:
+        condition:
+          switch.is_on: wake_word_enabled
+        then:
+          - voice_assistant.start_continuous:
+
+# Micro Wake Word configuration
+micro_wake_word:
+  models:
+    - model: okay_nabu
+  on_wake_word_detected:
+    - logger.log:
+        level: INFO
+        format: "Wake word detected!"
+    - voice_assistant.start:
+        wake_word: !lambda return wake_word;

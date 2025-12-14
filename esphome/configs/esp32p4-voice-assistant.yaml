@@ -1,0 +1,341 @@
+# ESP32-P4 Voice Assistant for Home Assistant
+# ESPHome configuration for ESP32-P4 based voice assistant
+#
+# Requirements:
+#   - ESPHome 2025.6.0 or later (ESP32-P4 support)
+#   - Home Assistant 2023.5 or later (Voice Assistant)
+#   - ESP-IDF framework (Arduino not supported on ESP32-P4)
+#
+# Supported Development Boards:
+#   - ESP32-P4-Function-EV-Board (with ES8311 codec)
+#   - Waveshare ESP32-P4-NANO
+#   - ESP32-P4-Module-DEV-KIT
+#   - Custom boards with I2S audio hardware
+
+substitutions:
+  device_name: esp32p4-voice-assistant
+  friendly_name: "ESP32-P4 Voice Assistant"
+  # Pin definitions for ESP32-P4-Function-EV-Board
+  # Adjust these for your specific board
+  i2s_bclk_pin: GPIO12
+  i2s_ws_pin: GPIO13
+  i2s_din_pin: GPIO14
+  i2s_dout_pin: GPIO15
+  i2c_sda_pin: GPIO7
+  i2c_scl_pin: GPIO8
+  led_pin: GPIO47
+  button_pin: GPIO0
+
+esphome:
+  name: ${device_name}
+  friendly_name: ${friendly_name}
+  comment: "ESP32-P4 Voice Assistant for Home Assistant Assist"
+  project:
+    name: "homeassistant.esp32p4-voice-assistant"
+    version: "1.0.0-beta"
+  platformio_options:
+    board_build.flash_mode: dio
+    board_build.flash_size: 16MB
+  on_boot:
+    priority: 600
+    then:
+      - light.turn_on:
+          id: status_led
+          effect: "Slow Pulse"
+          brightness: 50%
+      - delay: 2s
+      - light.turn_off: status_led
+
+esp32:
+  board: esp32-p4-function-ev-board
+  variant: esp32p4
+  framework:
+    type: esp-idf
+    version: "5.3.1"
+    platform_version: 6.8.1
+    sdkconfig_options:
+      # Enable PSRAM
+      CONFIG_SPIRAM: y
+      CONFIG_SPIRAM_MODE_OCT: y
+      CONFIG_SPIRAM_SPEED_80M: y
+      # Audio optimizations
+      CONFIG_ESP32P4_DEFAULT_CPU_FREQ_400: y
+      CONFIG_ESP_TASK_WDT_TIMEOUT_S: "30"
+      # Memory allocation for audio buffers
+      CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY: y
+
+# Enable logging (reduce for production)
+logger:
+  level: INFO
+  logs:
+    component: ERROR
+    i2s_audio: DEBUG
+    voice_assistant: DEBUG
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: !secret api_encryption_key
+  on_client_connected:
+    - light.turn_on:
+        id: status_led
+        brightness: 100%
+        red: 0%
+        green: 100%
+        blue: 0%
+    - delay: 500ms
+    - light.turn_off: status_led
+
+# Enable OTA updates
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+# WiFi configuration
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  fast_connect: true
+  power_save_mode: none  # Disable power saving for low latency audio
+  ap:
+    ssid: "${device_name}-fallback"
+    password: !secret ap_password
+
+# Captive portal for fallback WiFi setup
+captive_portal:
+
+# I2C bus for audio codec and other peripherals
+i2c:
+  sda: ${i2c_sda_pin}
+  scl: ${i2c_scl_pin}
+  scan: true
+  frequency: 400kHz
+
+# I2S Audio configuration
+i2s_audio:
+  - id: i2s_main
+    i2s_lrclk_pin: ${i2s_ws_pin}
+    i2s_bclk_pin: ${i2s_bclk_pin}
+
+# Microphone configuration (I2S input)
+microphone:
+  - platform: i2s_audio
+    id: mic_i2s
+    i2s_audio_id: i2s_main
+    i2s_din_pin: ${i2s_din_pin}
+    adc_type: external
+    pdm: false
+    channel: left
+    bits_per_sample: 32bit
+    sample_rate: 16000
+
+# Speaker configuration (I2S output)
+speaker:
+  - platform: i2s_audio
+    id: speaker_i2s
+    i2s_audio_id: i2s_main
+    dac_type: external
+    i2s_dout_pin: ${i2s_dout_pin}
+    mode: mono
+    sample_rate: 16000
+    bits_per_sample: 16bit
+
+# Voice Assistant configuration
+voice_assistant:
+  id: voice_assist
+  microphone: mic_i2s
+  speaker: speaker_i2s
+  use_wake_word: true
+  noise_suppression_level: 2
+  auto_gain: 31dBFS
+  volume_multiplier: 2.0
+
+  on_listening:
+    - light.turn_on:
+        id: status_led
+        brightness: 100%
+        red: 0%
+        green: 0%
+        blue: 100%
+        effect: "Pulse"
+
+  on_stt_vad_start:
+    - light.turn_on:
+        id: status_led
+        brightness: 100%
+        red: 0%
+        green: 100%
+        blue: 100%
+
+  on_stt_vad_end:
+    - light.turn_on:
+        id: status_led
+        brightness: 100%
+        red: 100%
+        green: 100%
+        blue: 0%
+
+  on_tts_start:
+    - light.turn_on:
+        id: status_led
+        brightness: 100%
+        red: 100%
+        green: 0%
+        blue: 100%
+
+  on_tts_end:
+    - light.turn_off: status_led
+
+  on_end:
+    - light.turn_off: status_led
+    - if:
+        condition:
+          switch.is_on: wake_word_enabled
+        then:
+          - voice_assistant.start_continuous:
+
+  on_error:
+    - light.turn_on:
+        id: status_led
+        brightness: 100%
+        red: 100%
+        green: 0%
+        blue: 0%
+        effect: "Fast Pulse"
+    - delay: 2s
+    - light.turn_off: status_led
+    - if:
+        condition:
+          switch.is_on: wake_word_enabled
+        then:
+          - voice_assistant.start_continuous:
+
+# Micro Wake Word (on-device wake word detection)
+micro_wake_word:
+  models:
+    - model: okay_nabu
+  on_wake_word_detected:
+    - voice_assistant.start:
+        wake_word: !lambda return wake_word;
+
+# Physical button for manual activation
+binary_sensor:
+  - platform: gpio
+    id: button_main
+    pin:
+      number: ${button_pin}
+      mode: INPUT_PULLUP
+      inverted: true
+    name: "${friendly_name} Button"
+    on_press:
+      - if:
+          condition:
+            voice_assistant.is_running:
+          then:
+            - voice_assistant.stop:
+            - light.turn_off: status_led
+          else:
+            - voice_assistant.start:
+    on_multi_click:
+      - timing:
+          - ON for at least 3s
+        then:
+          - switch.toggle: wake_word_enabled
+
+# Status LED (RGB)
+light:
+  - platform: esp32_rmt_led_strip
+    id: status_led
+    name: "${friendly_name} Status LED"
+    pin: ${led_pin}
+    num_leds: 1
+    rmt_channel: 0
+    rgb_order: GRB
+    chipset: WS2812
+    effects:
+      - pulse:
+          name: "Pulse"
+          transition_length: 250ms
+          update_interval: 250ms
+          min_brightness: 20%
+          max_brightness: 100%
+      - pulse:
+          name: "Slow Pulse"
+          transition_length: 1s
+          update_interval: 1s
+          min_brightness: 10%
+          max_brightness: 50%
+      - pulse:
+          name: "Fast Pulse"
+          transition_length: 100ms
+          update_interval: 100ms
+          min_brightness: 0%
+          max_brightness: 100%
+
+# Switches
+switch:
+  - platform: template
+    id: wake_word_enabled
+    name: "${friendly_name} Wake Word Enabled"
+    icon: "mdi:microphone"
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_ON
+    entity_category: config
+    on_turn_on:
+      - voice_assistant.start_continuous:
+      - micro_wake_word.start:
+    on_turn_off:
+      - voice_assistant.stop:
+      - micro_wake_word.stop:
+      - light.turn_off: status_led
+
+  - platform: restart
+    name: "${friendly_name} Restart"
+    entity_category: diagnostic
+
+# Sensors
+sensor:
+  # WiFi signal strength
+  - platform: wifi_signal
+    name: "${friendly_name} WiFi Signal"
+    update_interval: 60s
+    entity_category: diagnostic
+
+  # Uptime
+  - platform: uptime
+    name: "${friendly_name} Uptime"
+    entity_category: diagnostic
+
+  # Free memory
+  - platform: template
+    name: "${friendly_name} Free Memory"
+    id: free_memory
+    lambda: |-
+      return heap_caps_get_free_size(MALLOC_CAP_INTERNAL);
+    update_interval: 60s
+    unit_of_measurement: "B"
+    entity_category: diagnostic
+
+# Text sensors
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: "${friendly_name} IP Address"
+      entity_category: diagnostic
+    ssid:
+      name: "${friendly_name} Connected SSID"
+      entity_category: diagnostic
+
+  - platform: version
+    name: "${friendly_name} ESPHome Version"
+    entity_category: diagnostic
+
+# Buttons
+button:
+  - platform: factory_reset
+    name: "${friendly_name} Factory Reset"
+    entity_category: config
+
+  - platform: safe_mode
+    name: "${friendly_name} Safe Mode"
+    entity_category: config
