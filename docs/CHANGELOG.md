@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0-beta] - 2025-12-15
+
+### Added
+
+- `esp32p4-smart-speaker.yaml`: 高機能スマートスピーカー構成
+  - SCD40センサー (CO2、温度、湿度)
+  - SPS30センサー (PM1.0, PM2.5, PM4.0, PM10)
+  - 空気質指数 (AQI) 自動計算
+  - 空気質ステータステキストセンサー
+  - SPS30ファンクリーニングボタン
+  - MIPIカメラ対応準備（ESPHomeサポート待ち）
+- README に利用可能な設定ファイル一覧を追加
+
+### Changed
+
+- README の機能一覧に環境センサーを追加
+- プロジェクト構成の説明を更新
+
 ## [1.0.1-beta] - 2025-12-14
 
 ### Added

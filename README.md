@@ -22,6 +22,10 @@ Raspberry Pi 4B + Google AI Studio (Gemma 3) のクラウドオフロード構�
 - **ES8311 Codec**: 高品質オーディオ入出力
 - **Cloud Offload**: STT/TTS/LLMをGoogle Cloudで処理
 - **Japanese Support**: 日本語音声対応
+- **Environmental Sensors** (Smart Speaker版):
+  - SCD40: CO2、温度、湿度
+  - SPS30: PM1.0, PM2.5, PM4.0, PM10
+  - Air Quality Index 計算
 
 ## System Architecture
 
@@ -103,13 +107,23 @@ esphome run esphome/configs/esp32p4-function-ev-board.yaml
 
 [Raspberry Pi 4B + Google AI Studio 構成ガイド](docs/raspberry-pi-setup.md) を参照してください。
 
+## Available Configurations
+
+| 設定ファイル | 用途 | センサー |
+|------------|------|---------|
+| `esp32p4-function-ev-board.yaml` | 基本音声アシスタント | なし |
+| `esp32p4-smart-speaker.yaml` | 高機能スマートスピーカー | SCD40, SPS30 |
+| `esp32p4-lightweight.yaml` | 軽量版（RPi 4B最適化） | なし |
+
 ## Project Structure
 
 ```
 HomeAssistant-for-ESP32P4/
 ├── esphome/
 │   ├── configs/
-│   │   └── esp32p4-function-ev-board.yaml  # メイン設定
+│   │   ├── esp32p4-function-ev-board.yaml  # 基本音声アシスタント
+│   │   ├── esp32p4-smart-speaker.yaml      # 高機能版（環境センサー付き）
+│   │   └── esp32p4-lightweight.yaml        # 軽量版
 │   ├── common/
 │   │   ├── base.yaml
 │   │   ├── wifi.yaml
