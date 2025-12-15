@@ -1,69 +1,89 @@
-# Home Assistant Voice Assistant for ESP32-P4
+# Home Assistant Voice Assistant for ESP32-P4-Function-EV-Board
 
-ESP32-P4ベースのHome Assistant音声アシスタント実装です。ESPHomeを使用して、ESP32-P4の高性能オーディオ機能を活用した音声コントロールを実現します。
+ESP32-P4-Function-EV-Board を使用した Home Assistant 音声アシスタント実装です。
+Raspberry Pi 4B + Google AI Studio (Gemma 3) のクラウドオフロード構成に最適化されています。
 
-> **Beta Version**: このプロジェクトは現在ベータ版です。ESP32-P4のESPHomeサポートは2025年6月から開始されており、一部の機能はまだ開発中です。
+> **Beta Version**: ESP32-P4のESPHomeサポートは2025年6月から開始されており、一部の機能はまだ開発中です。
+
+## Target Hardware
+
+| コンポーネント | 詳細 |
+|--------------|------|
+| **開発ボード** | [ESP32-P4-Function-EV-Board](https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32p4/esp32-p4-function-ev-board/) v1.5 |
+| **CPU** | ESP32-P4 Dual-core RISC-V @ 400MHz |
+| **Audio Codec** | ES8311 + NS4150B Amplifier |
+| **WiFi/BLE** | ESP32-C6-MINI-1 (WiFi 6) |
+| **Memory** | 32MB PSRAM, 16MB Flash |
 
 ## Features
 
-- **Voice Control**: Home Assistantと連携した音声アシスタント機能
-- **Wake Word Detection**: オンデバイスのウェイクワード検出（"Okay Nabu"など）
-- **Low Latency**: ESP32-P4の400MHz RISC-Vプロセッサによる高速処理
-- **Multiple Boards**: 複数の開発ボードに対応した設定ファイル
-- **ES8311 Codec**: 高品質オーディオコーデックのサポート
+- **Voice Control**: Home Assistantと連携した音声アシスタント
+- **Wake Word**: オンデバイス検出（"Okay Nabu"）
+- **ES8311 Codec**: 高品質オーディオ入出力
+- **Cloud Offload**: STT/TTS/LLMをGoogle Cloudで処理
+- **Japanese Support**: 日本語音声対応
 
-## Supported Hardware
-
-| Board | Status | Features |
-|-------|--------|----------|
-| ESP32-P4-Function-EV-Board | Tested | ES8311 codec, dual mic, display |
-| Waveshare ESP32-P4-NANO | Supported | Compact, onboard audio |
-| Smart 86 Box 4" Panel | Supported | Touch display, wall-mount |
-| Generic ESP32-P4 | Template | Customizable |
-
-## Recommended Setup (Raspberry Pi 4B + Google AI)
-
-クラウドオフロード構成で、Raspberry Pi 4Bでも快適に動作します。
+## System Architecture
 
 ```
-ESP32-P4 (Voice Satellite)
-    ↓ WiFi
-Raspberry Pi 4B (Home Assistant)
-    ↓ Internet
-Google Cloud Services
-  ├─ Google AI Studio (Gemma 3 / Gemini)
-  ├─ Cloud Speech-to-Text (日本語対応)
-  └─ Cloud Text-to-Speech (Neural2音声)
+┌──────────────────────────────┐
+│  ESP32-P4-Function-EV-Board  │
+│  ┌────────┐    ┌──────────┐  │
+│  │ES8311  │    │ESP32-C6  │  │
+│  │Codec   │    │WiFi 6    │  │
+│  └────────┘    └──────────┘  │
+└──────────────┬───────────────┘
+               │ WiFi
+               ▼
+┌──────────────────────────────┐
+│     Raspberry Pi 4B          │
+│     Home Assistant           │
+└──────────────┬───────────────┘
+               │ Internet
+               ▼
+┌──────────────────────────────┐
+│      Google Cloud Services   │
+│  - AI Studio (Gemma 3)       │
+│  - Cloud Speech-to-Text      │
+│  - Cloud Text-to-Speech      │
+└──────────────────────────────┘
 ```
 
-**設定ファイル**: `esp32p4-lightweight.yaml` を使用
+## Pin Configuration
 
-詳細は [Raspberry Pi 4B + Google AI Studio 構成ガイド](docs/raspberry-pi-setup.md) を参照。
+| 機能 | GPIO | 説明 |
+|------|------|------|
+| I2S MCLK | GPIO13 | Master Clock |
+| I2S BCLK | GPIO12 | Bit Clock |
+| I2S WS | GPIO10 | Word Select |
+| I2S DOUT | GPIO9 | Speaker Data |
+| I2S DIN | GPIO11 | Microphone Data |
+| I2C SDA | GPIO7 | ES8311 Control |
+| I2C SCL | GPIO8 | ES8311 Control |
+| LED | GPIO47 | Status (WS2812) |
+| Button | GPIO0 | Boot Button |
 
 ## Requirements
 
-- **ESPHome** 2025.6.0以降（ESP32-P4サポート）
-- **Home Assistant** 2023.5以降（Voice Assistant対応）
-- **ESP-IDF Framework**（Arduinoは非対応）
-- ESP32-P4開発ボード（マイク・スピーカー付き）
+- **ESPHome** 2025.6.0以降
+- **Home Assistant** 2023.5以降
+- **Raspberry Pi 4B** (4GB以上推奨)
+- **Google AI Studio** APIキー
+- **Google Cloud** STT/TTS API
 
 ## Quick Start
 
-### 1. Clone Repository
+### 1. Clone & Configure
 
 ```bash
 git clone https://github.com/98kuwa036/HomeAssistant-for-ESP32P4.git
 cd HomeAssistant-for-ESP32P4
-```
 
-### 2. Configure Secrets
-
-```bash
+# secrets設定
 cp esphome/secrets.yaml.example esphome/secrets.yaml
 ```
 
-`secrets.yaml`を編集して、WiFi認証情報とAPIキーを設定：
-
+`secrets.yaml` を編集：
 ```yaml
 wifi_ssid: "YourWiFiSSID"
 wifi_password: "YourWiFiPassword"
@@ -72,27 +92,16 @@ api_encryption_key: "YOUR_32_CHAR_KEY"  # esphome generate-encryption-key
 ota_password: "YourOTAPassword"
 ```
 
-### 3. Flash Device
+### 2. Flash Device
 
 ```bash
-# Install ESPHome
 pip install esphome
-
-# Flash (USB接続)
-esphome run esphome/configs/esp32p4-voice-assistant.yaml
+esphome run esphome/configs/esp32p4-function-ev-board.yaml
 ```
 
-または、ESPHome Dashboardを使用：
-1. Home Assistant → ESPHome Add-on
-2. 設定ファイルをコピー
-3. Install → Wirelessly or via USB
+### 3. Configure Home Assistant
 
-### 4. Add to Home Assistant
-
-1. **Settings** → **Devices & Services**
-2. 発見されたESPHomeデバイスを追加
-3. APIキーを入力
-4. Voice Assistantパイプラインを設定
+[Raspberry Pi 4B + Google AI Studio 構成ガイド](docs/raspberry-pi-setup.md) を参照してください。
 
 ## Project Structure
 
@@ -100,141 +109,63 @@ esphome run esphome/configs/esp32p4-voice-assistant.yaml
 HomeAssistant-for-ESP32P4/
 ├── esphome/
 │   ├── configs/
-│   │   ├── esp32p4-voice-assistant.yaml  # Full featured config
-│   │   ├── esp32p4-lightweight.yaml      # Raspberry Pi 4B optimized
-│   │   ├── esp32p4-waveshare-nano.yaml   # Waveshare board
-│   │   ├── esp32p4-smart86box.yaml       # Smart 86 Box panel
-│   │   └── esp32p4-minimal.yaml          # Minimal template
+│   │   └── esp32p4-function-ev-board.yaml  # メイン設定
 │   ├── common/
-│   │   ├── base.yaml                     # Base configuration
-│   │   ├── wifi.yaml                     # WiFi settings
-│   │   └── voice.yaml                    # Voice assistant config
-│   └── secrets.yaml.example              # Secrets template
+│   │   ├── base.yaml
+│   │   ├── wifi.yaml
+│   │   └── voice.yaml
+│   └── secrets.yaml.example
 ├── components/
-│   ├── esp32_p4_audio/                   # P4 audio optimization
-│   │   ├── __init__.py
-│   │   ├── esp32_p4_audio.h
-│   │   └── esp32_p4_audio.cpp
-│   └── es8311/                           # ES8311 codec driver
-│       ├── __init__.py
-│       ├── es8311.h
-│       └── es8311.cpp
+│   ├── esp32_p4_audio/       # P4オーディオ最適化
+│   └── es8311/               # ES8311コーデックドライバ
 ├── docs/
-│   ├── home-assistant-setup.md           # HA setup guide
-│   ├── hardware-guide.md                 # Hardware documentation
-│   └── CHANGELOG.md                      # Version history
-├── LICENSE
+│   ├── raspberry-pi-setup.md # RPi 4B + Google AI ガイド
+│   ├── hardware-guide.md
+│   └── CHANGELOG.md
 └── README.md
 ```
 
-## Configuration
+## LED Status
 
-### Basic Configuration
-
-最小限の設定例：
-
-```yaml
-substitutions:
-  device_name: my-voice-assistant
-  i2s_bclk_pin: GPIO12
-  i2s_ws_pin: GPIO13
-  i2s_din_pin: GPIO14
-  i2s_dout_pin: GPIO15
-
-esphome:
-  name: ${device_name}
-
-esp32:
-  board: esp32-p4-generic
-  variant: esp32p4
-  framework:
-    type: esp-idf
-    version: "5.3.1"
-
-# ... (see esp32p4-minimal.yaml for complete example)
-```
-
-### Wake Word Configuration
-
-ウェイクワードの変更：
-
-```yaml
-micro_wake_word:
-  models:
-    - model: hey_jarvis  # Options: okay_nabu, hey_jarvis, alexa, etc.
-```
-
-### LED Status Indicators
-
-| Color | Meaning |
-|-------|---------|
-| Blue (pulse) | Listening |
-| Cyan | Speech detected |
-| Yellow | Processing |
-| Purple | Speaking |
-| Red (fast pulse) | Error |
-| Green (flash) | Connected |
+| 色 | 状態 |
+|----|------|
+| 青 | リスニング中 |
+| シアン | 音声検出 |
+| 黄 | 処理中 |
+| 紫 | 応答中 |
+| 赤 | エラー |
+| 緑 | 接続完了 |
 
 ## Documentation
 
-- [Raspberry Pi 4B + Google AI Setup](docs/raspberry-pi-setup.md) - **推奨構成ガイド**
-- [Home Assistant Setup Guide](docs/home-assistant-setup.md) - 詳細なセットアップ手順
-- [Hardware Guide](docs/hardware-guide.md) - ピン配置とハードウェア情報
+- **[Raspberry Pi 4B + Google AI Setup](docs/raspberry-pi-setup.md)** - 推奨構成の詳細ガイド
+- [Hardware Guide](docs/hardware-guide.md) - ハードウェア詳細
 - [Changelog](docs/CHANGELOG.md) - 変更履歴
-
-## Known Limitations
-
-- **ESP-IDF Only**: Arduino frameworkは非対応
-- **External Bluetooth**: ESP32-P4にはBluetooth非搭載、外部チップ（ESP32-C6）が必要
-- **Beta Status**: 一部のESPHomeコンポーネントは開発中
 
 ## Troubleshooting
 
-### デバイスが応答しない
-
-1. シリアルログを確認: `esphome logs esp32p4-voice-assistant.yaml`
-2. WiFi接続状態を確認
-3. Home Assistant APIの接続状態を確認
-
 ### 音声が認識されない
-
-1. マイクのピン設定を確認
-2. ノイズ環境を改善
-3. `noise_suppression_level`を調整
+1. マイクが正しく接続されているか確認
+2. `noise_suppression_level` を調整（0-4）
+3. シリアルログを確認: `esphome logs`
 
 ### 音声出力がない
+1. スピーカー接続を確認
+2. `volume_multiplier` を増加（1.0-3.0）
+3. ES8311のI2C通信を確認
 
-1. スピーカーのピン設定を確認
-2. `volume_multiplier`を増加
-3. I2Sの設定を確認
-
-## Contributing
-
-Issues and Pull Requests are welcome!
-
-1. Fork the repository
-2. Create your feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
-
-## License
-
-This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+### WiFi接続が不安定
+1. `power_save_mode: none` を確認
+2. ESP32-C6のアンテナ位置を調整
+3. `output_power: 20dB` に設定
 
 ## References
 
+- [ESP32-P4-Function-EV-Board User Guide](https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32p4/esp32-p4-function-ev-board/user_guide.html)
 - [ESPHome Voice Assistant](https://esphome.io/components/voice_assistant.html)
-- [ESPHome 2025.6.0 Changelog](https://esphome.io/changelog/2025.6.0/) - ESP32-P4 support
-- [ESPHome 2025.11.0 Changelog](https://esphome.io/changelog/2025.11.0/) - BLE via ESP-Hosted
-- [Home Assistant Voice Control](https://www.home-assistant.io/voice_control/)
-- [Google AI Studio](https://aistudio.google.com/) - Gemma 3 / Gemini API
+- [Google AI Studio](https://aistudio.google.com/)
 - [Google Cloud Speech-to-Text](https://cloud.google.com/speech-to-text)
-- [Google Cloud Text-to-Speech](https://cloud.google.com/text-to-speech)
-- [ESP32-P4 Datasheet](https://www.espressif.com/sites/default/files/documentation/esp32-p4_datasheet_en.pdf)
 
-## Acknowledgments
+## License
 
-- [ESPHome Project](https://esphome.io/)
-- [Home Assistant](https://www.home-assistant.io/)
-- [Espressif Systems](https://www.espressif.com/)
+Apache License 2.0 - see [LICENSE](LICENSE)
