@@ -10,14 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `esp32p4-respeaker-smart-speaker.yaml`: ReSpeaker USB Mic Array 構成
-  - ReSpeaker USB を Raspberry Pi に接続
+  - ReSpeaker USB を ESP32-P4 USB Host に直接接続
   - PAM8403 アンプ + Peerless スピーカー対応
   - ES8311 DAC 出力を PAM8403 に接続
   - 環境センサー (SCD40, SPS30) 対応
+  - USB Audio Class (UAC) サポート
 - `docs/respeaker-setup.md`: ReSpeaker セットアップガイド
-  - Wyoming Satellite 設定手順
-  - Assist Pipeline 構成
   - ハードウェア接続図
+  - ESP32-P4 USB Host 設定
+  - Assist Pipeline 構成
 
 ### Changed
 

@@ -113,7 +113,7 @@ esphome run esphome/configs/esp32p4-function-ev-board.yaml
 |------------|------|--------|---------|
 | `esp32p4-function-ev-board.yaml` | 基本音声アシスタント | ES8311内蔵 | なし |
 | `esp32p4-smart-speaker.yaml` | 高機能スマートスピーカー | ES8311内蔵 | SCD40, SPS30 |
-| `esp32p4-respeaker-smart-speaker.yaml` | ReSpeaker構成 | ReSpeaker USB (RPi) | SCD40, SPS30 |
+| `esp32p4-respeaker-smart-speaker.yaml` | ReSpeaker構成 | ReSpeaker USB (ESP32-P4) | SCD40, SPS30 |
 | `esp32p4-lightweight.yaml` | 軽量版（RPi 4B最適化） | ES8311内蔵 | なし |
 
 ## Project Structure

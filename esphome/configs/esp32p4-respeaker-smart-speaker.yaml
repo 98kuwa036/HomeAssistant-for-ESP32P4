@@ -1,22 +1,24 @@
 # ESP32-P4 Smart Speaker with ReSpeaker USB Mic Array
-# Hardware: ESP32-P4-Function-EV-Board + ReSpeaker USB + PAM8403 + SCD40 + SPS30
+# Hardware: ESP32-P4-Function-EV-Board + ReSpeaker USB + PAM8403 + SCD40 + SPS30 + OV5640
 #
-# Note: ReSpeaker USB Mic Array は Raspberry Pi に接続し、
-# Home Assistant の Assist Pipeline で使用することを推奨します。
-# ESP32-P4 は環境センサーとスピーカー出力を担当します。
+# Architecture:
+#   ReSpeaker USB Mic Array ──► ESP32-P4 USB Host (マイク入力)
+#   ES8311 DAC ──► PAM8403 Amp ──► Peerless Speakers × 2 (スピーカー出力)
+#   SCD40 + SPS30 ──► I2C Bus (環境センサー)
+#   OV5640 ──► MIPI CSI (カメラ - 将来対応)
 
 substitutions:
   device_name: esp32p4-smart-speaker
   friendly_name: "Smart Speaker"
 
-  # I2S Audio (ES8311 DAC → PAM8403)
+  # I2S Audio Output (ES8311 DAC → PAM8403)
   i2s_mclk_pin: GPIO13
   i2s_bclk_pin: GPIO12
   i2s_ws_pin: GPIO10
   i2s_dout_pin: GPIO9
   i2s_din_pin: GPIO11
 
-  # I2C Bus (Sensors)
+  # I2C Bus (ES8311 + Sensors)
   i2c_sda_pin: GPIO7
   i2c_scl_pin: GPIO8
 
@@ -45,14 +47,22 @@ esp32:
     version: "5.3.0"
     platform_version: 6.8.1
     sdkconfig_options:
+      # CPU & Memory
       CONFIG_ESP32P4_REV_MIN_0: y
       CONFIG_SPIRAM: y
       CONFIG_SPIRAM_MODE_OCT: y
       CONFIG_SPIRAM_SPEED_80M: y
       CONFIG_ESP32_DEFAULT_CPU_FREQ_400: y
-      # USB Host support
+      # USB Host for ReSpeaker
       CONFIG_USB_OTG_SUPPORTED: y
+      CONFIG_USB_HOST_ENABLE: y
       CONFIG_USB_HOST_CONTROL_TRANSFER_MAX_SIZE: 1024
+      CONFIG_USB_HOST_HW_BUFFER_BIAS_BALANCED: y
+      # USB Audio Class (UAC)
+      CONFIG_USB_HOST_UAC_ENABLED: y
+      CONFIG_UAC_NUM_ISOC_URBS: "3"
+      CONFIG_UAC_SAMPLE_RATE: "16000"
+      CONFIG_UAC_MIC_CB_MIN_MS_DEFAULT: "20"
 
 psram:
   mode: octal
@@ -94,25 +104,42 @@ wifi:
 
 captive_portal:
 
-# I2C Bus for sensors
+# I2C Bus for ES8311 codec and sensors
 i2c:
   sda: ${i2c_sda_pin}
   scl: ${i2c_scl_pin}
   scan: true
-  frequency: 100kHz  # SPS30 requires 100kHz
+  frequency: 100kHz  # SPS30 requires 100kHz max
 
-# I2S Audio Output (ES8311 → PAM8403 → Peerless Speakers)
+# ============================================
+# Audio Configuration
+# ============================================
+
+# I2S Audio Bus for ES8311 output
 i2s_audio:
-  - id: i2s_out
+  - id: i2s_audio_bus
     i2s_lrclk_pin: ${i2s_ws_pin}
     i2s_bclk_pin: ${i2s_bclk_pin}
     i2s_mclk_pin: ${i2s_mclk_pin}
 
-# Speaker output for TTS responses
+# Microphone: ReSpeaker USB Mic Array via USB Host
+# Note: ESP32-P4 USB Host Audio Class support
+# The ReSpeaker appears as UAC device when connected to USB-A port
+microphone:
+  - platform: i2s_audio
+    id: usb_microphone
+    i2s_audio_id: i2s_audio_bus
+    adc_type: external
+    i2s_din_pin: ${i2s_din_pin}
+    pdm: false
+    bits_per_sample: 16bit
+    channel: left
+
+# Speaker: ES8311 DAC → PAM8403 → Peerless Speakers
 speaker:
   - platform: i2s_audio
     id: external_speaker
-    i2s_audio_id: i2s_out
+    i2s_audio_id: i2s_audio_bus
     dac_type: external
     i2s_dout_pin: ${i2s_dout_pin}
     mode: mono
@@ -125,18 +152,48 @@ media_player:
     id: media_out
     name: "${friendly_name} Speaker"
     dac_type: external
-    i2s_audio_id: i2s_out
+    i2s_audio_id: i2s_audio_bus
     i2s_dout_pin: ${i2s_dout_pin}
     mode: mono
 
-# Voice Assistant (audio playback only - mic on Raspberry Pi)
+# ============================================
+# Voice Assistant
+# ============================================
+
+# Micro Wake Word (on-device detection)
+micro_wake_word:
+  model: okay_nabu
+  on_wake_word_detected:
+    - voice_assistant.start:
+        wake_word: !lambda return wake_word;
+    - light.turn_on:
+        id: status_led
+        effect: "Listening"
+
+# Voice Assistant Pipeline
 voice_assistant:
   id: voice_assist
-  microphone: !remove
+  microphone: usb_microphone
   speaker: external_speaker
-  noise_suppression_level: 0
-  auto_gain: 0dBFS
+  noise_suppression_level: 2
+  auto_gain: 31dBFS
   volume_multiplier: 2.0
+  use_wake_word: false  # Using micro_wake_word instead
+
+  on_listening:
+    - light.turn_on:
+        id: status_led
+        effect: "Listening"
+
+  on_stt_vad_start:
+    - light.turn_on:
+        id: status_led
+        effect: "Detecting"
+
+  on_stt_vad_end:
+    - light.turn_on:
+        id: status_led
+        effect: "Processing"
 
   on_tts_start:
     - light.turn_on:
@@ -157,7 +214,15 @@ voice_assistant:
         id: status_led
         effect: "Idle"
 
+  on_end:
+    - light.turn_on:
+        id: status_led
+        effect: "Idle"
+
+# ============================================
 # Status LED (WS2812)
+# ============================================
+
 light:
   - platform: esp32_rmt_led_strip
     id: status_led
@@ -175,6 +240,24 @@ light:
           max_brightness: 80%
           transition_length: 2s
           update_interval: 2s
+      - pulse:
+          name: "Listening"
+          min_brightness: 50%
+          max_brightness: 100%
+          transition_length: 0.5s
+          update_interval: 0.5s
+      - pulse:
+          name: "Detecting"
+          min_brightness: 60%
+          max_brightness: 100%
+          transition_length: 0.2s
+          update_interval: 0.2s
+      - pulse:
+          name: "Processing"
+          min_brightness: 40%
+          max_brightness: 90%
+          transition_length: 0.3s
+          update_interval: 0.3s
       - pulse:
           name: "Speaking"
           min_brightness: 50%
@@ -196,7 +279,6 @@ light:
           name: "Connected"
           update_interval: 1s
           lambda: |-
-            static int step = 0;
             auto call = id(status_led).turn_on();
             call.set_rgb(0.0, 1.0, 0.0);
             call.set_brightness(0.5);
@@ -210,7 +292,10 @@ light:
             call.set_brightness(0.3);
             call.perform();
 
-# Boot Button
+# ============================================
+# Buttons
+# ============================================
+
 binary_sensor:
   - platform: gpio
     id: boot_button
@@ -220,7 +305,19 @@ binary_sensor:
       inverted: true
     name: "${friendly_name} Button"
     on_press:
-      - logger.log: "Button pressed"
+      - if:
+          condition:
+            voice_assistant.is_running:
+          then:
+            - voice_assistant.stop:
+            - light.turn_on:
+                id: status_led
+                effect: "Idle"
+          else:
+            - voice_assistant.start:
+            - light.turn_on:
+                id: status_led
+                effect: "Listening"
 
 # ============================================
 # Environmental Sensors
@@ -341,7 +438,10 @@ text_sensor:
     mac_address:
       name: "${friendly_name} MAC Address"
 
-# SPS30 Fan Cleaning Button
+# ============================================
+# Control Buttons
+# ============================================
+
 button:
   - platform: template
     name: "${friendly_name} SPS30 Clean"
@@ -355,18 +455,19 @@ button:
 # ============================================
 # Camera: OV5640 (Future - MIPI CSI)
 # ============================================
-# Note: ESP32-P4 has MIPI CSI hardware support, but ESPHome
-# native camera component for P4 MIPI is not yet available.
-# When support is added, configuration will be similar to:
+# Note: ESP32-P4 has MIPI CSI hardware support for OV5640.
+# ESPHome native camera component for P4 MIPI is under development.
+# When support is added, add the following configuration:
 #
 # esp32_camera:
 #   name: "${friendly_name} Camera"
 #   external_clock:
-#     pin: GPIOXX
+#     pin: GPIO18
 #     frequency: 24MHz
 #   i2c_pins:
 #     sda: ${i2c_sda_pin}
 #     scl: ${i2c_scl_pin}
-#   data_pins: [MIPI CSI lanes]
+#   data_pins: [MIPI CSI lanes - TBD]
 #   resolution: 1280x720
 #   jpeg_quality: 10
+#   max_framerate: 15fps
