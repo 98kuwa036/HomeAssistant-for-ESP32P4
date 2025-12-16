@@ -107,6 +107,31 @@ esphome run esphome/configs/esp32p4-function-ev-board.yaml
 
 [Raspberry Pi 4B + Google AI Studio 構成ガイド](docs/raspberry-pi-setup.md) を参照してください。
 
+## Development Approaches
+
+本プロジェクトは2つの開発アプローチを提供しています：
+
+### ESPHome (推奨: 基本構成)
+
+ES8311内蔵マイクを使用する基本構成向け。設定が簡単で Home Assistant との統合も容易。
+
+```bash
+esphome run esphome/configs/esp32p4-function-ev-board.yaml
+```
+
+### ESP-IDF (推奨: ReSpeaker USB 構成)
+
+ReSpeaker USB Mic Array を使用する高機能構成向け。ESPHome の USB Audio Class サポートがまだ実験段階のため、C言語での直接開発が必要。
+
+```bash
+cd esp-idf
+idf.py set-target esp32p4
+idf.py menuconfig  # WiFi/HA設定
+idf.py build flash
+```
+
+詳細は [ESP-IDF 開発環境セットアップガイド](docs/esp-idf-setup.md) を参照。
+
 ## Available Configurations
 
 | 設定ファイル | 用途 | マイク | センサー |
@@ -120,22 +145,27 @@ esphome run esphome/configs/esp32p4-function-ev-board.yaml
 
 ```
 HomeAssistant-for-ESP32P4/
-├── esphome/
+├── esphome/                   # ESPHome 設定 (基本構成)
 │   ├── configs/
-│   │   ├── esp32p4-function-ev-board.yaml  # 基本音声アシスタント
-│   │   ├── esp32p4-smart-speaker.yaml      # 高機能版（環境センサー付き）
-│   │   └── esp32p4-lightweight.yaml        # 軽量版
+│   │   ├── esp32p4-function-ev-board.yaml
+│   │   ├── esp32p4-smart-speaker.yaml
+│   │   └── esp32p4-lightweight.yaml
 │   ├── common/
-│   │   ├── base.yaml
-│   │   ├── wifi.yaml
-│   │   └── voice.yaml
 │   └── secrets.yaml.example
-├── components/
-│   ├── esp32_p4_audio/       # P4オーディオ最適化
-│   └── es8311/               # ES8311コーデックドライバ
+├── esp-idf/                   # ESP-IDF プロジェクト (ReSpeaker USB)
+│   ├── main/
+│   │   ├── main.c             # メインアプリケーション
+│   │   ├── usb_audio.c        # USB Audio (ReSpeaker)
+│   │   ├── i2s_output.c       # I2S 出力 (ES8311)
+│   │   ├── wifi_manager.c     # WiFi 管理
+│   │   └── ha_client.c        # Home Assistant 連携
+│   ├── sdkconfig.defaults
+│   └── CMakeLists.txt
+├── components/                # ESPHome カスタムコンポーネント
 ├── docs/
-│   ├── raspberry-pi-setup.md # RPi 4B + Google AI ガイド
-│   ├── hardware-guide.md
+│   ├── esp-idf-setup.md       # ESP-IDF 開発ガイド
+│   ├── respeaker-setup.md     # ReSpeaker 構成ガイド
+│   ├── raspberry-pi-setup.md
 │   └── CHANGELOG.md
 └── README.md
 ```
@@ -153,8 +183,9 @@ HomeAssistant-for-ESP32P4/
 
 ## Documentation
 
-- **[Raspberry Pi 4B + Google AI Setup](docs/raspberry-pi-setup.md)** - 推奨構成の詳細ガイド
+- **[ESP-IDF 開発環境セットアップ](docs/esp-idf-setup.md)** - ReSpeaker USB 構成向け
 - **[ReSpeaker USB + PAM8403 Setup](docs/respeaker-setup.md)** - ReSpeaker構成ガイド
+- **[Raspberry Pi 4B + Google AI Setup](docs/raspberry-pi-setup.md)** - HA サーバー構成
 - [Hardware Guide](docs/hardware-guide.md) - ハードウェア詳細
 - [Changelog](docs/CHANGELOG.md) - 変更履歴
 
