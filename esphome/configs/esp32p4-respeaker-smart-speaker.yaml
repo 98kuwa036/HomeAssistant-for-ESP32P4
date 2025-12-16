@@ -1,0 +1,473 @@
+# ESP32-P4 Smart Speaker with ReSpeaker USB Mic Array
+# Hardware: ESP32-P4-Function-EV-Board + ReSpeaker USB + PAM8403 + SCD40 + SPS30 + OV5640
+#
+# Architecture:
+#   ReSpeaker USB Mic Array ──► ESP32-P4 USB Host (マイク入力)
+#   ES8311 DAC ──► PAM8403 Amp ──► Peerless Speakers × 2 (スピーカー出力)
+#   SCD40 + SPS30 ──► I2C Bus (環境センサー)
+#   OV5640 ──► MIPI CSI (カメラ - 将来対応)
+
+substitutions:
+  device_name: esp32p4-smart-speaker
+  friendly_name: "Smart Speaker"
+
+  # I2S Audio Output (ES8311 DAC → PAM8403)
+  i2s_mclk_pin: GPIO13
+  i2s_bclk_pin: GPIO12
+  i2s_ws_pin: GPIO10
+  i2s_dout_pin: GPIO9
+  i2s_din_pin: GPIO11
+
+  # I2C Bus (ES8311 + Sensors)
+  i2c_sda_pin: GPIO7
+  i2c_scl_pin: GPIO8
+
+  # Status LED
+  led_pin: GPIO47
+
+  # Button
+  button_pin: GPIO0
+
+  # Sensor update interval
+  env_update_interval: 60s
+
+esphome:
+  name: ${device_name}
+  friendly_name: ${friendly_name}
+  platformio_options:
+    board_build.flash_mode: dio
+    board_build.flash_size: 16MB
+    board_build.psram_mode: octal
+
+esp32:
+  board: esp32-p4-function-ev-board
+  flash_size: 16MB
+  framework:
+    type: esp-idf
+    version: "5.3.0"
+    platform_version: 6.8.1
+    sdkconfig_options:
+      # CPU & Memory
+      CONFIG_ESP32P4_REV_MIN_0: y
+      CONFIG_SPIRAM: y
+      CONFIG_SPIRAM_MODE_OCT: y
+      CONFIG_SPIRAM_SPEED_80M: y
+      CONFIG_ESP32_DEFAULT_CPU_FREQ_400: y
+      # USB Host for ReSpeaker
+      CONFIG_USB_OTG_SUPPORTED: y
+      CONFIG_USB_HOST_ENABLE: y
+      CONFIG_USB_HOST_CONTROL_TRANSFER_MAX_SIZE: 1024
+      CONFIG_USB_HOST_HW_BUFFER_BIAS_BALANCED: y
+      # USB Audio Class (UAC)
+      CONFIG_USB_HOST_UAC_ENABLED: y
+      CONFIG_UAC_NUM_ISOC_URBS: "3"
+      CONFIG_UAC_SAMPLE_RATE: "16000"
+      CONFIG_UAC_MIC_CB_MIN_MS_DEFAULT: "20"
+
+psram:
+  mode: octal
+  speed: 80MHz
+
+# Logging
+logger:
+  level: INFO
+  logs:
+    component: ERROR
+
+# Home Assistant API
+api:
+  encryption:
+    key: !secret api_encryption_key
+  on_client_connected:
+    - light.turn_on:
+        id: status_led
+        effect: "Connected"
+  on_client_disconnected:
+    - light.turn_on:
+        id: status_led
+        effect: "Disconnected"
+
+# OTA Updates
+ota:
+  platform: esphome
+  password: !secret ota_password
+
+# WiFi (via ESP32-C6)
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  power_save_mode: none
+  output_power: 20dB
+  ap:
+    ssid: "${device_name}-fallback"
+    password: !secret ap_password
+
+captive_portal:
+
+# I2C Bus for ES8311 codec and sensors
+i2c:
+  sda: ${i2c_sda_pin}
+  scl: ${i2c_scl_pin}
+  scan: true
+  frequency: 100kHz  # SPS30 requires 100kHz max
+
+# ============================================
+# Audio Configuration
+# ============================================
+
+# I2S Audio Bus for ES8311 output
+i2s_audio:
+  - id: i2s_audio_bus
+    i2s_lrclk_pin: ${i2s_ws_pin}
+    i2s_bclk_pin: ${i2s_bclk_pin}
+    i2s_mclk_pin: ${i2s_mclk_pin}
+
+# Microphone: ReSpeaker USB Mic Array via USB Host
+# Note: ESP32-P4 USB Host Audio Class support
+# The ReSpeaker appears as UAC device when connected to USB-A port
+microphone:
+  - platform: i2s_audio
+    id: usb_microphone
+    i2s_audio_id: i2s_audio_bus
+    adc_type: external
+    i2s_din_pin: ${i2s_din_pin}
+    pdm: false
+    bits_per_sample: 16bit
+    channel: left
+
+# Speaker: ES8311 DAC → PAM8403 → Peerless Speakers
+speaker:
+  - platform: i2s_audio
+    id: external_speaker
+    i2s_audio_id: i2s_audio_bus
+    dac_type: external
+    i2s_dout_pin: ${i2s_dout_pin}
+    mode: mono
+    sample_rate: 16000
+    bits_per_sample: 16bit
+
+# Media Player for Home Assistant
+media_player:
+  - platform: i2s_audio
+    id: media_out
+    name: "${friendly_name} Speaker"
+    dac_type: external
+    i2s_audio_id: i2s_audio_bus
+    i2s_dout_pin: ${i2s_dout_pin}
+    mode: mono
+
+# ============================================
+# Voice Assistant
+# ============================================
+
+# Micro Wake Word (on-device detection)
+micro_wake_word:
+  model: okay_nabu
+  on_wake_word_detected:
+    - voice_assistant.start:
+        wake_word: !lambda return wake_word;
+    - light.turn_on:
+        id: status_led
+        effect: "Listening"
+
+# Voice Assistant Pipeline
+voice_assistant:
+  id: voice_assist
+  microphone: usb_microphone
+  speaker: external_speaker
+  noise_suppression_level: 2
+  auto_gain: 31dBFS
+  volume_multiplier: 2.0
+  use_wake_word: false  # Using micro_wake_word instead
+
+  on_listening:
+    - light.turn_on:
+        id: status_led
+        effect: "Listening"
+
+  on_stt_vad_start:
+    - light.turn_on:
+        id: status_led
+        effect: "Detecting"
+
+  on_stt_vad_end:
+    - light.turn_on:
+        id: status_led
+        effect: "Processing"
+
+  on_tts_start:
+    - light.turn_on:
+        id: status_led
+        effect: "Speaking"
+
+  on_tts_end:
+    - light.turn_on:
+        id: status_led
+        effect: "Idle"
+
+  on_error:
+    - light.turn_on:
+        id: status_led
+        effect: "Error"
+    - delay: 3s
+    - light.turn_on:
+        id: status_led
+        effect: "Idle"
+
+  on_end:
+    - light.turn_on:
+        id: status_led
+        effect: "Idle"
+
+# ============================================
+# Status LED (WS2812)
+# ============================================
+
+light:
+  - platform: esp32_rmt_led_strip
+    id: status_led
+    name: "${friendly_name} LED"
+    pin: ${led_pin}
+    num_leds: 1
+    rmt_channel: 0
+    rgb_order: GRB
+    chipset: WS2812
+    default_transition_length: 0.5s
+    effects:
+      - pulse:
+          name: "Idle"
+          min_brightness: 20%
+          max_brightness: 80%
+          transition_length: 2s
+          update_interval: 2s
+      - pulse:
+          name: "Listening"
+          min_brightness: 50%
+          max_brightness: 100%
+          transition_length: 0.5s
+          update_interval: 0.5s
+      - pulse:
+          name: "Detecting"
+          min_brightness: 60%
+          max_brightness: 100%
+          transition_length: 0.2s
+          update_interval: 0.2s
+      - pulse:
+          name: "Processing"
+          min_brightness: 40%
+          max_brightness: 90%
+          transition_length: 0.3s
+          update_interval: 0.3s
+      - pulse:
+          name: "Speaking"
+          min_brightness: 50%
+          max_brightness: 100%
+          transition_length: 0.3s
+          update_interval: 0.3s
+      - strobe:
+          name: "Error"
+          colors:
+            - state: true
+              brightness: 100%
+              red: 100%
+              green: 0%
+              blue: 0%
+              duration: 500ms
+            - state: false
+              duration: 500ms
+      - lambda:
+          name: "Connected"
+          update_interval: 1s
+          lambda: |-
+            auto call = id(status_led).turn_on();
+            call.set_rgb(0.0, 1.0, 0.0);
+            call.set_brightness(0.5);
+            call.perform();
+      - lambda:
+          name: "Disconnected"
+          update_interval: 500ms
+          lambda: |-
+            auto call = id(status_led).turn_on();
+            call.set_rgb(1.0, 0.5, 0.0);
+            call.set_brightness(0.3);
+            call.perform();
+
+# ============================================
+# Buttons
+# ============================================
+
+binary_sensor:
+  - platform: gpio
+    id: boot_button
+    pin:
+      number: ${button_pin}
+      mode: INPUT_PULLUP
+      inverted: true
+    name: "${friendly_name} Button"
+    on_press:
+      - if:
+          condition:
+            voice_assistant.is_running:
+          then:
+            - voice_assistant.stop:
+            - light.turn_on:
+                id: status_led
+                effect: "Idle"
+          else:
+            - voice_assistant.start:
+            - light.turn_on:
+                id: status_led
+                effect: "Listening"
+
+# ============================================
+# Environmental Sensors
+# ============================================
+
+sensor:
+  # WiFi Signal Strength
+  - platform: wifi_signal
+    name: "${friendly_name} WiFi Signal"
+    update_interval: 60s
+
+  # Uptime
+  - platform: uptime
+    name: "${friendly_name} Uptime"
+    update_interval: 60s
+
+  # ----- SCD40: CO2, Temperature, Humidity -----
+  - platform: scd4x
+    co2:
+      name: "${friendly_name} CO2"
+      id: co2_sensor
+    temperature:
+      name: "${friendly_name} Temperature"
+      id: temp_sensor
+    humidity:
+      name: "${friendly_name} Humidity"
+      id: humidity_sensor
+    address: 0x62
+    update_interval: ${env_update_interval}
+    measurement_mode: periodic
+    ambient_pressure_compensation_source: none
+
+  # ----- SPS30: Particulate Matter -----
+  - platform: sps30
+    pm_1_0:
+      name: "${friendly_name} PM1.0"
+      id: pm1_sensor
+    pm_2_5:
+      name: "${friendly_name} PM2.5"
+      id: pm25_sensor
+    pm_4_0:
+      name: "${friendly_name} PM4.0"
+      id: pm4_sensor
+    pm_10_0:
+      name: "${friendly_name} PM10"
+      id: pm10_sensor
+    pmc_0_5:
+      name: "${friendly_name} PMC0.5"
+    pmc_1_0:
+      name: "${friendly_name} PMC1.0"
+    pmc_2_5:
+      name: "${friendly_name} PMC2.5"
+    pmc_4_0:
+      name: "${friendly_name} PMC4.0"
+    pmc_10_0:
+      name: "${friendly_name} PMC10"
+    pm_size:
+      name: "${friendly_name} PM Size"
+    address: 0x69
+    update_interval: ${env_update_interval}
+
+  # ----- Air Quality Index (AQI) based on PM2.5 -----
+  - platform: template
+    name: "${friendly_name} AQI"
+    id: aqi_sensor
+    unit_of_measurement: "AQI"
+    icon: "mdi:air-filter"
+    accuracy_decimals: 0
+    lambda: |-
+      float pm25 = id(pm25_sensor).state;
+      if (isnan(pm25)) return NAN;
+
+      // US EPA AQI calculation for PM2.5
+      if (pm25 <= 12.0) return ((50.0 - 0.0) / (12.0 - 0.0)) * (pm25 - 0.0) + 0.0;
+      if (pm25 <= 35.4) return ((100.0 - 51.0) / (35.4 - 12.1)) * (pm25 - 12.1) + 51.0;
+      if (pm25 <= 55.4) return ((150.0 - 101.0) / (55.4 - 35.5)) * (pm25 - 35.5) + 101.0;
+      if (pm25 <= 150.4) return ((200.0 - 151.0) / (150.4 - 55.5)) * (pm25 - 55.5) + 151.0;
+      if (pm25 <= 250.4) return ((300.0 - 201.0) / (250.4 - 150.5)) * (pm25 - 150.5) + 201.0;
+      if (pm25 <= 350.4) return ((400.0 - 301.0) / (350.4 - 250.5)) * (pm25 - 250.5) + 301.0;
+      return ((500.0 - 401.0) / (500.4 - 350.5)) * (pm25 - 350.5) + 401.0;
+    update_interval: ${env_update_interval}
+
+# Air Quality Status
+text_sensor:
+  - platform: template
+    name: "${friendly_name} Air Quality"
+    id: air_quality_status
+    icon: "mdi:leaf"
+    lambda: |-
+      float co2 = id(co2_sensor).state;
+      float pm25 = id(pm25_sensor).state;
+
+      if (isnan(co2) || isnan(pm25)) return {"Unknown"};
+
+      // Combined assessment
+      int score = 0;
+
+      // CO2 scoring
+      if (co2 < 600) score += 2;
+      else if (co2 < 1000) score += 1;
+      else if (co2 > 1500) score -= 1;
+
+      // PM2.5 scoring
+      if (pm25 < 12) score += 2;
+      else if (pm25 < 35) score += 1;
+      else if (pm25 > 55) score -= 1;
+
+      if (score >= 3) return {"Excellent"};
+      if (score >= 1) return {"Good"};
+      if (score >= 0) return {"Moderate"};
+      if (score >= -1) return {"Poor"};
+      return {"Very Poor"};
+    update_interval: ${env_update_interval}
+
+  - platform: wifi_info
+    ip_address:
+      name: "${friendly_name} IP Address"
+    mac_address:
+      name: "${friendly_name} MAC Address"
+
+# ============================================
+# Control Buttons
+# ============================================
+
+button:
+  - platform: template
+    name: "${friendly_name} SPS30 Clean"
+    icon: "mdi:fan"
+    on_press:
+      - sps30.start_fan_autoclean:
+
+  - platform: restart
+    name: "${friendly_name} Restart"
+
+# ============================================
+# Camera: OV5640 (Future - MIPI CSI)
+# ============================================
+# Note: ESP32-P4 has MIPI CSI hardware support for OV5640.
+# ESPHome native camera component for P4 MIPI is under development.
+# When support is added, add the following configuration:
+#
+# esp32_camera:
+#   name: "${friendly_name} Camera"
+#   external_clock:
+#     pin: GPIO18
+#     frequency: 24MHz
+#   i2c_pins:
+#     sda: ${i2c_sda_pin}
+#     scl: ${i2c_scl_pin}
+#   data_pins: [MIPI CSI lanes - TBD]
+#   resolution: 1280x720
+#   jpeg_quality: 10
+#   max_framerate: 15fps

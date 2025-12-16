@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0-beta] - 2025-12-16
+
+### Added
+
+- `esp32p4-respeaker-smart-speaker.yaml`: ReSpeaker USB Mic Array 構成
+  - ReSpeaker USB を ESP32-P4 USB Host に直接接続
+  - PAM8403 アンプ + Peerless スピーカー対応
+  - ES8311 DAC 出力を PAM8403 に接続
+  - 環境センサー (SCD40, SPS30) 対応
+  - USB Audio Class (UAC) サポート
+- `docs/respeaker-setup.md`: ReSpeaker セットアップガイド
+  - ハードウェア接続図
+  - ESP32-P4 USB Host 設定
+  - Assist Pipeline 構成
+
+### Changed
+
+- README の設定ファイル一覧にマイク列を追加
+- ドキュメントリンクに ReSpeaker ガイドを追加
+
 ## [1.1.0-beta] - 2025-12-15
 
 ### Added
