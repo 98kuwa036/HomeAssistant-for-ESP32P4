@@ -109,11 +109,12 @@ esphome run esphome/configs/esp32p4-function-ev-board.yaml
 
 ## Available Configurations
 
-| 設定ファイル | 用途 | センサー |
-|------------|------|---------|
-| `esp32p4-function-ev-board.yaml` | 基本音声アシスタント | なし |
-| `esp32p4-smart-speaker.yaml` | 高機能スマートスピーカー | SCD40, SPS30 |
-| `esp32p4-lightweight.yaml` | 軽量版（RPi 4B最適化） | なし |
+| 設定ファイル | 用途 | マイク | センサー |
+|------------|------|--------|---------|
+| `esp32p4-function-ev-board.yaml` | 基本音声アシスタント | ES8311内蔵 | なし |
+| `esp32p4-smart-speaker.yaml` | 高機能スマートスピーカー | ES8311内蔵 | SCD40, SPS30 |
+| `esp32p4-respeaker-smart-speaker.yaml` | ReSpeaker構成 | ReSpeaker USB (RPi) | SCD40, SPS30 |
+| `esp32p4-lightweight.yaml` | 軽量版（RPi 4B最適化） | ES8311内蔵 | なし |
 
 ## Project Structure
 
@@ -153,6 +154,7 @@ HomeAssistant-for-ESP32P4/
 ## Documentation
 
 - **[Raspberry Pi 4B + Google AI Setup](docs/raspberry-pi-setup.md)** - 推奨構成の詳細ガイド
+- **[ReSpeaker USB + PAM8403 Setup](docs/respeaker-setup.md)** - ReSpeaker構成ガイド
 - [Hardware Guide](docs/hardware-guide.md) - ハードウェア詳細
 - [Changelog](docs/CHANGELOG.md) - 変更履歴
 
