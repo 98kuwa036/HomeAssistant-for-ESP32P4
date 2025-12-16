@@ -136,17 +136,31 @@ idf.py -p /dev/ttyUSB0 monitor
 
 ESP32-P4-Function-EV-Board の **USB-A ポート**に接続。
 
-### 3.2 PAM8403 アンプ
+### 3.2 PAM8403 アンプ（重要：AEC対応ルート）
 
-ES8311 オーディオ出力ヘッダから：
+**⚠️ 注意**: AEC（エコーキャンセル）を有効にするため、音声は ReSpeaker を経由させます。
 
 ```
-Audio Header    PAM8403
-L_OUT      →    L-IN
-R_OUT      →    R-IN
-GND        →    GND
+【正しい接続】
+ESP32-P4 ──(USB)──► ReSpeaker ──(3.5mm ジャック)──► PAM8403 ──► Peerless Speakers
 
-VCC (5V)   →    5V電源（別途供給推奨）
+ReSpeaker 3.5mm出力    PAM8403
+L (白/Tip)        →    L-IN
+R (赤/Ring)       →    R-IN
+GND (黒/Sleeve)   →    GND
+
+PAM8403 電源: 5V（別電源推奨）
+```
+
+**なぜこのルートが必要か？**
+- ReSpeaker は USB 経由で受け取った音声を内部で記録
+- マイク入力から「今流れている音」を差し引く（AEC）
+- これにより、スピーカーが鳴っていてもウェイクワードを正しく検出できる
+
+**❌ やってはいけない接続:**
+```
+# ES8311 DAC → PAM8403 は AEC が効かなくなる！
+ESP32-P4 (ES8311) ──► PAM8403  ← NG
 ```
 
 ### 3.3 I2C センサー
