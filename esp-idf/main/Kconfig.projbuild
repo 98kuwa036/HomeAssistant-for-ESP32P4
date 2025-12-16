@@ -1,0 +1,34 @@
+menu "ESP32-P4 Smart Speaker Configuration"
+
+    config WIFI_SSID
+        string "WiFi SSID"
+        default "YourWiFiSSID"
+        help
+            WiFi network name to connect to.
+
+    config WIFI_PASSWORD
+        string "WiFi Password"
+        default "YourWiFiPassword"
+        help
+            WiFi password.
+
+    config HA_HOST
+        string "Home Assistant Host"
+        default "homeassistant.local"
+        help
+            Home Assistant hostname or IP address.
+
+    config HA_PORT
+        int "Home Assistant Port"
+        default 8123
+        help
+            Home Assistant API port.
+
+    config HA_TOKEN
+        string "Home Assistant Long-Lived Access Token"
+        default "YOUR_LONG_LIVED_ACCESS_TOKEN"
+        help
+            Home Assistant long-lived access token for API authentication.
+            Generate from: Profile -> Long-Lived Access Tokens
+
+endmenu

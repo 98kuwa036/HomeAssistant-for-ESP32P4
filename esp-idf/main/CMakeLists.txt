@@ -1,0 +1,19 @@
+idf_component_register(
+    SRCS
+        "main.c"
+        "usb_audio.c"
+        "i2s_output.c"
+        "wifi_manager.c"
+        "ha_client.c"
+    INCLUDE_DIRS
+        "."
+    REQUIRES
+        driver
+        esp_wifi
+        esp_event
+        nvs_flash
+        usb_host_uac
+        esp_http_client
+        json
+        esp_tls
+)
