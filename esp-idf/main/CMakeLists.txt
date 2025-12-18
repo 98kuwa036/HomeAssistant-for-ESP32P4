@@ -5,8 +5,15 @@ idf_component_register(
         "i2s_output.c"
         "wifi_manager.c"
         "ha_client.c"
+        "sensor_hub.c"
+        "drivers/sen66.c"
+        "drivers/sen0395.c"
+        "drivers/vl53l1x.c"
+        "drivers/paj7620.c"
+        "drivers/veml7700.c"
     INCLUDE_DIRS
         "."
+        "drivers"
     REQUIRES
         driver
         esp_wifi
