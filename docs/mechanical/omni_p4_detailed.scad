@@ -1,19 +1,18 @@
 // ============================================================================
-// Project Omni-P4: Formation Wedge Style v3.4
-// True Wedge Shape - Narrow Back with Smooth Curves
+// Project Omni-P4: Formation Wedge Style v3.5
+// Elliptical Front + 120° Wedge Top View
 // ============================================================================
+//
+// v3.5 Changes:
+// - Front view: Elliptical profile (smooth oval)
+// - Top view: 120-degree wedge/fan shape maintained
+// - Lofted shell using hull() of elliptical cross-sections
+// - Internal structure preserved unchanged
 //
 // v3.4 Changes:
 // - BACK_WIDTH: 150mm → 30mm (true wedge/triangular shape)
 // - Back corner radius: 30mm (smooth continuous curve)
 // - Center tower moved forward to avoid back protrusion
-// - Connectors repositioned to sides
-// - Speaker toe-in: 8° → 15° (follows wedge angle)
-//
-// v3.3 Changes:
-// - Shell thickness: 6mm → 8mm (HiFi Rose monocoque rigidity)
-// - Corner radius: 10mm → 15mm (Formation Wedge smooth curves)
-// - Tapered LCD bezel with 1mm shadow gap (B&O floating effect)
 //
 // ============================================================================
 
@@ -23,15 +22,19 @@ $fn = 128;  // High resolution for smooth curves
 // MASTER PARAMETERS
 // ============================================================================
 
-// === Outer Shell (True Wedge Shape) ===
-FRONT_WIDTH       = 380;
-BACK_WIDTH        = 30;       // CHANGED: 150mm → 30mm (true wedge)
-DEPTH             = 200;
-HEIGHT            = 180;
+// === Outer Shell (Elliptical Wedge) ===
+FRONT_WIDTH       = 380;      // Major axis of front ellipse
+BACK_WIDTH        = 30;       // Back tip width (nearly pointed)
+DEPTH             = 200;      // Front to back
+HEIGHT            = 180;      // Vertical (minor axis of front ellipse)
 WALL_THICKNESS    = 8;
-WEDGE_ANGLE       = 120;
-CORNER_RADIUS     = 15;       // Front corners
-BACK_CORNER_RADIUS = 30;      // NEW: Larger radius for smooth back curve
+WEDGE_ANGLE       = 120;      // Internal angle at back vertex
+CORNER_RADIUS     = 15;       // Front corner radius (legacy, for rounded_wedge_2d)
+BACK_CORNER_RADIUS = 30;      // Back tip radius
+
+// Elliptical wedge parameters
+ELLIPSE_STEPS     = 8;        // Number of hull() slices for smooth loft
+BACK_ELLIPSE_SCALE = 0.15;    // How much smaller the back ellipse is (height)
 
 // === Center Tower (Moved Forward) ===
 STANDOFF_PITCH    = 55;
@@ -131,6 +134,10 @@ function wedge_points() = [
 function wedge_width_at(y) =
     FRONT_WIDTH - (FRONT_WIDTH - BACK_WIDTH) * (y / DEPTH);
 
+// Calculate ellipse height at given Y position (tapers toward back)
+function ellipse_height_at(y) =
+    HEIGHT * (1 - (y / DEPTH) * BACK_ELLIPSE_SCALE);
+
 // Standoff positions
 function standoff_positions() = [
     [-STANDOFF_PITCH/2, -STANDOFF_PITCH/2],
@@ -156,11 +163,14 @@ SPK_INTERNAL_HEIGHT = SPK_HEIGHT - MDF_THICKNESS * 2;
 SPK_VOLUME_ML = (SPK_INTERNAL_FRONT + SPK_INTERNAL_BACK) / 2 * SPK_INTERNAL_DEPTH * SPK_INTERNAL_HEIGHT / 1000;
 SPK_VOLUME_L = SPK_VOLUME_ML / 1000;
 
-echo(str("=== v3.4 True Wedge Design Verification ==="));
-echo(str("Wedge geometry:"));
-echo(str("  Front width: ", FRONT_WIDTH, "mm"));
-echo(str("  Back width: ", BACK_WIDTH, "mm (true wedge)"));
+echo(str("=== v3.5 Elliptical Wedge Design Verification ==="));
+echo(str("Elliptical wedge geometry:"));
+echo(str("  Front width (ellipse major axis): ", FRONT_WIDTH, "mm"));
+echo(str("  Back width: ", BACK_WIDTH, "mm (nearly pointed)"));
+echo(str("  Height (ellipse minor axis): ", HEIGHT, "mm"));
+echo(str("  Back height: ", ellipse_height_at(DEPTH), "mm"));
 echo(str("  Taper ratio: ", (FRONT_WIDTH - BACK_WIDTH) / DEPTH, "mm/mm"));
+echo(str("  Wedge angle: ", WEDGE_ANGLE, "° (internal)"));
 echo(str("Speaker fitment check:"));
 echo(str("  Speaker back Y: ", SPK_BACK_Y, "mm"));
 echo(str("  Wedge inner half-width at back: ", WEDGE_INNER_HALF, "mm"));
@@ -170,7 +180,7 @@ echo(str("  Fits inside: ", WEDGE_INNER_HALF > SPK_OUTER_EDGE ? "YES" : "NO - AD
 echo(str("Speaker volume:"));
 echo(str("  Volume per channel: ", SPK_VOLUME_L, "L"));
 echo(str("  Toe-in angle: ", SPK_TOE_IN, "°"));
-echo(str("Shell: ", WALL_THICKNESS, "mm, Front R=", CORNER_RADIUS, "mm, Back R=", BACK_CORNER_RADIUS, "mm"));
+echo(str("Shell: ", WALL_THICKNESS, "mm wall, ", ELLIPSE_STEPS, " loft steps"));
 
 // ============================================================================
 // MODULE: True Wedge Shape with Smooth Back Curve
@@ -207,6 +217,36 @@ module inner_wedge_2d() {
         // Back - single arc (inset)
         translate([0, DEPTH - BACK_CORNER_RADIUS - WALL_THICKNESS])
         circle(r=max(BACK_CORNER_RADIUS - WALL_THICKNESS, 5));
+    }
+}
+
+// ============================================================================
+// MODULE: Elliptical Wedge 2D Shape (for plates)
+// Creates 2D cross-section of elliptical wedge at XY plane
+// ============================================================================
+module elliptical_wedge_2d(inset=0) {
+    // Create wedge shape by connecting ellipse center points
+    // Uses hull() with multiple circles along the wedge taper
+    hull() {
+        // Front - wide ellipse (represented as circle at front)
+        front_w = FRONT_WIDTH - inset * 2;
+        translate([-front_w/2 + 15, 15])
+        circle(r=15);
+        translate([front_w/2 - 15, 15])
+        circle(r=15);
+
+        // Mid points along wedge
+        for (i = [1:4]) {
+            y = DEPTH * i / 5;
+            w = wedge_width_at(y) - inset * 2;
+            r = max(10 - i * 1.5, 3);
+            translate([0, y])
+            circle(r=r);
+        }
+
+        // Back tip
+        translate([0, DEPTH - BACK_CORNER_RADIUS - inset])
+        circle(r=max(BACK_CORNER_RADIUS - inset, 5));
     }
 }
 
@@ -294,6 +334,126 @@ module outer_shell_rounded(show_cutaway=false) {
             cylinder(d=7, h=WALL_THICKNESS + 2);
 
             // Cutaway
+            if (show_cutaway) {
+                translate([0, -DEPTH, 0])
+                cube([FRONT_WIDTH, DEPTH, HEIGHT * 2], center=true);
+            }
+        }
+    }
+}
+
+// ============================================================================
+// MODULE: Elliptical Wedge Shell (v3.5)
+// Front view = Ellipse, Top view = 120° Wedge
+// ============================================================================
+
+// Helper: Create elliptical cross-section at given Y position
+// Width follows wedge taper, height also tapers toward back
+module ellipse_slice(y_pos, inset=0) {
+    // Calculate width at this Y position (follows wedge geometry)
+    w = wedge_width_at(y_pos) - inset * 2;
+
+    // Height tapers slightly toward back (ellipse becomes smaller)
+    y_ratio = y_pos / DEPTH;
+    h = HEIGHT * (1 - y_ratio * BACK_ELLIPSE_SCALE) - inset * 2;
+
+    // Position ellipse at correct Y and center vertically
+    translate([0, y_pos, HEIGHT/2 - (HEIGHT * y_ratio * BACK_ELLIPSE_SCALE)/2])
+    rotate([90, 0, 0])
+    resize([w, h, 0])
+    cylinder(d=1, h=0.01, center=true, $fn=128);
+}
+
+// Outer elliptical wedge shell with lofted cross-sections
+module outer_shell_elliptical(show_cutaway=false) {
+    color(C_MDF_DARK, 0.35) {
+        difference() {
+            // === Outer surface: hull of multiple ellipses ===
+            hull() {
+                // Front ellipse
+                ellipse_slice(WALL_THICKNESS/2);
+
+                // Intermediate slices for smooth loft
+                for (i = [1 : ELLIPSE_STEPS - 1]) {
+                    y = WALL_THICKNESS + (DEPTH - WALL_THICKNESS - BACK_CORNER_RADIUS) * i / ELLIPSE_STEPS;
+                    ellipse_slice(y);
+                }
+
+                // Back (near tip)
+                ellipse_slice(DEPTH - BACK_CORNER_RADIUS);
+            }
+
+            // === Inner cavity (same shape, inset by wall thickness) ===
+            hull() {
+                // Front inner ellipse
+                ellipse_slice(WALL_THICKNESS * 1.5, WALL_THICKNESS);
+
+                // Intermediate inner slices
+                for (i = [1 : ELLIPSE_STEPS - 1]) {
+                    y = WALL_THICKNESS * 2 + (DEPTH - WALL_THICKNESS * 3 - BACK_CORNER_RADIUS) * i / ELLIPSE_STEPS;
+                    ellipse_slice(y, WALL_THICKNESS);
+                }
+
+                // Back inner (with wall thickness offset)
+                ellipse_slice(DEPTH - BACK_CORNER_RADIUS - WALL_THICKNESS, WALL_THICKNESS);
+            }
+
+            // === LCD aperture (front face, follows ellipse curve) ===
+            translate([0, -1, LCD_Z_CENTER])
+            rotate([-90, 0, 0])
+            hull() {
+                for (x = [-1, 1]) {
+                    for (z = [-1, 1]) {
+                        translate([x * (LCD_BEZEL[0]/2 - 8), z * (LCD_BEZEL[1]/2 - 8), 0])
+                        cylinder(r=8, h=WALL_THICKNESS + 2);
+                    }
+                }
+            }
+
+            // === Bottom intake vents (forward position, ellipse floor) ===
+            for (x = [-100, -50, 0, 50, 100]) {
+                hull() {
+                    translate([x-12, DEPTH * 0.35, -1])
+                    cylinder(d=5, h=WALL_THICKNESS + 2);
+                    translate([x+12, DEPTH * 0.35, -1])
+                    cylinder(d=5, h=WALL_THICKNESS + 2);
+                }
+            }
+
+            // === Top exhaust (moved forward due to narrow back) ===
+            translate([0, DEPTH * 0.4, HEIGHT - WALL_THICKNESS/2])
+            cylinder(d=MIC_MESH_DIA + 15, h=WALL_THICKNESS + 1, center=true);
+
+            // === Side connectors (on angled sides of wedge) ===
+            // Left side: DC jack + USB-C
+            translate([-FRONT_WIDTH/4, 0, HEIGHT * 0.35]) {
+                rotate([0, 0, -30])
+                translate([0, -1, 0]) {
+                    // DC jack
+                    translate([0, 0, 15])
+                    rotate([-90, 0, 0])
+                    cylinder(d=11, h=WALL_THICKNESS + 2);
+
+                    // USB-C
+                    translate([0, 0, -10])
+                    rotate([-90, 0, 0])
+                    hull() {
+                        for (x = [-3.5, 3.5]) {
+                            translate([x, 0, 0])
+                            cylinder(d=4, h=WALL_THICKNESS + 2);
+                        }
+                    }
+                }
+            }
+
+            // Right side: SMA antenna
+            translate([FRONT_WIDTH/4, 0, HEIGHT * 0.35])
+            rotate([0, 0, 30])
+            translate([0, -1, 0])
+            rotate([-90, 0, 0])
+            cylinder(d=7, h=WALL_THICKNESS + 2);
+
+            // === Cutaway for section view ===
             if (show_cutaway) {
                 translate([0, -DEPTH, 0])
                 cube([FRONT_WIDTH, DEPTH, HEIGHT * 2], center=true);
@@ -391,15 +551,14 @@ module internal_lattice_ribs() {
 }
 
 // ============================================================================
-// MODULE: Reinforced Bottom Plate
+// MODULE: Reinforced Bottom Plate (v3.5 Elliptical)
 // ============================================================================
 module reinforced_bottom_plate() {
     color(C_MDF_DARK) {
         difference() {
-            // Thick bottom plate following wedge shape
+            // Thick bottom plate following elliptical wedge shape
             linear_extrude(height=BOTTOM_PLATE_THICK)
-            offset(r=-WALL_THICKNESS)
-            rounded_wedge_2d();
+            elliptical_wedge_2d(inset=WALL_THICKNESS);
 
             // Ventilation slots (intake)
             for (i = [-2:2]) {
@@ -426,16 +585,15 @@ module reinforced_bottom_plate() {
 }
 
 // ============================================================================
-// MODULE: Reinforced Top Plate
+// MODULE: Reinforced Top Plate (v3.5 Elliptical)
 // ============================================================================
 module reinforced_top_plate() {
     translate([0, 0, HEIGHT - TOP_PLATE_THICK])
     color(C_MDF_DARK) {
         difference() {
-            // Thick top plate following wedge shape (slightly inset)
+            // Thick top plate following elliptical wedge shape (slightly inset)
             linear_extrude(height=TOP_PLATE_THICK)
-            offset(r=-WALL_THICKNESS - 2)
-            rounded_wedge_2d();
+            elliptical_wedge_2d(inset=WALL_THICKNESS + 2);
 
             // Microphone mesh opening
             translate([0, DEPTH/2, -1])
@@ -927,7 +1085,7 @@ module inner_frame() {
 // ============================================================================
 
 module full_assembly() {
-    outer_shell_rounded(show_cutaway=false);
+    outer_shell_elliptical(show_cutaway=false);  // v3.5 elliptical wedge
     monocoque_structure();      // Unified structural assembly
     center_tower();
     speaker_boxes();
@@ -938,7 +1096,7 @@ module full_assembly() {
 }
 
 module exploded_view() {
-    translate([0, 0, 0]) outer_shell_rounded(show_cutaway=true);
+    translate([0, 0, 0]) outer_shell_elliptical(show_cutaway=true);
     translate([0, 0, 20]) reinforced_bottom_plate();
     translate([0, 0, 130]) reinforced_top_plate();
     translate([0, 0, 30]) internal_lattice_ribs();
@@ -974,7 +1132,7 @@ module structure_only() {
 
 // Monocoque view (shell + structure)
 module monocoque_view() {
-    color(C_MDF_DARK, 0.4) outer_shell_rounded(show_cutaway=false);
+    color(C_MDF_DARK, 0.4) outer_shell_elliptical(show_cutaway=false);
     monocoque_structure();
 }
 
@@ -1002,6 +1160,54 @@ full_assembly();              // Complete Formation Wedge style
 // EXPORT NOTES
 // ============================================================================
 /*
+===================================================================
+v3.5 Elliptical Front + 120° Wedge Top View
+===================================================================
+
+KEY CHANGES FROM v3.4:
+
+1. ELLIPTICAL FRONT PROFILE:
+   - Front view: Smooth elliptical shape
+   - Major axis: FRONT_WIDTH (380mm horizontal)
+   - Minor axis: HEIGHT (180mm vertical)
+   - Creates organic, speaker-like appearance
+
+2. 120° WEDGE TOP VIEW MAINTAINED:
+   - Top view still shows 120° wedge/fan shape
+   - Width tapers from FRONT_WIDTH to BACK_WIDTH
+   - Back tip nearly pointed (30mm)
+
+3. LOFTED SHELL CONSTRUCTION:
+   - Uses hull() with multiple elliptical cross-sections
+   - ELLIPSE_STEPS slices for smooth transition
+   - Each slice follows wedge_width_at(y) function
+   - Height tapers slightly toward back (BACK_ELLIPSE_SCALE)
+
+4. INTERNAL STRUCTURE PRESERVED:
+   - All internal components unchanged
+   - Speaker boxes, tower, LCD remain in place
+   - Plates updated to elliptical profiles
+
+GEOMETRY:
+  Front view (XZ plane):
+         ╭───────────────────╮
+        ╱                     ╲
+       │                       │  ← Ellipse: 380mm × 180mm
+       │         LCD           │
+        ╲                     ╱
+         ╰───────────────────╯
+
+  Top view (XY plane):
+         ┌──────────────────────┐
+        ╱                        ╲
+       ╱                          ╲  ← FRONT: 380mm
+      │      ○ Spk    Spk ○       │
+       ╲          ○ Tower        ╱
+        ╲                       ╱
+         ╲                    ╱
+          ╲        ●         ╱   ← BACK: 30mm (120° wedge)
+           ╰───────────────╯
+
 ===================================================================
 v3.4 True Wedge Shape - Formation Wedge Authentic
 ===================================================================
