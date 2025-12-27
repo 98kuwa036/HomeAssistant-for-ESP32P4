@@ -107,6 +107,12 @@ VENT_SLOT_W       = 40;
 VENT_SLOT_H       = 6;
 VENT_COUNT        = 5;
 
+// === Rubber Feet ===
+FOOT_DIAMETER     = 20;       // Ø20mm black rubber feet
+FOOT_HEIGHT       = 8;        // 8mm height (vibration isolation)
+FOOT_INSET        = 25;       // Distance from edge
+FOOT_COUNT        = 4;        // 4 feet (corners of sector)
+
 // === Colors ===
 C_SHELL       = [0.25, 0.22, 0.20];  // Dark walnut
 C_BAFFLE      = [0.55, 0.45, 0.35];  // MDF natural
@@ -117,6 +123,7 @@ C_DRIVER      = [0.15, 0.15, 0.18];
 C_CONE        = [0.90, 0.88, 0.82];
 C_MESH        = [0.50, 0.50, 0.52, 0.7];
 C_FABRIC      = [0.12, 0.12, 0.15];
+C_RUBBER      = [0.08, 0.08, 0.10];  // Black rubber
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -708,6 +715,42 @@ module xvf3800() {
 }
 
 // ============================================================================
+// MODULE: Black Rubber Feet
+// ============================================================================
+
+module rubber_foot() {
+    color(C_RUBBER)
+    union() {
+        // Main rubber body (slightly domed)
+        cylinder(d1=FOOT_DIAMETER, d2=FOOT_DIAMETER - 2, h=FOOT_HEIGHT - 1);
+
+        // Domed top for grip
+        translate([0, 0, FOOT_HEIGHT - 1])
+        scale([1, 1, 0.3])
+        sphere(d=FOOT_DIAMETER - 2);
+    }
+}
+
+module rubber_feet() {
+    // 4 rubber feet positioned at the corners of the 120° sector
+    // Front left
+    translate([-FRONT_WIDTH/2 + FOOT_INSET + 10, FOOT_INSET, -FOOT_HEIGHT])
+    rubber_foot();
+
+    // Front right
+    translate([FRONT_WIDTH/2 - FOOT_INSET - 10, FOOT_INSET, -FOOT_HEIGHT])
+    rubber_foot();
+
+    // Back left (closer to center due to narrow back)
+    translate([-40, DEPTH - FOOT_INSET - 15, -FOOT_HEIGHT])
+    rubber_foot();
+
+    // Back right (closer to center due to narrow back)
+    translate([40, DEPTH - FOOT_INSET - 15, -FOOT_HEIGHT])
+    rubber_foot();
+}
+
+// ============================================================================
 // MODULE: Front Fabric Grille
 // ============================================================================
 
@@ -758,6 +801,7 @@ module full_assembly() {
     center_tower();
     lcd_assembly();
     xvf3800();
+    rubber_feet();
     // fabric_grille();  // Uncomment to show grille
 }
 
@@ -876,13 +920,141 @@ ADVANTAGES OF v4.1:
   3. 120° sector = B&W official geometry
   4. Increased volume (15.6L) for better bass
   5. LCD inset for premium appearance
+  6. Black rubber feet for vibration isolation
 
-MATERIALS:
-  Shell:      12mm MDF (walnut veneer or matte black)
-  Baffles:    15mm MDF (internal)
-  Plates:     2mm A6063-T5 Aluminum
-  Standoffs:  M3 aluminum hex
-  Grille:     Acoustically transparent fabric
+===================================================================
+MATERIALS BOM (Bill of Materials)
+===================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ STRUCTURAL COMPONENTS                                                        │
+├──────────────────┬────────────────────────────────────────┬────────┬────────┤
+│ Part             │ Material / Specification               │ Qty    │ Notes  │
+├──────────────────┼────────────────────────────────────────┼────────┼────────┤
+│ Outer Shell      │ MDF 12mm (Medium Density Fiberboard)   │ 1 set  │ CNC    │
+│                  │ Finish: Matte Black Paint or           │        │        │
+│                  │         Walnut Veneer (0.6mm)          │        │        │
+├──────────────────┼────────────────────────────────────────┼────────┼────────┤
+│ Internal Baffles │ MDF 15mm                               │ 2 pcs  │ CNC    │
+│                  │ No finish (internal)                   │        │        │
+├──────────────────┼────────────────────────────────────────┼────────┼────────┤
+│ Electronics      │ Aluminum A6063-T5 2mm                  │ 3 pcs  │ Laser  │
+│ Shelf Plates     │ Finish: Black Anodized                 │        │ Cut    │
+│                  │ Sizes: 80×60, 85×65, 100×80mm          │        │        │
+├──────────────────┼────────────────────────────────────────┼────────┼────────┤
+│ Standoffs        │ Aluminum M3 Hex Standoffs              │ 12 pcs │ M3×6mm │
+│                  │ Lengths: 53mm (×8), 30mm (×4)          │        │ OD     │
+├──────────────────┼────────────────────────────────────────┼────────┼────────┤
+│ Rubber Feet      │ Silicone Rubber, Shore A 60            │ 4 pcs  │ Black  │
+│                  │ Ø20mm × 8mm height                     │        │ Dome   │
+│                  │ Self-adhesive (3M VHB backing)         │        │        │
+└──────────────────┴────────────────────────────────────────┴────────┴────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ ACOUSTIC COMPONENTS                                                          │
+├──────────────────┬────────────────────────────────────────┬────────┬────────┤
+│ Active Drivers   │ Peerless by Tymphany                   │ 2 pcs  │ L + R  │
+│                  │ 2.5" Full Range NE65W-04               │        │        │
+│                  │ 4Ω, 15W RMS, Ø68mm cutout              │        │        │
+├──────────────────┼────────────────────────────────────────┼────────┼────────┤
+│ Passive Radiators│ Dayton Audio ND65PR-4                  │ 2 pcs  │ L + R  │
+│                  │ 2.5" Passive Radiator                  │        │        │
+│                  │ Ø68mm cutout                           │        │        │
+├──────────────────┼────────────────────────────────────────┼────────┼────────┤
+│ Acoustic Foam    │ Open-cell Polyurethane Foam            │ 2 pcs  │ 20mm   │
+│                  │ 60×80×100mm per chamber                │        │ thick  │
+├──────────────────┼────────────────────────────────────────┼────────┼────────┤
+│ Front Grille     │ Acoustically Transparent Fabric        │ 1 pc   │ Black  │
+│                  │ Knit polyester (Guilford FR701 type)   │        │        │
+│                  │ Stretched over MDF frame               │        │        │
+└──────────────────┴────────────────────────────────────────┴────────┴────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ ELECTRONICS COMPONENTS                                                       │
+├──────────────────┬────────────────────────────────────────┬────────┬────────┤
+│ Main MCU         │ ESP32-P4 DevKit (Espressif)            │ 1 pc   │ RISC-V │
+│                  │ 32MB PSRAM, WiFi 6, BLE 5.0            │        │        │
+├──────────────────┼────────────────────────────────────────┼────────┼────────┤
+│ Display          │ 7" MIPI-DSI LCD Module                 │ 1 pc   │ IPS    │
+│                  │ 1024×600, Capacitive Touch             │        │        │
+│                  │ Module: 170×105×5mm                    │        │        │
+├──────────────────┼────────────────────────────────────────┼────────┼────────┤
+│ DAC              │ ES9039Q2M Hi-Res DAC Board             │ 1 pc   │ 32bit  │
+│                  │ I2S input, -120dB THD+N                │        │ 384kHz │
+├──────────────────┼────────────────────────────────────────┼────────┼────────┤
+│ Amplifier        │ TPA3116D2 Class-D Stereo               │ 1 pc   │ 2×15W  │
+│                  │ 12-24V input, 4Ω/8Ω compatible         │        │        │
+├──────────────────┼────────────────────────────────────────┼────────┼────────┤
+│ Microphone Array │ XMOS XVF3800                           │ 1 pc   │ 4-mic  │
+│                  │ Far-field voice capture                │        │ MEMS   │
+├──────────────────┼────────────────────────────────────────┼────────┼────────┤
+│ Power Supply     │ 24V 3A DC Adapter + Buck Converter     │ 1 set  │ 72W    │
+│                  │ 24V→5V (3A) for ESP32-P4               │        │        │
+│                  │ 24V→12V (2A) for Amp                   │        │        │
+├──────────────────┼────────────────────────────────────────┼────────┼────────┤
+│ Sensors          │ BME680 (Temp/Humidity/Gas)             │ 1 pc   │ I2C    │
+│                  │ BH1750 (Ambient Light)                 │ 1 pc   │ I2C    │
+│                  │ LD2410 (mmWave Presence)               │ 1 pc   │ UART   │
+└──────────────────┴────────────────────────────────────────┴────────┴────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ HARDWARE & FASTENERS                                                         │
+├──────────────────┬────────────────────────────────────────┬────────┬────────┤
+│ M3 Screws        │ M3×8mm Pan Head (Black Oxide Steel)    │ 30 pcs │ Plates │
+├──────────────────┼────────────────────────────────────────┼────────┼────────┤
+│ M3 Nuts          │ M3 Hex Nuts (Black Oxide Steel)        │ 20 pcs │        │
+├──────────────────┼────────────────────────────────────────┼────────┼────────┤
+│ M2.5 Screws      │ M2.5×5mm (for PCB mounting)            │ 16 pcs │ PCBs   │
+├──────────────────┼────────────────────────────────────────┼────────┼────────┤
+│ Wood Screws      │ 3.5×20mm Countersunk (for MDF)         │ 12 pcs │ Shell  │
+├──────────────────┼────────────────────────────────────────┼────────┼────────┤
+│ Cable Ties       │ 100mm Nylon Cable Ties                 │ 20 pcs │ Wiring │
+├──────────────────┼────────────────────────────────────────┼────────┼────────┤
+│ Acoustic Mesh    │ Stainless Steel Mesh Ø60mm             │ 1 pc   │ Mic    │
+│                  │ 100 mesh count                         │        │        │
+└──────────────────┴────────────────────────────────────────┴────────┴────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ FINISH OPTIONS                                                               │
+├──────────────────┬────────────────────────────────────────────────────────────┤
+│ Option A         │ Matte Black                                               │
+│ (Recommended)    │ - Primer: Zinsser B-I-N (shellac-based)                   │
+│                  │ - Paint: 2K Polyurethane Matte Black                      │
+│                  │ - Clear: Satin clear coat (optional)                      │
+├──────────────────┼────────────────────────────────────────────────────────────┤
+│ Option B         │ Walnut Veneer                                             │
+│ (Premium)        │ - Veneer: 0.6mm American Black Walnut                     │
+│                  │ - Adhesive: Contact cement or iron-on                     │
+│                  │ - Finish: Danish Oil + Wax                                │
+├──────────────────┼────────────────────────────────────────────────────────────┤
+│ Option C         │ Fabric Wrap                                               │
+│ (Speaker-like)   │ - Fabric: Acoustic knit fabric (black)                    │
+│                  │ - Method: Stretch + staple to MDF frame                   │
+│                  │ - LCD area: Cut opening with heat-sealed edge             │
+└──────────────────┴────────────────────────────────────────────────────────────┘
+
+RUBBER FEET SPECIFICATIONS:
+  Type:       Self-adhesive silicone rubber bumpers
+  Diameter:   Ø20mm
+  Height:     8mm
+  Hardness:   Shore A 60 (soft enough for vibration isolation)
+  Color:      Black
+  Quantity:   4 pieces
+  Placement:  Front corners: 35mm from front edge, 25mm from side
+              Back corners: 40mm from center (80mm apart)
+  Purpose:    - Vibration isolation from surface
+              - Anti-slip stability
+              - Acoustic decoupling
+              - Protect furniture surface
+
+ESTIMATED WEIGHT:
+  MDF Shell (12mm):     ~2.5 kg
+  MDF Baffles (15mm):   ~0.5 kg
+  Electronics:          ~0.3 kg
+  Speakers:             ~0.4 kg
+  Hardware:             ~0.2 kg
+  ─────────────────────────────
+  Total:                ~3.9 kg (vs B&W 6.5kg - lighter due to no metal chassis)
 
 ===================================================================
 */
