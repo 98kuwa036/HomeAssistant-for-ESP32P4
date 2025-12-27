@@ -1,7 +1,13 @@
 // ============================================================================
-// Project Omni-P4: Formation Wedge Style v3.0
-// Slim Design with Trapezoidal Speaker Boxes
+// Project Omni-P4: Formation Wedge Style v3.1
+// Slim Design with Structural Reinforcement
 // ============================================================================
+//
+// v3.1 Changes:
+// - Internal lattice reinforcement ribs (radial + cross grid pattern)
+// - Reinforced bottom plate (12mm thick vs 6mm)
+// - Reinforced top plate (10mm thick vs 6mm)
+// - Outer shell wall thickness unchanged (6mm MDF)
 //
 // v3.0 Changes:
 // - Trapezoidal speaker boxes following 120° wedge angle
@@ -81,6 +87,13 @@ SPK_Z_OFFSET    = 12;
 MIC_PCB         = [40, 40, 2];
 MIC_MESH_DIA    = 55;     // Slightly smaller
 MIC_Z           = HEIGHT - 10;
+
+// === Structural Reinforcement ===
+RIB_THICKNESS       = 4;      // Internal rib thickness
+RIB_HEIGHT          = 25;     // Rib height from shell floor
+LATTICE_SPACING     = 50;     // Grid spacing for lattice
+BOTTOM_PLATE_THICK  = 12;     // Thicker bottom (was 6mm)
+TOP_PLATE_THICK     = 10;     // Thicker top (was 6mm)
 
 // === Other ===
 HANENITE_THICKNESS = 5;
@@ -210,6 +223,176 @@ module outer_shell_rounded(show_cutaway=false) {
             if (show_cutaway) {
                 translate([0, -DEPTH, 0])
                 cube([FRONT_WIDTH, DEPTH, HEIGHT * 2], center=true);
+            }
+        }
+    }
+}
+
+// ============================================================================
+// MODULE: Internal Lattice Reinforcement Ribs
+// ============================================================================
+module internal_lattice_ribs() {
+    color(C_MDF, 0.7) {
+        // --- Radial ribs from center outward ---
+        // Main center-to-front rib
+        translate([0, WALL_THICKNESS, BOTTOM_PLATE_THICK])
+        linear_extrude(height=RIB_HEIGHT) {
+            polygon([
+                [-RIB_THICKNESS/2, 0],
+                [RIB_THICKNESS/2, 0],
+                [RIB_THICKNESS/2, DEPTH/2 - STANDOFF_PITCH/2 - 10],
+                [-RIB_THICKNESS/2, DEPTH/2 - STANDOFF_PITCH/2 - 10]
+            ]);
+        }
+
+        // Main center-to-back rib
+        translate([0, DEPTH/2 + STANDOFF_PITCH/2 + 10, BOTTOM_PLATE_THICK])
+        linear_extrude(height=RIB_HEIGHT) {
+            polygon([
+                [-RIB_THICKNESS/2, 0],
+                [RIB_THICKNESS/2, 0],
+                [RIB_THICKNESS/2, DEPTH/2 - STANDOFF_PITCH/2 - WALL_THICKNESS - 10],
+                [-RIB_THICKNESS/2, DEPTH/2 - STANDOFF_PITCH/2 - WALL_THICKNESS - 10]
+            ]);
+        }
+
+        // --- Diagonal ribs (left side) ---
+        translate([0, DEPTH/2, BOTTOM_PLATE_THICK]) {
+            // Left front diagonal
+            rotate([0, 0, 35])
+            translate([-RIB_THICKNESS/2, STANDOFF_PITCH/2 + 5, 0])
+            cube([RIB_THICKNESS, 70, RIB_HEIGHT]);
+
+            // Left back diagonal
+            rotate([0, 0, 145])
+            translate([-RIB_THICKNESS/2, STANDOFF_PITCH/2 + 5, 0])
+            cube([RIB_THICKNESS, 50, RIB_HEIGHT]);
+        }
+
+        // --- Diagonal ribs (right side, mirrored) ---
+        translate([0, DEPTH/2, BOTTOM_PLATE_THICK]) {
+            // Right front diagonal
+            rotate([0, 0, -35])
+            translate([-RIB_THICKNESS/2, STANDOFF_PITCH/2 + 5, 0])
+            cube([RIB_THICKNESS, 70, RIB_HEIGHT]);
+
+            // Right back diagonal
+            rotate([0, 0, -145])
+            translate([-RIB_THICKNESS/2, STANDOFF_PITCH/2 + 5, 0])
+            cube([RIB_THICKNESS, 50, RIB_HEIGHT]);
+        }
+
+        // --- Horizontal cross ribs (grid pattern) ---
+        // Front cross rib
+        y_front = WALL_THICKNESS + 35;
+        w_front = wedge_width_at(y_front - WALL_THICKNESS) - WALL_THICKNESS*2;
+        translate([0, y_front, BOTTOM_PLATE_THICK])
+        cube([w_front - 20, RIB_THICKNESS, RIB_HEIGHT], center=true);
+
+        // Mid-front cross rib
+        y_mid1 = DEPTH * 0.35;
+        w_mid1 = wedge_width_at(y_mid1) - WALL_THICKNESS*2;
+        translate([0, y_mid1, BOTTOM_PLATE_THICK])
+        cube([w_mid1 - 30, RIB_THICKNESS, RIB_HEIGHT], center=true);
+
+        // Mid-back cross rib
+        y_mid2 = DEPTH * 0.65;
+        w_mid2 = wedge_width_at(y_mid2) - WALL_THICKNESS*2;
+        translate([0, y_mid2, BOTTOM_PLATE_THICK])
+        cube([w_mid2 - 20, RIB_THICKNESS, RIB_HEIGHT], center=true);
+
+        // Back cross rib
+        y_back = DEPTH - WALL_THICKNESS - 25;
+        w_back = wedge_width_at(y_back) - WALL_THICKNESS*2;
+        translate([0, y_back, BOTTOM_PLATE_THICK])
+        cube([w_back - 15, RIB_THICKNESS, RIB_HEIGHT], center=true);
+
+        // --- Speaker box support ribs ---
+        for (side = [-1, 1]) {
+            // Side wall connection ribs
+            translate([side * (SPK_X_OFFSET - 20), DEPTH * 0.3, BOTTOM_PLATE_THICK])
+            cube([RIB_THICKNESS, 80, RIB_HEIGHT]);
+        }
+    }
+}
+
+// ============================================================================
+// MODULE: Reinforced Bottom Plate
+// ============================================================================
+module reinforced_bottom_plate() {
+    color(C_MDF_DARK) {
+        difference() {
+            // Thick bottom plate following wedge shape
+            linear_extrude(height=BOTTOM_PLATE_THICK)
+            offset(r=-WALL_THICKNESS)
+            rounded_wedge_2d();
+
+            // Ventilation slots (intake)
+            for (i = [-2:2]) {
+                hull() {
+                    translate([i * 55 - 15, DEPTH/2, -1])
+                    cylinder(d=6, h=BOTTOM_PLATE_THICK + 2);
+                    translate([i * 55 + 15, DEPTH/2, -1])
+                    cylinder(d=6, h=BOTTOM_PLATE_THICK + 2);
+                }
+            }
+
+            // Cable routing holes (4 corners of tower)
+            translate([0, DEPTH/2, 0])
+            for (pos = standoff_positions()) {
+                translate([pos[0] * 1.3, pos[1] * 1.3, -1])
+                cylinder(d=10, h=BOTTOM_PLATE_THICK + 2);
+            }
+
+            // Center tower base mounting
+            translate([0, DEPTH/2, -1])
+            cylinder(d=PLATE_L1[0] - 15, h=BOTTOM_PLATE_THICK + 2);
+        }
+    }
+}
+
+// ============================================================================
+// MODULE: Reinforced Top Plate
+// ============================================================================
+module reinforced_top_plate() {
+    translate([0, 0, HEIGHT - TOP_PLATE_THICK])
+    color(C_MDF_DARK) {
+        difference() {
+            // Thick top plate following wedge shape (slightly inset)
+            linear_extrude(height=TOP_PLATE_THICK)
+            offset(r=-WALL_THICKNESS - 2)
+            rounded_wedge_2d();
+
+            // Microphone mesh opening
+            translate([0, DEPTH/2, -1])
+            cylinder(d=MIC_MESH_DIA + 8, h=TOP_PLATE_THICK + 2);
+
+            // Exhaust ventilation (around mic)
+            for (a = [0:45:315]) {
+                rotate([0, 0, a])
+                translate([MIC_MESH_DIA/2 + 12, 0, -1])
+                hull() {
+                    cylinder(d=8, h=TOP_PLATE_THICK + 2);
+                    translate([12, 0, 0])
+                    cylinder(d=8, h=TOP_PLATE_THICK + 2);
+                }
+            }
+
+            // Tower top access
+            translate([0, DEPTH/2, -1])
+            for (pos = standoff_positions()) {
+                translate([pos[0], pos[1], 0])
+                cylinder(d=8, h=TOP_PLATE_THICK + 2);
+            }
+
+            // Heat exhaust slots (back area)
+            for (i = [-1:1]) {
+                translate([i * 30, DEPTH - 30, -1])
+                hull() {
+                    cylinder(d=5, h=TOP_PLATE_THICK + 2);
+                    translate([0, 15, 0])
+                    cylinder(d=5, h=TOP_PLATE_THICK + 2);
+                }
             }
         }
     }
@@ -579,6 +762,9 @@ module inner_frame() {
 
 module full_assembly() {
     outer_shell_rounded(show_cutaway=false);
+    reinforced_bottom_plate();
+    reinforced_top_plate();
+    internal_lattice_ribs();
     center_tower();
     speaker_boxes();
     lcd_assembly();
@@ -589,6 +775,9 @@ module full_assembly() {
 
 module exploded_view() {
     translate([0, 0, 0]) outer_shell_rounded(show_cutaway=true);
+    translate([0, 0, 20]) reinforced_bottom_plate();
+    translate([0, 0, 130]) reinforced_top_plate();
+    translate([0, 0, 30]) internal_lattice_ribs();
     translate([0, 0, 60]) center_tower();
     translate([0, 0, 40]) speaker_boxes();
     translate([0, 0, 90]) lcd_assembly();
@@ -604,11 +793,21 @@ module section_view() {
 }
 
 module internal_only() {
+    reinforced_bottom_plate();
+    reinforced_top_plate();
+    internal_lattice_ribs();
     center_tower();
     speaker_boxes();
     lcd_assembly();
     xvf3800();
     inner_frame();
+}
+
+// Structural reinforcement only view
+module structure_only() {
+    reinforced_bottom_plate();
+    reinforced_top_plate();
+    internal_lattice_ribs();
 }
 
 module top_view() {
@@ -627,12 +826,45 @@ full_assembly();              // Complete Formation Wedge style
 // exploded_view();           // Exploded view
 // section_view();            // Cross-section
 // internal_only();           // Internal components only
+// structure_only();          // Structural reinforcement only
 // top_view();                // 2D top view
 
 // ============================================================================
 // EXPORT NOTES
 // ============================================================================
 /*
+v3.1 Structural Reinforcement:
+
+REINFORCEMENT COMPONENTS:
+1. Reinforced Bottom Plate (12mm thick)
+   - Follows wedge shape, inset from outer walls
+   - Ventilation slots for intake airflow
+   - Cable routing holes at tower corners
+   - Center cutout for tower base
+
+2. Reinforced Top Plate (10mm thick)
+   - Slightly inset from outer shell
+   - Microphone mesh opening (Ø63mm)
+   - Exhaust ventilation around mic (8 radial slots)
+   - Heat exhaust slots at back
+
+3. Internal Lattice Ribs (4mm thick, 25mm high)
+   - Radial ribs from center (front/back)
+   - Diagonal ribs to left/right speaker areas
+   - Cross ribs at 4 Y positions (35%, 65% depth)
+   - Speaker box support ribs connecting to side walls
+
+STRUCTURAL BENEFITS:
+- Increased rigidity without changing external dimensions
+- Better vibration damping (ribs act as dampers)
+- Improved thermal mass (thicker plates)
+- Maintains 6mm outer wall for Formation Wedge aesthetic
+
+MATERIAL NOTES:
+- Bottom/Top plates: MDF 12mm/10mm (or aluminum for premium)
+- Internal ribs: MDF 4mm or plywood
+- Glue ribs to bottom plate, then slide in as assembly
+
 v3.0 Formation Wedge Slim Design:
 
 CHANGES FROM v2.0:
