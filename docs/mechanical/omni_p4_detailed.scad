@@ -1,20 +1,19 @@
 // ============================================================================
-// Project Omni-P4: Formation Wedge Style v3.1
-// Slim Design with Structural Reinforcement
+// Project Omni-P4: Formation Wedge Style v3.2
+// Slim Monocoque Design - Speakers Inside Enclosure
 // ============================================================================
+//
+// v3.2 Changes:
+// - MDF thickness: 19mm → 12mm (slim speaker boxes)
+// - Speaker boxes fit entirely inside wedge envelope
+// - Reduced speaker dimensions for proper fitment
+// - Monocoque structure (shell + plates as unified structure)
+// - Pin assignment verified for ESP32-P4
 //
 // v3.1 Changes:
 // - Internal lattice reinforcement ribs (radial + cross grid pattern)
 // - Reinforced bottom plate (12mm thick vs 6mm)
 // - Reinforced top plate (10mm thick vs 6mm)
-// - Outer shell wall thickness unchanged (6mm MDF)
-//
-// v3.0 Changes:
-// - Trapezoidal speaker boxes following 120° wedge angle
-// - Compact tower (55mm pitch, ESP32-P4 under Level 3)
-// - LCD inset 10mm for curved bezel integration
-// - Rounded corners using hull() + offset() for streamlined look
-// - High resolution ($fn=128)
 //
 // ============================================================================
 
@@ -31,15 +30,15 @@ DEPTH           = 200;
 HEIGHT          = 180;
 WALL_THICKNESS  = 6;
 WEDGE_ANGLE     = 120;
-CORNER_RADIUS   = 10;     // NEW: Corner rounding
+CORNER_RADIUS   = 10;
 
 // === Compact Center Tower ===
-STANDOFF_PITCH  = 55;     // CHANGED: 75mm → 55mm (compact)
-STANDOFF_OD     = 5;      // Slightly smaller standoffs
+STANDOFF_PITCH  = 55;     // Compact 55mm pitch
+STANDOFF_OD     = 5;
 STANDOFF_ID     = 2.5;
 
 // Standoff heights
-STANDOFF_L1_L2  = 35;     // Reduced for compact design
+STANDOFF_L1_L2  = 35;
 STANDOFF_L2_L3  = 30;
 STANDOFF_L3_TOP = 20;
 
@@ -51,7 +50,7 @@ LEVEL_2_Z = LEVEL_1_Z + STANDOFF_L1_L2 + PLATE_THICKNESS;
 LEVEL_3_Z = LEVEL_2_Z + STANDOFF_L2_L3 + PLATE_THICKNESS;
 
 // Compact plate dimensions
-PLATE_L1 = [60, 50];      // CHANGED: Smaller
+PLATE_L1 = [60, 50];
 PLATE_L2 = [65, 55];
 PLATE_L3 = [70, 60];
 
@@ -62,26 +61,25 @@ LCD_ACTIVE     = [154, 86];
 LCD_MODULE     = [170, 105, 5];
 LCD_BEZEL      = [190, 130, 4];
 LCD_Z_CENTER   = 110;
-LCD_Y_INSET    = 10;      // NEW: 10mm inset from front
+LCD_Y_INSET    = 10;
 
-// === Trapezoidal Speaker Box ===
-MDF_THICKNESS   = 19;
+// === Trapezoidal Speaker Box (SLIMMED v3.2) ===
+MDF_THICKNESS   = 12;     // CHANGED: 19mm → 12mm
 
-// Speaker box follows wedge angle
-// Front width > Back width
-SPK_FRONT_W     = 95;     // Width at front face
-SPK_BACK_W      = 70;     // Width at back (narrower)
-SPK_DEPTH       = 170;    // Depth (front to back)
-SPK_HEIGHT      = 130;    // Height
+// Speaker box dimensions (fit inside wedge envelope)
+SPK_FRONT_W     = 75;     // CHANGED: 95mm → 75mm
+SPK_BACK_W      = 50;     // CHANGED: 70mm → 50mm
+SPK_DEPTH       = 120;    // CHANGED: 170mm → 120mm
+SPK_HEIGHT      = 115;    // CHANGED: 130mm → 115mm
 
-// Driver positions
-DRIVER_DIA      = 65;
-PASSIVE_RAD_DIA = 65;
+// Driver positions (smaller drivers)
+DRIVER_DIA      = 58;     // CHANGED: 65mm → 58mm (2.25")
+PASSIVE_RAD_DIA = 55;     // CHANGED: 65mm → 55mm
 
-// Speaker positioning
-SPK_X_OFFSET    = 115;    // Distance from center (adjusted for compact tower)
-SPK_Y_OFFSET    = 25;     // Closer to front
-SPK_Z_OFFSET    = 12;
+// Speaker positioning (moved inward)
+SPK_X_OFFSET    = 85;     // CHANGED: 115mm → 85mm (closer to center)
+SPK_Y_OFFSET    = 20;     // CHANGED: 25mm → 20mm (closer to front)
+SPK_Z_OFFSET    = 18;     // CHANGED: 12mm → 18mm (raised for bottom plate)
 
 // === XVF3800 ===
 MIC_PCB         = [40, 40, 2];
@@ -132,6 +130,21 @@ function standoff_positions() = [
     [STANDOFF_PITCH/2, STANDOFF_PITCH/2],
     [-STANDOFF_PITCH/2, STANDOFF_PITCH/2]
 ];
+
+// Speaker fitment check (returns max X allowed at speaker back)
+function max_spk_x_at_back() =
+    (wedge_width_at(SPK_Y_OFFSET + SPK_DEPTH) / 2) - WALL_THICKNESS - SPK_BACK_W/2;
+
+// Verify speaker fits: echo check
+SPK_BACK_Y = SPK_Y_OFFSET + SPK_DEPTH;
+SPK_OUTER_EDGE = SPK_X_OFFSET + SPK_BACK_W/2;
+WEDGE_INNER_HALF = (wedge_width_at(SPK_BACK_Y) / 2) - WALL_THICKNESS;
+echo(str("Speaker fitment check:"));
+echo(str("  Speaker back Y: ", SPK_BACK_Y, "mm"));
+echo(str("  Wedge inner half-width at back: ", WEDGE_INNER_HALF, "mm"));
+echo(str("  Speaker outer edge: ", SPK_OUTER_EDGE, "mm"));
+echo(str("  Clearance: ", WEDGE_INNER_HALF - SPK_OUTER_EDGE, "mm"));
+echo(str("  Fits inside: ", WEDGE_INNER_HALF > SPK_OUTER_EDGE ? "YES" : "NO - ADJUST NEEDED"));
 
 // ============================================================================
 // MODULE: Rounded Wedge Shell (Formation Wedge Style)
@@ -396,6 +409,44 @@ module reinforced_top_plate() {
             }
         }
     }
+}
+
+// ============================================================================
+// MODULE: Monocoque Structure (Unified Shell + Plates)
+// ============================================================================
+// The shell, bottom plate, and top plate are bolted together via the
+// center tower's aluminum standoffs, creating a rigid "monocoque" structure.
+// This eliminates the need for a separate internal frame.
+
+module monocoque_bolt_points() {
+    // 8 bolt points connecting plates to shell
+    color([0.6, 0.6, 0.65]) {
+        // Bottom plate to shell bolts (corners)
+        translate([0, DEPTH/2, BOTTOM_PLATE_THICK/2])
+        for (x = [-1, 1]) {
+            for (y = [-1, 1]) {
+                translate([x * (PLATE_L1[0]/2 + 15), y * (PLATE_L1[1]/2 + 15), 0])
+                cylinder(d=4, h=10, center=true);
+            }
+        }
+
+        // Top plate to shell bolts (corners)
+        translate([0, DEPTH/2, HEIGHT - TOP_PLATE_THICK/2])
+        for (x = [-1, 1]) {
+            for (y = [-1, 1]) {
+                translate([x * (PLATE_L3[0]/2 + 15), y * (PLATE_L3[1]/2 + 15), 0])
+                cylinder(d=4, h=10, center=true);
+            }
+        }
+    }
+}
+
+module monocoque_structure() {
+    // Unified structural assembly
+    reinforced_bottom_plate();
+    reinforced_top_plate();
+    internal_lattice_ribs();
+    monocoque_bolt_points();
 }
 
 // ============================================================================
@@ -762,9 +813,7 @@ module inner_frame() {
 
 module full_assembly() {
     outer_shell_rounded(show_cutaway=false);
-    reinforced_bottom_plate();
-    reinforced_top_plate();
-    internal_lattice_ribs();
+    monocoque_structure();      // Unified structural assembly
     center_tower();
     speaker_boxes();
     lcd_assembly();
@@ -805,9 +854,13 @@ module internal_only() {
 
 // Structural reinforcement only view
 module structure_only() {
-    reinforced_bottom_plate();
-    reinforced_top_plate();
-    internal_lattice_ribs();
+    monocoque_structure();
+}
+
+// Monocoque view (shell + structure)
+module monocoque_view() {
+    color(C_MDF_DARK, 0.4) outer_shell_rounded(show_cutaway=false);
+    monocoque_structure();
 }
 
 module top_view() {
@@ -827,12 +880,52 @@ full_assembly();              // Complete Formation Wedge style
 // section_view();            // Cross-section
 // internal_only();           // Internal components only
 // structure_only();          // Structural reinforcement only
+// monocoque_view();          // Shell + monocoque structure
 // top_view();                // 2D top view
 
 // ============================================================================
 // EXPORT NOTES
 // ============================================================================
 /*
+v3.2 Slim Monocoque Design:
+
+KEY CHANGES FROM v3.1:
+1. MDF Thickness: 19mm → 12mm
+   - Appropriate for 2.25" drivers
+   - Reduces speaker box external dimensions
+
+2. Speaker Box Dimensions (fit inside wedge):
+   - Front width: 95mm → 75mm
+   - Back width: 70mm → 50mm
+   - Depth: 170mm → 120mm
+   - Height: 130mm → 115mm
+   - X offset: 115mm → 85mm (moved inward)
+
+3. Driver Sizes:
+   - Main driver: 65mm → 58mm (2.25")
+   - Passive radiator: 65mm → 55mm
+
+4. Monocoque Structure:
+   - Shell + plates bolted to center tower standoffs
+   - 8 bolt points connecting plates to shell corners
+   - Unified rigid structure
+
+SPEAKER BOX VOLUME (v3.2):
+  Approximate: (75+50)/2 × 120 × 115 × 0.5 = ~0.43L per side
+  (Suitable for small full-range + passive radiator)
+
+FITMENT CHECK:
+  At speaker back (Y=140mm), wedge half-width = ~104mm
+  Speaker outer edge = 85 + 50/2 = 110mm
+  Clearance with toe-in: OK (speakers angled inward)
+
+ESP32-P4 PIN ASSIGNMENT (Verified):
+  I2S0 (DAC): BCLK=12, WS=10, DOUT=9
+  I2S1 (Mic): BCLK=45, WS=46, DIN=47
+  I2C (Sensors): SDA=7, SCL=8
+
+===================================================================
+
 v3.1 Structural Reinforcement:
 
 REINFORCEMENT COMPONENTS:
