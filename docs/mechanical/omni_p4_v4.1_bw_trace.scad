@@ -991,10 +991,34 @@ MATERIALS BOM (Bill of Materials)
 │ Power Supply     │ 24V 3A DC Adapter + Buck Converter     │ 1 set  │ 72W    │
 │                  │ 24V→5V (3A) for ESP32-P4               │        │        │
 │                  │ 24V→12V (2A) for Amp                   │        │        │
+└──────────────────┴────────────────────────────────────────┴────────┴────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ SENSOR MODULES (Multi-Sensor Hub Configuration)                             │
+├──────────────────┬────────────────────────────────────────┬────────┬────────┤
+│ SCD41            │ Sensirion CO2 Sensor                   │ 1 pc   │ I2C    │
+│                  │ CO2 (400-5000ppm), Temp, Humidity      │        │        │
 ├──────────────────┼────────────────────────────────────────┼────────┼────────┤
-│ Sensors          │ BME680 (Temp/Humidity/Gas)             │ 1 pc   │ I2C    │
-│                  │ BH1750 (Ambient Light)                 │ 1 pc   │ I2C    │
-│                  │ LD2410 (mmWave Presence)               │ 1 pc   │ UART   │
+│ SGP40            │ Sensirion VOC Sensor                   │ 1 pc   │ I2C    │
+│                  │ VOC Index (1-500)                      │        │        │
+├──────────────────┼────────────────────────────────────────┼────────┼────────┤
+│ ENS160           │ ScioSense Air Quality Sensor           │ 1 pc   │ I2C    │
+│                  │ eCO2, TVOC, AQI (1-5)                  │        │        │
+├──────────────────┼────────────────────────────────────────┼────────┼────────┤
+│ BMP388           │ Bosch Barometric Sensor                │ 1 pc   │ I2C    │
+│                  │ Pressure, Temperature, Altitude        │        │        │
+├──────────────────┼────────────────────────────────────────┼────────┼────────┤
+│ SHT40            │ Sensirion High-Precision Temp/Humidity │ 1 pc   │ I2C    │
+│                  │ ±0.2°C, ±1.8% RH                       │        │        │
+├──────────────────┼────────────────────────────────────────┼────────┼────────┤
+│ SEN0428          │ DFRobot PM Sensor (Laser)              │ 1 pc   │ I2C    │
+│                  │ PM1.0, PM2.5, PM10 (µg/m³)             │        │        │
+├──────────────────┼────────────────────────────────────────┼────────┼────────┤
+│ SEN0395          │ DFRobot mmWave Presence Sensor         │ 1 pc   │ UART1  │
+│                  │ Human detection, distance, motion      │        │        │
+├──────────────────┼────────────────────────────────────────┼────────┼────────┤
+│ SEN0540          │ DFRobot Offline Voice Recognition      │ 1 pc   │ UART2  │
+│                  │ Local keyword spotting                 │        │        │
 └──────────────────┴────────────────────────────────────────┴────────┴────────┘
 
 ┌─────────────────────────────────────────────────────────────────────────────┐
