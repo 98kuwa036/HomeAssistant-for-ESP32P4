@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-50 -100 600 450" width="600mm" height="450mm">
+  <title>OMNI-P4 v4.0 Top/Bottom Panel CNC Pattern</title>
+  <desc>上面/底面パネル (120°扇形) - CNC切削パターン - Scale 1:1</desc>
+
+  <style>
+    .cut { fill: none; stroke: #f00; stroke-width: 0.5; }
+    .engrave { fill: none; stroke: #00f; stroke-width: 0.3; }
+    .dimension { fill: none; stroke: #000; stroke-width: 0.2; }
+    .dim-text { font-family: Arial, sans-serif; font-size: 8px; fill: #000; }
+    .title { font-family: Arial, sans-serif; font-size: 12px; font-weight: bold; fill: #000; }
+    .subtitle { font-family: Arial, sans-serif; font-size: 8px; fill: #000; }
+    .annotation { font-family: Arial, sans-serif; font-size: 6px; fill: #333; }
+    .calc { font-family: Arial, sans-serif; font-size: 5px; fill: #006600; font-style: italic; }
+    .center { fill: none; stroke: #0a0; stroke-width: 0.2; stroke-dasharray: 5,3; }
+    .construction { fill: none; stroke: #999; stroke-width: 0.15; stroke-dasharray: 2,2; }
+    .angle-arc { fill: none; stroke: #c00; stroke-width: 0.3; }
+  </style>
+
+  <!-- Title Block -->
+  <text x="250" y="-70" class="title" text-anchor="middle">上面/底面パネル CNC切削パターン</text>
+  <text x="250" y="-55" class="subtitle" text-anchor="middle">TOP/BOTTOM PANEL - 120° SECTOR (Scale 1:1)</text>
+  <text x="250" y="-40" class="annotation" text-anchor="middle">Material: 12mm MDF | Quantity: 2 | RED = Cut Line</text>
+
+  <!--
+    Geometry:
+    - Apex (virtual) at (250, 272.5)
+    - Front radius R = 242.5mm, front arc at Y = 272.5 - 242.5 = 30
+    - Back radius r = 22.5mm, back arc at Y = 272.5 - 22.5 = 250
+    - Sector angle = 120° (±60° from centerline)
+    - Front half-width = 242.5 × sin(60°) = 210mm → Front at X = 40 to 460
+    - Back half-width = 22.5 × sin(60°) = 19.5mm → Back at X = 230.5 to 269.5
+  -->
+
+  <!-- Virtual apex point (construction) -->
+  <circle cx="250" cy="272.5" r="2" fill="#999"/>
+  <text x="260" y="280" class="calc">頂点 (仮想)</text>
+
+  <!-- Construction lines showing 120° angle -->
+  <line x1="250" y1="272.5" x2="40" y2="30" class="construction"/>
+  <line x1="250" y1="272.5" x2="460" y2="30" class="construction"/>
+
+  <!-- 120° angle arc at apex -->
+  <path d="M 220,242.5 A 40,40 0 0,1 280,242.5" class="angle-arc"/>
+  <text x="250" y="235" class="dim-text" text-anchor="middle" fill="#c00">120°</text>
+
+  <!-- Center line -->
+  <line x1="250" y1="10" x2="250" y2="290" class="center"/>
+
+  <!-- ==================== MAIN SECTOR SHAPE (CUT) ==================== -->
+  <path d="M 40,30
+           A 242.5,242.5 0 0,1 460,30
+           L 269.5,250
+           A 22.5,22.5 0 0,0 230.5,250
+           Z" class="cut"/>
+
+  <!-- ==================== MIC OPENING (CUT) - for top panel only ==================== -->
+  <!-- Ø60mm at center, Y position = 272.5 - 180 = 92.5 (approx middle) -->
+  <circle cx="250" cy="120" r="30" class="cut"/>
+  <text x="250" y="125" class="annotation" text-anchor="middle">Ø60 MIC</text>
+  <text x="250" y="135" class="calc" text-anchor="middle">(Top panel only)</text>
+
+  <!-- ==================== DIMENSIONS ==================== -->
+
+  <!-- Front width (chord) 420mm -->
+  <line x1="40" y1="10" x2="460" y2="10" class="dimension"/>
+  <line x1="40" y1="30" x2="40" y2="5" class="dimension"/>
+  <line x1="460" y1="30" x2="460" y2="5" class="dimension"/>
+  <polygon points="40,10 48,7 48,13" fill="#000"/>
+  <polygon points="460,10 452,7 452,13" fill="#000"/>
+  <text x="250" y="-2" class="dim-text" text-anchor="middle">420 (前面弦長)</text>
+
+  <!-- Back width (chord) 39mm -->
+  <line x1="230.5" y1="265" x2="269.5" y2="265" class="dimension"/>
+  <line x1="230.5" y1="250" x2="230.5" y2="270" class="dimension"/>
+  <line x1="269.5" y1="250" x2="269.5" y2="270" class="dimension"/>
+  <text x="250" y="280" class="dim-text" text-anchor="middle">39 (背面)</text>
+
+  <!-- Depth 220mm -->
+  <line x1="480" y1="30" x2="480" y2="250" class="dimension"/>
+  <line x1="460" y1="30" x2="485" y2="30" class="dimension"/>
+  <line x1="269.5" y1="250" x2="485" y2="250" class="dimension"/>
+  <polygon points="480,30 477,38 483,38" fill="#000"/>
+  <polygon points="480,250 477,242 483,242" fill="#000"/>
+  <text x="495" y="145" class="dim-text" text-anchor="start">220</text>
+
+  <!-- Front radius 242.5mm -->
+  <line x1="250" y1="272.5" x2="460" y2="30" class="dimension"/>
+  <text x="380" y="170" class="dim-text" transform="rotate(-60, 380, 170)">R = 242.5</text>
+
+  <!-- Back radius 22.5mm -->
+  <line x1="250" y1="272.5" x2="269.5" y2="250" class="dimension"/>
+  <text x="270" y="265" class="dim-text">r = 22.5</text>
+
+  <!-- Mic position from front -->
+  <line x1="510" y1="30" x2="510" y2="120" class="dimension"/>
+  <line x1="250" y1="120" x2="515" y2="120" class="dimension"/>
+  <text x="525" y="80" class="dim-text" text-anchor="start">90</text>
+  <text x="525" y="95" class="calc" text-anchor="start">(MIC位置)</text>
+
+  <!-- ==================== GEOMETRY CALCULATIONS BOX ==================== -->
+  <rect x="-40" y="300" width="250" height="100" fill="#fffff0" stroke="#999" stroke-width="0.3"/>
+  <text x="85" y="315" class="subtitle" text-anchor="middle">幾何学計算</text>
+
+  <text x="-30" y="330" class="calc">扇形パラメータ:</text>
+  <text x="-25" y="342" class="calc">θ = 120° = 2π/3 rad</text>
+  <text x="-25" y="352" class="calc">弦長 = 2R·sin(θ/2) = 2R·sin(60°) = 1.732R</text>
+  <text x="-25" y="362" class="calc">前面: 420 = 1.732R → R = 242.5mm</text>
+  <text x="-25" y="372" class="calc">背面: r = R - 220 = 22.5mm</text>
+  <text x="-25" y="382" class="calc">背面幅 = 2 × 22.5 × sin(60°) = 39mm</text>
+  <text x="-25" y="392" class="calc">扇形面積 = (θ/2)(R² - r²) = 61,045 mm²</text>
+
+  <!-- ==================== CNC NOTES BOX ==================== -->
+  <rect x="230" y="300" width="150" height="100" fill="#f0fff0" stroke="#999" stroke-width="0.3"/>
+  <text x="305" y="315" class="subtitle" text-anchor="middle">CNC NOTES</text>
+
+  <text x="240" y="332" class="calc">• Material: 12mm MDF</text>
+  <text x="240" y="344" class="calc">• Quantity: 2 (Top + Bottom)</text>
+  <text x="240" y="356" class="calc">• Tool: 6mm endmill</text>
+  <text x="240" y="368" class="calc">• Tolerance: ±0.5mm</text>
+  <text x="240" y="380" class="calc">• MIC hole: Top panel only</text>
+  <text x="240" y="392" class="calc">• Arc: Use circular interpolation</text>
+
+  <!-- Origin mark -->
+  <circle cx="40" cy="30" r="3" class="engrave"/>
+  <line x1="32" y1="30" x2="48" y2="30" class="engrave"/>
+  <line x1="40" y1="22" x2="40" y2="38" class="engrave"/>
+  <text x="25" y="45" class="annotation" text-anchor="end">ORIGIN</text>
+</svg>
