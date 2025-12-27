@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="-50 -100 850 800" width="850mm" height="800mm">
   <title>OMNI-P4 v4.1 Exploded Assembly View</title>
-  <desc>B&W Formation Wedge完全トレース: 440×243×232mm, 120° Sector</desc>
+  <desc>B&amp;W Formation Wedge完全トレース: 440×243×232mm, 120° Sector</desc>
 
   <style>
     .outline { fill: none; stroke: #000; stroke-width: 0.6; }
@@ -26,11 +26,11 @@
 
   <!-- Title -->
   <text x="380" y="-70" class="title" text-anchor="middle">OMNI-P4 v4.1 分解組立図</text>
-  <text x="380" y="-55" class="subtitle" text-anchor="middle">EXPLODED ASSEMBLY - B&W Formation Wedge Trace</text>
+  <text x="380" y="-55" class="subtitle" text-anchor="middle">EXPLODED ASSEMBLY - B&amp;W Formation Wedge Trace</text>
   <text x="380" y="-40" class="bw-ref" text-anchor="middle">公式寸法: 440mm × 243mm × 232mm | 120° Sector</text>
   <line x1="50" y1="-30" x2="710" y2="-30" class="outline"/>
 
-  <!-- ========== 1. TOP SHELL (120° Sector - B&W) ========== -->
+  <!-- ========== 1. TOP SHELL (120° Sector - B&amp;W) ========== -->
   <g transform="translate(220, 0)">
     <!-- 120° sector shape with narrower back (r=11mm) -->
     <path d="M -160,20
@@ -53,7 +53,7 @@
     <circle cx="170" cy="55" r="2" fill="#ff0000"/>
     <text x="215" y="28" class="callout">1</text>
     <text x="215" y="38" class="annotation">TOP SHELL</text>
-    <text x="215" y="48" class="small">120° Sector (B&W)</text>
+    <text x="215" y="48" class="small">120° Sector (B&amp;W)</text>
     <text x="215" y="58" class="small">12mm MDF</text>
     <text x="215" y="68" class="calc">背面幅: 19mm</text>
   </g>
@@ -176,7 +176,7 @@
     <text x="145" y="40" class="small">170×105mm</text>
   </g>
 
-  <!-- ========== 10. FRONT PANEL (Elliptical - B&W) ========== -->
+  <!-- ========== 10. FRONT PANEL (Elliptical - B&amp;W) ========== -->
   <g transform="translate(220, 505)">
     <!-- Elliptical front panel 440×232mm scaled -->
     <ellipse cx="0" cy="58" rx="165" ry="72" class="fill-front"/>
@@ -192,12 +192,12 @@
     <circle cx="180" cy="58" r="2" fill="#ff0000"/>
     <text x="225" y="45" class="callout">9</text>
     <text x="225" y="55" class="annotation">FRONT PANEL</text>
-    <text x="225" y="65" class="annotation">楕円形 (B&W)</text>
+    <text x="225" y="65" class="annotation">楕円形 (B&amp;W)</text>
     <text x="225" y="75" class="small">440×232mm</text>
     <text x="225" y="85" class="small">12mm MDF</text>
   </g>
 
-  <!-- ========== 11. BOTTOM SHELL (120° Sector - B&W) ========== -->
+  <!-- ========== 11. BOTTOM SHELL (120° Sector - B&amp;W) ========== -->
   <g transform="translate(220, 630)">
     <!-- 120° sector shape (inverted) -->
     <path d="M -160,110
@@ -215,7 +215,7 @@
     <circle cx="170" cy="55" r="2" fill="#ff0000"/>
     <text x="215" y="65" class="callout">10</text>
     <text x="215" y="75" class="annotation">BOTTOM SHELL</text>
-    <text x="215" y="85" class="small">120° Sector (B&W)</text>
+    <text x="215" y="85" class="small">120° Sector (B&amp;W)</text>
     <text x="215" y="95" class="small">12mm MDF</text>
   </g>
 
@@ -242,7 +242,7 @@
     <text x="10" y="194" class="annotation">6. LCDをタワーに取付</text>
 
     <text x="10" y="214" class="annotation">7. 正面パネル取付</text>
-    <text x="15" y="227" class="small">楕円形 440×232mm (B&W)</text>
+    <text x="15" y="227" class="small">楕円形 440×232mm (B&amp;W)</text>
 
     <text x="10" y="247" class="annotation">8. 上面シェル取付</text>
     <text x="15" y="260" class="small">全接合部をシール</text>
@@ -268,11 +268,11 @@
     <text x="10" y="190" class="small">1    XVF3800            4-Mic PCB</text>
   </g>
 
-  <!-- ========== B&W SPECIFICATIONS ========== -->
+  <!-- ========== B&amp;W SPECIFICATIONS ========== -->
   <g transform="translate(520, 510)">
     <rect x="0" y="0" width="220" height="150" fill="#f0f8ff" stroke="#0066cc" stroke-width="0.5"/>
     <rect x="0" y="0" width="220" height="22" fill="#0066cc" stroke="#0066cc" stroke-width="0.5"/>
-    <text x="110" y="15" class="subtitle" text-anchor="middle" fill="#fff">B&W Formation Wedge準拠</text>
+    <text x="110" y="15" class="subtitle" text-anchor="middle" fill="#fff">B&amp;W Formation Wedge準拠</text>
 
     <text x="10" y="42" class="annotation">【公式寸法】</text>
     <text x="15" y="58" class="calc">Width: 440mm (17.3")</text>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="-50 -120 600 500" width="600mm" height="500mm">
   <title>OMNI-P4 v4.1 Top/Bottom Panel CNC Pattern</title>
-  <desc>上面/底面パネル (120°扇形) - B&W Formation Wedge準拠 - Scale 1:1</desc>
+  <desc>上面/底面パネル (120°扇形) - B&amp;W Formation Wedge準拠 - Scale 1:1</desc>
 
   <style>
     .cut { fill: none; stroke: #f00; stroke-width: 0.5; }
@@ -21,11 +21,11 @@
   <!-- Title Block -->
   <text x="270" y="-90" class="title" text-anchor="middle">上面/底面パネル CNC切削パターン v4.1</text>
   <text x="270" y="-75" class="subtitle" text-anchor="middle">TOP/BOTTOM PANEL - 120° SECTOR (Scale 1:1)</text>
-  <text x="270" y="-60" class="bw-ref" text-anchor="middle">B&W Formation Wedge準拠: 440mm × 243mm</text>
+  <text x="270" y="-60" class="bw-ref" text-anchor="middle">B&amp;W Formation Wedge準拠: 440mm × 243mm</text>
   <text x="270" y="-45" class="annotation" text-anchor="middle">Material: 12mm MDF | Quantity: 2 | RED = Cut Line</text>
 
   <!--
-    B&W Geometry:
+    B&amp;W Geometry:
     - Front width = 440mm
     - Depth = 243mm
     - Sector angle = 120°
@@ -77,7 +77,7 @@
   <line x1="490" y1="43" x2="490" y2="20" class="dimension"/>
   <polygon points="50,25 58,22 58,28" fill="#000"/>
   <polygon points="490,25 482,22 482,28" fill="#000"/>
-  <text x="270" y="13" class="dim-text" text-anchor="middle">440 (B&W公式)</text>
+  <text x="270" y="13" class="dim-text" text-anchor="middle">440 (B&amp;W公式)</text>
 
   <!-- Back width (chord) 19mm -->
   <line x1="260.5" y1="303" x2="279.5" y2="303" class="dimension"/>
@@ -91,7 +91,7 @@
   <line x1="279.5" y1="286" x2="515" y2="286" class="dimension"/>
   <polygon points="510,43 507,51 513,51" fill="#000"/>
   <polygon points="510,286 507,278 513,278" fill="#000"/>
-  <text x="525" y="170" class="dim-text" text-anchor="start">243 (B&W公式)</text>
+  <text x="525" y="170" class="dim-text" text-anchor="start">243 (B&amp;W公式)</text>
 
   <!-- Front radius 254mm -->
   <line x1="270" y1="297" x2="490" y2="43" class="dimension"/>
@@ -109,13 +109,13 @@
 
   <!-- ==================== GEOMETRY CALCULATIONS BOX ==================== -->
   <rect x="-40" y="330" width="260" height="110" fill="#fffff0" stroke="#999" stroke-width="0.3"/>
-  <text x="90" y="345" class="subtitle" text-anchor="middle">幾何学計算 (B&W準拠)</text>
+  <text x="90" y="345" class="subtitle" text-anchor="middle">幾何学計算 (B&amp;W準拠)</text>
 
   <text x="-30" y="362" class="calc">【120°扇形パラメータ】</text>
   <text x="-25" y="375" class="calc">θ = 120° = 2π/3 rad</text>
   <text x="-25" y="387" class="calc">弦長 = 2R·sin(θ/2) = 2R·sin(60°) = 1.732R</text>
   <text x="-25" y="399" class="calc">前面幅: 440 = 1.732R → R = 254.0mm</text>
-  <text x="-25" y="411" class="calc">奥行き: 243mm (B&W公式)</text>
+  <text x="-25" y="411" class="calc">奥行き: 243mm (B&amp;W公式)</text>
   <text x="-25" y="423" class="calc">背面半径: r = 254 - 243 = 11mm</text>
   <text x="-25" y="435" class="calc">背面幅 = 2 × 11 × sin(60°) = 19mm</text>
 

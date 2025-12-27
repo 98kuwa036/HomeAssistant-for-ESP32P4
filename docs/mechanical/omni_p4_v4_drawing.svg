@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="-100 -100 1200 950" width="1200mm" height="950mm">
-  <title>OMNI-P4 v4.1 Engineering Drawing - B&W Formation Wedge Trace</title>
-  <desc>B&W Formation Wedge完全トレース: 440×243×232mm, 120° Sector</desc>
+  <title>OMNI-P4 v4.1 Engineering Drawing - B&amp;W Formation Wedge Trace</title>
+  <desc>B&amp;W Formation Wedge完全トレース: 440×243×232mm, 120° Sector</desc>
 
   <style>
     .outline { fill: none; stroke: #000; stroke-width: 0.8; }
@@ -24,13 +24,13 @@
 
   <!-- ==================== TITLE BLOCK ==================== -->
   <text x="500" y="-70" class="title" text-anchor="middle">OMNI-P4 v4.1 詳細設計図</text>
-  <text x="500" y="-50" class="subtitle" text-anchor="middle">B&W Formation Wedge 完全トレース</text>
+  <text x="500" y="-50" class="subtitle" text-anchor="middle">B&amp;W Formation Wedge 完全トレース</text>
   <text x="500" y="-35" class="bw-ref" text-anchor="middle">公式寸法: 440mm × 243mm × 232mm | 120° Elliptical Shape</text>
   <line x1="0" y1="-25" x2="1000" y2="-25" class="outline"/>
 
-  <!-- ==================== B&W REFERENCE BOX ==================== -->
+  <!-- ==================== B&amp;W REFERENCE BOX ==================== -->
   <rect x="800" y="-20" width="200" height="140" fill="#f0f8ff" stroke="#0066cc" stroke-width="0.5"/>
-  <text x="900" y="-5" class="subtitle" text-anchor="middle" fill="#0066cc">B&W Formation Wedge</text>
+  <text x="900" y="-5" class="subtitle" text-anchor="middle" fill="#0066cc">B&amp;W Formation Wedge</text>
   <text x="900" y="8" class="bw-ref" text-anchor="middle">公式スペック</text>
 
   <text x="810" y="25" class="annotation">【寸法】</text>
@@ -41,7 +41,7 @@
 
   <text x="810" y="90" class="annotation">【形状】</text>
   <text x="815" y="103" class="calc">"120-degrees elliptical shape"</text>
-  <text x="815" y="115" class="calc">- B&W公式製品説明より</text>
+  <text x="815" y="115" class="calc">- B&amp;W公式製品説明より</text>
 
   <!-- ==================== GEOMETRY CALCULATIONS ==================== -->
   <rect x="800" y="130" width="200" height="130" fill="#fffff0" stroke="#999" stroke-width="0.5"/>
@@ -91,7 +91,7 @@
   <!-- Verify drivers are inside ellipse -->
   <!-- At X=90 (130mm from center): -->
   <!-- Ellipse Y extent = 116 × sqrt(1 - (130/220)²) = 116 × 0.807 = 93.6mm -->
-  <!-- Driver at Y=35 from center, edge at 69mm < 93.6mm ✓ -->
+  <!-- Driver at Y=35 from center, edge at 69mm &lt; 93.6mm ✓ -->
 
   <!-- Dimensions: Width 440mm -->
   <line x1="0" y1="270" x2="440" y2="270" class="dimension"/>
@@ -99,7 +99,7 @@
   <line x1="440" y1="252" x2="440" y2="275" class="dimension"/>
   <polygon points="0,270 8,267 8,273" fill="#00f"/>
   <polygon points="440,270 432,267 432,273" fill="#00f"/>
-  <text x="220" y="285" class="dim-text" text-anchor="middle">440 (B&W公式)</text>
+  <text x="220" y="285" class="dim-text" text-anchor="middle">440 (B&amp;W公式)</text>
 
   <!-- Dimensions: Height 232mm -->
   <line x1="460" y1="20" x2="460" y2="252" class="dimension"/>
@@ -107,7 +107,7 @@
   <line x1="440" y1="252" x2="465" y2="252" class="dimension"/>
   <polygon points="460,20 457,28 463,28" fill="#00f"/>
   <polygon points="460,252 457,244 463,244" fill="#00f"/>
-  <text x="475" y="140" class="dim-text" text-anchor="start">232 (B&W公式)</text>
+  <text x="475" y="140" class="dim-text" text-anchor="start">232 (B&amp;W公式)</text>
 
   <!-- Driver position from center -->
   <line x1="90" y1="210" x2="220" y2="210" class="dimension"/>
@@ -136,7 +136,7 @@
   <text x="720" y="280" class="subtitle">2. 上面図 (TOP VIEW) - 120°扇形</text>
 
   <!--
-    B&W Geometry:
+    B&amp;W Geometry:
     - Apex at (720, 578) - virtual apex
     - Front radius R = 254mm, front arc at Y = 578 - 254 = 324
     - Back radius r = 11mm, back arc at Y = 578 - 11 = 567
@@ -160,7 +160,7 @@
   <!-- Center line -->
   <line x1="720" y1="305" x2="720" y2="590" class="center"/>
 
-  <!-- Main sector shape - B&W dimensions -->
+  <!-- Main sector shape - B&amp;W dimensions -->
   <path d="M 500,324
            A 254,254 0 0,1 940,324
            L 729.5,567
@@ -185,7 +185,7 @@
   <line x1="500" y1="308" x2="940" y2="308" class="dimension"/>
   <line x1="500" y1="324" x2="500" y2="303" class="dimension"/>
   <line x1="940" y1="324" x2="940" y2="303" class="dimension"/>
-  <text x="720" y="298" class="dim-text" text-anchor="middle">440 (B&W公式)</text>
+  <text x="720" y="298" class="dim-text" text-anchor="middle">440 (B&amp;W公式)</text>
 
   <!-- Dimension: Back width 19mm -->
   <line x1="710.5" y1="580" x2="729.5" y2="580" class="dimension"/>
@@ -195,7 +195,7 @@
   <line x1="960" y1="324" x2="960" y2="567" class="dimension"/>
   <line x1="940" y1="324" x2="965" y2="324" class="dimension"/>
   <line x1="729.5" y1="567" x2="965" y2="567" class="dimension"/>
-  <text x="975" y="450" class="dim-text" text-anchor="start">243 (B&W公式)</text>
+  <text x="975" y="450" class="dim-text" text-anchor="start">243 (B&amp;W公式)</text>
 
   <!-- Dimension: Front radius -->
   <line x1="720" y1="578" x2="940" y2="324" class="dimension"/>
@@ -224,7 +224,7 @@
   <line x1="48.5" y1="630" x2="291.5" y2="630" class="dimension"/>
   <line x1="48.5" y1="611" x2="48.5" y2="635" class="dimension"/>
   <line x1="291.5" y1="611" x2="291.5" y2="635" class="dimension"/>
-  <text x="170" y="650" class="dim-text" text-anchor="middle">243 (B&W公式)</text>
+  <text x="170" y="650" class="dim-text" text-anchor="middle">243 (B&amp;W公式)</text>
 
   <!-- Dimension: Height 232mm -->
   <line x1="310" y1="379" x2="310" y2="611" class="dimension"/>
@@ -294,9 +294,9 @@
   <!-- ==================== SPECIFICATIONS TABLE ==================== -->
   <rect x="0" y="680" width="220" height="160" fill="#fafafa" stroke="#000" stroke-width="0.5"/>
   <rect x="0" y="680" width="220" height="22" fill="#e0e0e0" stroke="#000" stroke-width="0.5"/>
-  <text x="110" y="696" class="subtitle" text-anchor="middle">仕様一覧 (B&W準拠)</text>
+  <text x="110" y="696" class="subtitle" text-anchor="middle">仕様一覧 (B&amp;W準拠)</text>
 
-  <text x="10" y="718" class="annotation">【外形寸法 - B&W公式】</text>
+  <text x="10" y="718" class="annotation">【外形寸法 - B&amp;W公式】</text>
   <text x="15" y="732" class="small">前面幅: 440mm</text>
   <text x="15" y="744" class="small">背面幅: 19mm</text>
   <text x="15" y="756" class="small">奥行き: 243mm</text>
@@ -321,7 +321,7 @@
   <text x="255" y="788" class="calc">→ 中心から ±93.6mm</text>
 
   <text x="250" y="806" class="annotation">【ドライバー位置】</text>
-  <text x="255" y="820" class="calc">上側: +35mm + 34mm = 69mm < 93.6mm ✓</text>
+  <text x="255" y="820" class="calc">上側: +35mm + 34mm = 69mm &lt; 93.6mm ✓</text>
   <text x="255" y="834" class="calc">下側: -35mm - 34mm = -69mm > -93.6mm ✓</text>
 
   <!-- ==================== COMPARISON WITH PREVIOUS ==================== -->
@@ -336,7 +336,7 @@
   <text x="495" y="768" class="small">背面: 39mm → 19mm (-20mm)</text>
 
   <text x="490" y="786" class="annotation">【改善点】</text>
-  <text x="495" y="800" class="small">✓ B&W公式寸法に完全準拠</text>
+  <text x="495" y="800" class="small">✓ B&amp;W公式寸法に完全準拠</text>
   <text x="495" y="812" class="small">✓ ドライバーが楕円内に収まる</text>
   <text x="495" y="824" class="small">✓ より細い背面 (19mm) で</text>
   <text x="495" y="836" class="small">  Formation Wedgeらしい形状</text>
@@ -344,7 +344,7 @@
   <!-- ==================== TITLE BLOCK ==================== -->
   <rect x="720" y="680" width="280" height="160" fill="#f5f5f5" stroke="#000" stroke-width="0.5"/>
   <rect x="720" y="680" width="280" height="22" fill="#0066cc" stroke="#000" stroke-width="0.5"/>
-  <text x="860" y="696" class="subtitle" text-anchor="middle" fill="#fff">OMNI-P4 v4.1 - B&W Trace</text>
+  <text x="860" y="696" class="subtitle" text-anchor="middle" fill="#fff">OMNI-P4 v4.1 - B&amp;W Trace</text>
 
   <line x1="720" y1="750" x2="1000" y2="750" stroke="#000" stroke-width="0.3"/>
   <line x1="860" y1="702" x2="860" y2="840" stroke="#000" stroke-width="0.3"/>
@@ -353,10 +353,10 @@
   <text x="730" y="735" class="annotation">OMNI-P4 Smart Console</text>
 
   <text x="870" y="720" class="small">Reference:</text>
-  <text x="870" y="735" class="annotation">B&W Formation Wedge</text>
+  <text x="870" y="735" class="annotation">B&amp;W Formation Wedge</text>
 
   <text x="730" y="768" class="small">Designer: Claude</text>
-  <text x="730" y="783" class="small">Version: 4.1 (B&W Trace)</text>
+  <text x="730" y="783" class="small">Version: 4.1 (B&amp;W Trace)</text>
   <text x="730" y="798" class="small">Date: 2025-01</text>
 
   <text x="870" y="768" class="small">Scale: NTS</text>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="-50 -100 600 450" width="600mm" height="450mm">
   <title>OMNI-P4 v4.1 Front Panel CNC Pattern</title>
-  <desc>正面パネル (楕円形 440×232mm) - B&W Formation Wedge準拠 - Scale 1:1</desc>
+  <desc>正面パネル (楕円形 440×232mm) - B&amp;W Formation Wedge準拠 - Scale 1:1</desc>
 
   <style>
     .cut { fill: none; stroke: #f00; stroke-width: 0.5; }
@@ -19,7 +19,7 @@
   <!-- Title Block -->
   <text x="220" y="-70" class="title" text-anchor="middle">正面パネル CNC切削パターン v4.1</text>
   <text x="220" y="-55" class="subtitle" text-anchor="middle">FRONT PANEL - ELLIPTICAL (Scale 1:1)</text>
-  <text x="220" y="-40" class="bw-ref" text-anchor="middle">B&W Formation Wedge準拠: 440mm × 232mm</text>
+  <text x="220" y="-40" class="bw-ref" text-anchor="middle">B&amp;W Formation Wedge準拠: 440mm × 232mm</text>
   <text x="220" y="-25" class="annotation" text-anchor="middle">Material: 12mm MDF | RED = Cut | BLUE = Engrave | GREEN = Center</text>
 
   <!-- Center lines -->
@@ -27,7 +27,7 @@
   <line x1="-10" y1="116" x2="450" y2="116" class="center"/>
 
   <!-- ==================== OUTER ELLIPSE (CUT) ==================== -->
-  <!-- 楕円: a=220mm, b=116mm → 440mm × 232mm (B&W公式) -->
+  <!-- 楕円: a=220mm, b=116mm → 440mm × 232mm (B&amp;W公式) -->
   <ellipse cx="220" cy="116" rx="220" ry="116" class="cut"/>
 
   <!-- ==================== LCD CUTOUT (CUT) ==================== -->
@@ -54,21 +54,21 @@
 
   <!-- ==================== DIMENSIONS ==================== -->
 
-  <!-- Width 440mm (B&W公式) -->
+  <!-- Width 440mm (B&amp;W公式) -->
   <line x1="0" y1="250" x2="440" y2="250" class="dimension"/>
   <line x1="0" y1="232" x2="0" y2="255" class="dimension"/>
   <line x1="440" y1="232" x2="440" y2="255" class="dimension"/>
   <polygon points="0,250 6,247 6,253" fill="#000"/>
   <polygon points="440,250 434,247 434,253" fill="#000"/>
-  <text x="220" y="268" class="dim-text" text-anchor="middle">440 (B&W公式)</text>
+  <text x="220" y="268" class="dim-text" text-anchor="middle">440 (B&amp;W公式)</text>
 
-  <!-- Height 232mm (B&W公式) -->
+  <!-- Height 232mm (B&amp;W公式) -->
   <line x1="460" y1="0" x2="460" y2="232" class="dimension"/>
   <line x1="440" y1="0" x2="465" y2="0" class="dimension"/>
   <line x1="440" y1="232" x2="465" y2="232" class="dimension"/>
   <polygon points="460,0 457,6 463,6" fill="#000"/>
   <polygon points="460,232 457,226 463,226" fill="#000"/>
-  <text x="475" y="120" class="dim-text" text-anchor="start">232 (B&W公式)</text>
+  <text x="475" y="120" class="dim-text" text-anchor="start">232 (B&amp;W公式)</text>
 
   <!-- LCD width 190mm -->
   <line x1="125" y1="40" x2="315" y2="40" class="dimension"/>
@@ -131,7 +131,7 @@
   <text x="385" y="300" class="calc">• Tool: 6mm endmill</text>
   <text x="385" y="312" class="calc">• Tolerance: ±0.5mm</text>
   <text x="385" y="324" class="calc">• Material: 12mm MDF</text>
-  <text x="385" y="336" class="calc">• B&W Formation Wedge準拠</text>
+  <text x="385" y="336" class="calc">• B&amp;W Formation Wedge準拠</text>
 
   <!-- ==================== DRIVER FIT VERIFICATION ==================== -->
   <rect x="-40" y="320" width="180" height="55" fill="#f0fff0" stroke="#999" stroke-width="0.3"/>
