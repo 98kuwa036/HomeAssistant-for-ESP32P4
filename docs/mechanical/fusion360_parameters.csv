@@ -1,0 +1,90 @@
+Name,Value,Unit,Comment
+# ============================================================
+# Omni-P4: Fusion 360 User Parameters
+# Import via: Modify > Change Parameters > Import from CSV
+# ============================================================
+
+# === Outer Shell Dimensions ===
+FRONT_WIDTH,380,mm,Front face width
+BACK_WIDTH,150,mm,Back face width (calculated from wedge angle)
+DEPTH,200,mm,Front to back depth
+HEIGHT,180,mm,Total enclosure height
+WALL_THICKNESS,6,mm,MDF outer shell thickness
+WEDGE_ANGLE,120,deg,Wedge opening angle
+
+# === Center Tower Standoffs ===
+STANDOFF_PITCH,75,mm,Square pattern spacing
+STANDOFF_OD,6,mm,Hex standoff outer diameter
+STANDOFF_ID,2.5,mm,M3 tap hole diameter
+STANDOFF_L1_L2,40,mm,Height: Level 1 to Level 2
+STANDOFF_L2_L3,35,mm,Height: Level 2 to Level 3
+STANDOFF_L3_TOP,25,mm,Height: Level 3 to LCD mount
+
+# === Shelf Plate Dimensions ===
+PLATE_THICKNESS,2,mm,Aluminum plate thickness
+LEVEL_1_Z,20,mm,Level 1 height from bottom
+PLATE_L1_W,80,mm,Level 1 plate width
+PLATE_L1_D,60,mm,Level 1 plate depth
+PLATE_L2_W,90,mm,Level 2 plate width
+PLATE_L2_D,70,mm,Level 2 plate depth
+PLATE_L3_W,100,mm,Level 3 plate width
+PLATE_L3_D,80,mm,Level 3 plate depth
+
+# === Cable Duct Dimensions ===
+CABLE_DUCT_W,12,mm,Cable duct width
+CABLE_DUCT_D,8,mm,Cable duct depth
+CABLE_DUCT_OFFSET,3,mm,Distance from plate edge
+
+# === LCD Dimensions ===
+LCD_ACTIVE_W,154,mm,Active display width
+LCD_ACTIVE_H,86,mm,Active display height
+LCD_MODULE_W,170,mm,LCD module width (with PCB)
+LCD_MODULE_H,105,mm,LCD module height
+LCD_MODULE_D,5,mm,LCD module depth
+LCD_BEZEL_W,190,mm,Bezel outer width
+LCD_BEZEL_H,130,mm,Bezel outer height
+LCD_BEZEL_D,3,mm,Bezel thickness
+LCD_Z_CENTER,110,mm,LCD center height from bottom
+
+# === Speaker Box (MDF) ===
+MDF_THICKNESS,19,mm,MDF wall thickness
+SPK_INT_W,80,mm,Internal width
+SPK_INT_D,180,mm,Internal depth
+SPK_INT_H,120,mm,Internal height
+DRIVER_DIA,65,mm,Main driver cutout diameter
+PASSIVE_RAD_DIA,65,mm,Passive radiator cutout diameter
+PASSIVE_STROKE,15,mm,Passive radiator stroke clearance
+SPK_ANGLE,15,deg,Toe-in angle
+SPK_X_OFFSET,130,mm,Distance from center
+SPK_Y_OFFSET,40,mm,Distance from front
+SPK_Z_OFFSET,10,mm,Height from bottom
+
+# === Vibration Isolation ===
+HANENITE_THICKNESS,5,mm,Hanenite pad thickness
+
+# === Microphone Mount ===
+MIC_PCB_W,40,mm,XVF3800 PCB width
+MIC_PCB_D,40,mm,XVF3800 PCB depth
+MIC_PCB_H,2,mm,XVF3800 PCB thickness
+MIC_MESH_DIA,60,mm,Acoustic mesh diameter
+MIC_MESH_H,1,mm,Acoustic mesh height
+MIC_Z,168,mm,Mic center height (HEIGHT - 12)
+
+# === Thermal ===
+VENT_SLOT_W,30,mm,Bottom vent slot width
+VENT_SLOT_H,5,mm,Bottom vent slot height
+VENT_COUNT,7,ul,Number of bottom vent slots
+VENT_OPEN_RATIO,0.4,ul,Target 40% open area on plates
+
+# === Fasteners ===
+M3_CLEARANCE,3.2,mm,M3 clearance hole diameter
+M3_TAP,2.5,mm,M3 tap hole diameter
+M4_CLEARANCE,4.2,mm,M4 clearance hole diameter
+INSERT_HOLE,4.0,mm,M3 heat-set insert hole
+
+# === Derived Values (reference only) ===
+# LEVEL_2_Z = LEVEL_1_Z + STANDOFF_L1_L2 + PLATE_THICKNESS = 62
+# LEVEL_3_Z = LEVEL_2_Z + STANDOFF_L2_L3 + PLATE_THICKNESS = 99
+# SPK_EXT_W = SPK_INT_W + MDF_THICKNESS * 2 = 118
+# SPK_EXT_D = SPK_INT_D + MDF_THICKNESS * 2 = 218
+# SPK_EXT_H = SPK_INT_H + MDF_THICKNESS * 2 = 158
