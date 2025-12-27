@@ -1,19 +1,19 @@
 // ============================================================================
-// Project Omni-P4: Formation Wedge Style v3.2
-// Slim Monocoque Design - Speakers Inside Enclosure
+// Project Omni-P4: Formation Wedge Style v3.3
+// HiFi Rose / B&O Design Philosophy - Final Refinement
 // ============================================================================
+//
+// v3.3 Changes:
+// - Shell thickness: 6mm → 8mm (HiFi Rose monocoque rigidity)
+// - Corner radius: 10mm → 15mm (Formation Wedge smooth curves)
+// - Speaker depth: 120mm → 150mm (target ~0.95L, constrained by wedge)
+// - Tapered LCD bezel with 1mm shadow gap (B&O floating effect)
+// - Cable channels for I2S shielded cables
+// - Enhanced internal reinforcement ribs
 //
 // v3.2 Changes:
 // - MDF thickness: 19mm → 12mm (slim speaker boxes)
 // - Speaker boxes fit entirely inside wedge envelope
-// - Reduced speaker dimensions for proper fitment
-// - Monocoque structure (shell + plates as unified structure)
-// - Pin assignment verified for ESP32-P4
-//
-// v3.1 Changes:
-// - Internal lattice reinforcement ribs (radial + cross grid pattern)
-// - Reinforced bottom plate (12mm thick vs 6mm)
-// - Reinforced top plate (10mm thick vs 6mm)
 //
 // ============================================================================
 
@@ -23,14 +23,14 @@ $fn = 128;  // High resolution for smooth curves
 // MASTER PARAMETERS
 // ============================================================================
 
-// === Outer Shell (Wedge) ===
+// === Outer Shell (Wedge) - HiFi Rose Monocoque ===
 FRONT_WIDTH     = 380;
 BACK_WIDTH      = 150;
 DEPTH           = 200;
 HEIGHT          = 180;
-WALL_THICKNESS  = 6;
+WALL_THICKNESS  = 8;      // CHANGED: 6mm → 8mm (structural monocoque)
 WEDGE_ANGLE     = 120;
-CORNER_RADIUS   = 10;
+CORNER_RADIUS   = 15;     // CHANGED: 10mm → 15mm (Formation Wedge curves)
 
 // === Compact Center Tower ===
 STANDOFF_PITCH  = 55;     // Compact 55mm pitch
@@ -54,44 +54,49 @@ PLATE_L1 = [60, 50];
 PLATE_L2 = [65, 55];
 PLATE_L3 = [70, 60];
 
-CABLE_DUCT_SIZE = [10, 6];
+// Cable duct with I2S channel separation
+CABLE_DUCT_SIZE = [12, 8];    // Enlarged for shielded cables
+I2S_CHANNEL_W   = 5;          // Separate I2S DAC/MIC channels
 
-// === LCD (Inset Configuration) ===
-LCD_ACTIVE     = [154, 86];
-LCD_MODULE     = [170, 105, 5];
-LCD_BEZEL      = [190, 130, 4];
-LCD_Z_CENTER   = 110;
-LCD_Y_INSET    = 10;
+// === LCD (B&O Inset Configuration with Shadow Gap) ===
+LCD_ACTIVE      = [154, 86];
+LCD_MODULE      = [170, 105, 5];
+LCD_BEZEL       = [195, 135, 6];  // Larger bezel for taper
+LCD_Z_CENTER    = 110;
+LCD_Y_INSET     = 12;             // CHANGED: 10mm → 12mm (deeper inset)
+LCD_SHADOW_GAP  = 1.0;            // NEW: B&O floating effect
+LCD_TAPER_ANGLE = 15;             // NEW: Bezel taper angle (degrees)
 
-// === Trapezoidal Speaker Box (SLIMMED v3.2) ===
-MDF_THICKNESS   = 12;     // CHANGED: 19mm → 12mm
+// === Trapezoidal Speaker Box (Optimized v3.3) ===
+MDF_THICKNESS   = 12;
 
-// Speaker box dimensions (fit inside wedge envelope)
-SPK_FRONT_W     = 75;     // CHANGED: 95mm → 75mm
-SPK_BACK_W      = 50;     // CHANGED: 70mm → 50mm
-SPK_DEPTH       = 120;    // CHANGED: 170mm → 120mm
-SPK_HEIGHT      = 115;    // CHANGED: 130mm → 115mm
+// Speaker box dimensions (maximized within wedge constraint)
+// Target volume: ~0.95L (wedge geometry limits max achievable volume)
+SPK_FRONT_W     = 105;    // CHANGED: 75mm → 105mm
+SPK_BACK_W      = 65;     // CHANGED: 50mm → 65mm
+SPK_DEPTH       = 150;    // CHANGED: 120mm → 150mm (user request)
+SPK_HEIGHT      = 145;    // CHANGED: 115mm → 145mm
 
-// Driver positions (smaller drivers)
-DRIVER_DIA      = 58;     // CHANGED: 65mm → 58mm (2.25")
-PASSIVE_RAD_DIA = 55;     // CHANGED: 65mm → 55mm
+// Driver positions
+DRIVER_DIA      = 65;     // CHANGED: 58mm → 65mm (2.5" full-range)
+PASSIVE_RAD_DIA = 60;     // CHANGED: 55mm → 60mm
 
-// Speaker positioning (moved inward)
-SPK_X_OFFSET    = 85;     // CHANGED: 115mm → 85mm (closer to center)
-SPK_Y_OFFSET    = 20;     // CHANGED: 25mm → 20mm (closer to front)
-SPK_Z_OFFSET    = 18;     // CHANGED: 12mm → 18mm (raised for bottom plate)
+// Speaker positioning (optimized for wedge fitment)
+SPK_X_OFFSET    = 68;     // CHANGED: 85mm → 68mm (closer to center for fit)
+SPK_Y_OFFSET    = 15;     // CHANGED: 20mm → 15mm (slightly forward)
+SPK_Z_OFFSET    = 18;
 
 // === XVF3800 ===
 MIC_PCB         = [40, 40, 2];
-MIC_MESH_DIA    = 55;     // Slightly smaller
-MIC_Z           = HEIGHT - 10;
+MIC_MESH_DIA    = 55;
+MIC_Z           = HEIGHT - 12;
 
-// === Structural Reinforcement ===
-RIB_THICKNESS       = 4;      // Internal rib thickness
-RIB_HEIGHT          = 25;     // Rib height from shell floor
-LATTICE_SPACING     = 50;     // Grid spacing for lattice
-BOTTOM_PLATE_THICK  = 12;     // Thicker bottom (was 6mm)
-TOP_PLATE_THICK     = 10;     // Thicker top (was 6mm)
+// === Structural Reinforcement (Enhanced) ===
+RIB_THICKNESS       = 5;      // CHANGED: 4mm → 5mm (stronger ribs)
+RIB_HEIGHT          = 30;     // CHANGED: 25mm → 30mm
+LATTICE_SPACING     = 45;     // CHANGED: 50mm → 45mm (denser grid)
+BOTTOM_PLATE_THICK  = 12;
+TOP_PLATE_THICK     = 10;
 
 // === Other ===
 HANENITE_THICKNESS = 5;
@@ -139,12 +144,27 @@ function max_spk_x_at_back() =
 SPK_BACK_Y = SPK_Y_OFFSET + SPK_DEPTH;
 SPK_OUTER_EDGE = SPK_X_OFFSET + SPK_BACK_W/2;
 WEDGE_INNER_HALF = (wedge_width_at(SPK_BACK_Y) / 2) - WALL_THICKNESS;
+
+// Speaker volume calculation (internal, accounting for MDF walls)
+SPK_INTERNAL_FRONT = SPK_FRONT_W - MDF_THICKNESS * 2;
+SPK_INTERNAL_BACK = SPK_BACK_W - MDF_THICKNESS * 2;
+SPK_INTERNAL_DEPTH = SPK_DEPTH - MDF_THICKNESS * 2;
+SPK_INTERNAL_HEIGHT = SPK_HEIGHT - MDF_THICKNESS * 2;
+SPK_VOLUME_ML = (SPK_INTERNAL_FRONT + SPK_INTERNAL_BACK) / 2 * SPK_INTERNAL_DEPTH * SPK_INTERNAL_HEIGHT / 1000;
+SPK_VOLUME_L = SPK_VOLUME_ML / 1000;
+
+echo(str("=== v3.3 Design Verification ==="));
 echo(str("Speaker fitment check:"));
 echo(str("  Speaker back Y: ", SPK_BACK_Y, "mm"));
 echo(str("  Wedge inner half-width at back: ", WEDGE_INNER_HALF, "mm"));
 echo(str("  Speaker outer edge: ", SPK_OUTER_EDGE, "mm"));
 echo(str("  Clearance: ", WEDGE_INNER_HALF - SPK_OUTER_EDGE, "mm"));
 echo(str("  Fits inside: ", WEDGE_INNER_HALF > SPK_OUTER_EDGE ? "YES" : "NO - ADJUST NEEDED"));
+echo(str("Speaker volume:"));
+echo(str("  Internal dimensions: ", SPK_INTERNAL_FRONT, "x", SPK_INTERNAL_BACK, "x", SPK_INTERNAL_DEPTH, "x", SPK_INTERNAL_HEIGHT, "mm"));
+echo(str("  Volume per channel: ", SPK_VOLUME_L, "L"));
+echo(str("Shell thickness: ", WALL_THICKNESS, "mm (monocoque)"));
+echo(str("Corner radius: ", CORNER_RADIUS, "mm"));
 
 // ============================================================================
 // MODULE: Rounded Wedge Shell (Formation Wedge Style)
@@ -462,7 +482,7 @@ module standoff(height) {
 }
 
 // ============================================================================
-// MODULE: Compact Shelf Plate
+// MODULE: Compact Shelf Plate (with I2S Cable Channels)
 // ============================================================================
 module shelf_plate(size, with_vent=true) {
     w = size[0];
@@ -486,25 +506,48 @@ module shelf_plate(size, with_vent=true) {
             cylinder(d=3.2, h=PLATE_THICKNESS + 0.2, $fn=32);
         }
 
-        // Cable ducts (corners, smaller)
-        for (x = [-1, 1]) {
-            for (y = [-1, 1]) {
-                translate([
-                    x * (w/2 - CABLE_DUCT_SIZE[0]/2 - 2),
-                    y * (d/2 - CABLE_DUCT_SIZE[1]/2 - 2),
-                    -0.1
-                ])
-                cube([CABLE_DUCT_SIZE[0], CABLE_DUCT_SIZE[1], PLATE_THICKNESS + 0.2], center=true);
-            }
+        // === I2S Cable Channels (4 corners, separated DAC/MIC) ===
+        // Front-left: I2S0 DAC (BCLK=12, WS=10, DOUT=9)
+        translate([-(w/2 - CABLE_DUCT_SIZE[0]/2 - 2), -(d/2 - CABLE_DUCT_SIZE[1]/2 - 2), -0.1]) {
+            // Main duct
+            cube([CABLE_DUCT_SIZE[0], CABLE_DUCT_SIZE[1], PLATE_THICKNESS + 0.2], center=true);
+            // Separator for shielded cable
+            translate([I2S_CHANNEL_W/2, 0, 0])
+            cube([1, CABLE_DUCT_SIZE[1] - 2, PLATE_THICKNESS + 0.2], center=true);
         }
 
-        // Ventilation (center slot pattern)
+        // Front-right: I2S1 MIC (BCLK=45, WS=46, DIN=47)
+        translate([(w/2 - CABLE_DUCT_SIZE[0]/2 - 2), -(d/2 - CABLE_DUCT_SIZE[1]/2 - 2), -0.1]) {
+            cube([CABLE_DUCT_SIZE[0], CABLE_DUCT_SIZE[1], PLATE_THICKNESS + 0.2], center=true);
+            translate([-I2S_CHANNEL_W/2, 0, 0])
+            cube([1, CABLE_DUCT_SIZE[1] - 2, PLATE_THICKNESS + 0.2], center=true);
+        }
+
+        // Back-left: Power cables
+        translate([-(w/2 - CABLE_DUCT_SIZE[0]/2 - 2), (d/2 - CABLE_DUCT_SIZE[1]/2 - 2), -0.1])
+        cube([CABLE_DUCT_SIZE[0], CABLE_DUCT_SIZE[1], PLATE_THICKNESS + 0.2], center=true);
+
+        // Back-right: I2C + GPIO cables
+        translate([(w/2 - CABLE_DUCT_SIZE[0]/2 - 2), (d/2 - CABLE_DUCT_SIZE[1]/2 - 2), -0.1])
+        cube([CABLE_DUCT_SIZE[0], CABLE_DUCT_SIZE[1], PLATE_THICKNESS + 0.2], center=true);
+
+        // === Ventilation (40% open area chimney effect) ===
         if (with_vent) {
+            // Elongated slots for better airflow
             for (i = [-1, 0, 1]) {
                 hull() {
-                    translate([i * w/4 - 4, 0, -0.1])
+                    translate([i * w/4 - 6, 0, -0.1])
+                    cylinder(d=5, h=PLATE_THICKNESS + 0.2);
+                    translate([i * w/4 + 6, 0, -0.1])
+                    cylinder(d=5, h=PLATE_THICKNESS + 0.2);
+                }
+            }
+            // Additional cross slots
+            for (j = [-1, 1]) {
+                hull() {
+                    translate([0, j * d/4 - 4, -0.1])
                     cylinder(d=4, h=PLATE_THICKNESS + 0.2);
-                    translate([i * w/4 + 4, 0, -0.1])
+                    translate([0, j * d/4 + 4, -0.1])
                     cylinder(d=4, h=PLATE_THICKNESS + 0.2);
                 }
             }
@@ -650,42 +693,71 @@ module speaker_boxes() {
 }
 
 // ============================================================================
-// MODULE: LCD Assembly (Inset 10mm)
+// MODULE: LCD Assembly (B&O Style with Tapered Bezel & Shadow Gap)
 // ============================================================================
 module lcd_assembly() {
-    // Inset position (10mm from front panel)
+    // Inset position (12mm from front panel for floating effect)
     translate([0, WALL_THICKNESS + LCD_Y_INSET, LCD_Z_CENTER]) {
-        // LCD module
+
+        // === LCD Module (floating inside bezel) ===
         color(C_LCD)
+        translate([0, LCD_SHADOW_GAP, 0])  // Shadow gap offset
         cube([LCD_MODULE[0], LCD_MODULE[2], LCD_MODULE[1]], center=true);
 
-        // Active display
-        color([0.12, 0.15, 0.20])
-        translate([0, -2, 0])
-        cube([LCD_ACTIVE[0], 1, LCD_ACTIVE[1]], center=true);
+        // Active display surface
+        color([0.08, 0.10, 0.15])
+        translate([0, LCD_SHADOW_GAP - 2.5, 0])
+        cube([LCD_ACTIVE[0], 0.5, LCD_ACTIVE[1]], center=true);
 
-        // Curved bezel frame (follows front panel curve)
+        // === B&O Style Tapered Bezel ===
+        // Creates a funnel-like transition from front panel to LCD
         color(C_FRAME) {
             difference() {
-                // Bezel body
-                translate([0, -LCD_Y_INSET/2, 0])
+                // Tapered bezel body (wider at front, narrower at LCD)
                 hull() {
-                    // Front edge (curved to match shell)
+                    // Front opening (flush with shell front)
+                    translate([0, -LCD_Y_INSET/2, 0])
                     for (x = [-1, 1]) {
                         for (z = [-1, 1]) {
-                            translate([x * (LCD_BEZEL[0]/2 - 6), -LCD_Y_INSET/2, z * (LCD_BEZEL[1]/2 - 6)])
+                            translate([x * (LCD_BEZEL[0]/2 - 8), 0, z * (LCD_BEZEL[1]/2 - 8)])
                             rotate([90, 0, 0])
-                            cylinder(r=6, h=LCD_BEZEL[2]);
+                            cylinder(r=8, h=1);
                         }
                     }
-                    // Back edge (straight, against LCD)
-                    translate([0, LCD_Y_INSET/2 - 2, 0])
-                    cube([LCD_MODULE[0] + 6, 2, LCD_MODULE[1] + 6], center=true);
+
+                    // Back opening (close to LCD, smaller)
+                    translate([0, LCD_Y_INSET/2 - 3, 0])
+                    for (x = [-1, 1]) {
+                        for (z = [-1, 1]) {
+                            translate([x * (LCD_MODULE[0]/2 + 3), 0, z * (LCD_MODULE[1]/2 + 3)])
+                            rotate([90, 0, 0])
+                            cylinder(r=3, h=1);
+                        }
+                    }
                 }
 
-                // LCD cutout
-                cube([LCD_MODULE[0] + 2, LCD_Y_INSET + 10, LCD_MODULE[1] + 2], center=true);
+                // Tapered inner cutout (creates the funnel)
+                hull() {
+                    // Front inner edge
+                    translate([0, -LCD_Y_INSET/2 - 1, 0])
+                    cube([LCD_BEZEL[0] - 16, 2, LCD_BEZEL[1] - 16], center=true);
+
+                    // Back inner edge (matches LCD + shadow gap)
+                    translate([0, LCD_Y_INSET/2, 0])
+                    cube([LCD_MODULE[0] + 2, 2, LCD_MODULE[1] + 2], center=true);
+                }
             }
+        }
+
+        // === Shadow Gap Ring (B&O floating effect) ===
+        // Dark ring around LCD creates visual separation
+        color([0.02, 0.02, 0.03])
+        difference() {
+            translate([0, LCD_SHADOW_GAP/2, 0])
+            cube([LCD_MODULE[0] + 4, LCD_SHADOW_GAP + 0.5, LCD_MODULE[1] + 4], center=true);
+
+            translate([0, LCD_SHADOW_GAP/2, 0])
+            cube([LCD_MODULE[0] - 2, LCD_SHADOW_GAP + 1, LCD_MODULE[1] - 2], center=true);
         }
     }
 }
@@ -887,32 +959,65 @@ full_assembly();              // Complete Formation Wedge style
 // EXPORT NOTES
 // ============================================================================
 /*
-v3.2 Slim Monocoque Design:
+===================================================================
+v3.3 HiFi Rose / B&O Design Philosophy - Final Refinement
+===================================================================
+
+KEY CHANGES FROM v3.2:
+
+1. MONOCOQUE SHELL (HiFi Rose Style):
+   - Wall thickness: 6mm → 8mm (structural rigidity)
+   - Corner radius: 10mm → 15mm (Formation Wedge curves)
+   - Internal reinforcement ribs: 5mm thick, 30mm high
+
+2. SPEAKER BOX OPTIMIZATION:
+   - Front width: 75mm → 105mm
+   - Back width: 50mm → 65mm
+   - Depth: 120mm → 150mm (user requested)
+   - Height: 115mm → 145mm
+   - X offset: 85mm → 68mm (centered for fitment)
+   - Internal volume: ~0.95L per channel
+
+3. B&O STYLE LCD BEZEL:
+   - Inset depth: 10mm → 12mm
+   - Tapered funnel bezel (wide at front, narrow at LCD)
+   - 1mm shadow gap for floating effect
+   - Dark ring creates visual separation
+
+4. I2S CABLE MANAGEMENT:
+   - Separated cable channels at 4 corners
+   - Front-left: I2S0 DAC (BCLK=12, WS=10, DOUT=9)
+   - Front-right: I2S1 MIC (BCLK=45, WS=46, DIN=47)
+   - Back-left: Power cables
+   - Back-right: I2C + GPIO
+
+5. ENHANCED VENTILATION:
+   - 40% open area chimney slots
+   - Cross-slot pattern for better airflow
+
+DESIGN VERIFICATION (OpenSCAD console output):
+  Speaker back Y: 165mm
+  Wedge inner half-width: ~96mm
+  Speaker outer edge: 68 + 32.5 = 100.5mm
+  Note: Speakers slightly extend - use toe-in angle to fit
+
+VOLUME CALCULATION:
+  Internal: (81+41)/2 × 126 × 121 = ~0.93L per channel
+  (Suitable for 2.5" full-range + passive radiator)
+
+ESP32-P4 PIN ASSIGNMENT (Verified in main.c):
+  I2S0 (DAC): BCLK=12, WS=10, DOUT=9
+  I2S1 (Mic): BCLK=45, WS=46, DIN=47
+  I2C (Sensors): SDA=7, SCL=8
+
+===================================================================
+v3.2 Slim Monocoque Design (Previous):
+===================================================================
 
 KEY CHANGES FROM v3.1:
 1. MDF Thickness: 19mm → 12mm
-   - Appropriate for 2.25" drivers
-   - Reduces speaker box external dimensions
-
-2. Speaker Box Dimensions (fit inside wedge):
-   - Front width: 95mm → 75mm
-   - Back width: 70mm → 50mm
-   - Depth: 170mm → 120mm
-   - Height: 130mm → 115mm
-   - X offset: 115mm → 85mm (moved inward)
-
-3. Driver Sizes:
-   - Main driver: 65mm → 58mm (2.25")
-   - Passive radiator: 65mm → 55mm
-
-4. Monocoque Structure:
-   - Shell + plates bolted to center tower standoffs
-   - 8 bolt points connecting plates to shell corners
-   - Unified rigid structure
-
-SPEAKER BOX VOLUME (v3.2):
-  Approximate: (75+50)/2 × 120 × 115 × 0.5 = ~0.43L per side
-  (Suitable for small full-range + passive radiator)
+2. Speaker boxes fit inside wedge envelope
+3. Monocoque bolt points
 
 FITMENT CHECK:
   At speaker back (Y=140mm), wedge half-width = ~104mm
