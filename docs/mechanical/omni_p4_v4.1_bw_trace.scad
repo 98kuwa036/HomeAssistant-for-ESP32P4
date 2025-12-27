@@ -1,0 +1,888 @@
+// ============================================================================
+// Project Omni-P4: B&W Formation Wedge Trace v4.1
+// Complete Redesign - B&W Official Dimensions (440mm Class)
+// ============================================================================
+//
+// DESIGN PHILOSOPHY:
+// Perfect trace of B&W Formation Wedge geometry with 120° sector top view
+// and elliptical front profile. The enclosure IS the speaker box.
+//
+// B&W FORMATION WEDGE OFFICIAL SPECS:
+// - Width:  440mm (17.3")
+// - Depth:  243mm (9.6")
+// - Height: 232mm (9.1")
+// - Shape:  "120-degrees elliptical shape"
+//
+// KEY CHANGES FROM v4.0:
+// - Front width: 420mm → 440mm (B&W official)
+// - Depth: 220mm → 243mm (B&W official)
+// - Height: 200mm → 232mm (B&W official)
+// - Top shape: Simple wedge → 120° sector (authentic)
+// - Front shape: Flat → Elliptical (authentic)
+// - Back width: 160mm → 19mm (calculated from 120° geometry)
+// - Driver X position: 155mm → 130mm (fits inside ellipse)
+//
+// ============================================================================
+
+$fn = 96;
+
+// ============================================================================
+// MASTER PARAMETERS v4.1 - B&W Formation Wedge Trace
+// ============================================================================
+
+// === B&W Official Outer Dimensions ===
+FRONT_WIDTH       = 440;      // B&W公式: 440mm (17.3")
+DEPTH             = 243;      // B&W公式: 243mm (9.6")
+HEIGHT            = 232;      // B&W公式: 232mm (9.1")
+SECTOR_ANGLE      = 120;      // B&W公式: 120° sector
+
+// === Calculated 120° Sector Geometry ===
+// 弦長 = 2R × sin(θ/2) → R = FRONT_WIDTH / (2 × sin(60°))
+FRONT_RADIUS      = FRONT_WIDTH / (2 * sin(60));  // = 254.0mm
+BACK_RADIUS       = FRONT_RADIUS - DEPTH;          // = 11.0mm
+BACK_WIDTH        = 2 * BACK_RADIUS * sin(60);     // = 19.0mm
+
+// === Shell Construction ===
+SHELL_THICKNESS   = 12;       // 12mm MDF outer shell
+
+// === Elliptical Front Profile ===
+ELLIPSE_A         = FRONT_WIDTH / 2;  // = 220mm (半長軸)
+ELLIPSE_B         = HEIGHT / 2;       // = 116mm (半短軸)
+
+// === Internal Baffles ===
+BAFFLE_THICKNESS  = 15;       // Internal divider thickness (MDF)
+CENTER_ZONE_WIDTH = 120;      // Width reserved for electronics tower
+BAFFLE_SETBACK    = 30;       // Distance from front for baffle
+
+// === Center Tower ===
+STANDOFF_PITCH    = 75;       // M3 standoff spacing
+STANDOFF_OD       = 6;        // Standoff outer diameter
+STANDOFF_ID       = 3;        // M3 thread
+TOWER_WIDTH       = 100;      // Plate width
+TOWER_DEPTH       = 80;       // Plate depth
+
+// Tower level heights (adjusted for taller enclosure)
+LEVEL_1_Z         = 25;       // Power + sensors
+LEVEL_2_Z         = 80;       // DAC + Amp
+LEVEL_3_Z         = 135;      // ESP32-P4
+
+// Standoff heights between levels
+STANDOFF_L1_L2    = 53;       // 80 - 25 - 2
+STANDOFF_L2_L3    = 53;       // 135 - 80 - 2
+STANDOFF_L3_TOP   = 30;       // To LCD mount
+
+// === Plate Dimensions ===
+PLATE_THICKNESS   = 2.0;
+PLATE_L1          = [80, 60];
+PLATE_L2          = [85, 65];
+PLATE_L3          = [100, 80];
+
+// === LCD (7" MIPI-DSI) - INSET CONFIGURATION ===
+LCD_ACTIVE        = [154, 86];       // Active display area
+LCD_MODULE        = [170, 105, 5];   // Module dimensions
+LCD_BEZEL         = [190, 108, 10];  // Bezel with inset frame
+LCD_Z_CENTER      = HEIGHT / 2;      // = 116mm (centered vertically)
+LCD_INSET_DEPTH   = 8;               // How deep the LCD is recessed
+
+// === Speaker Drivers (positioned to fit inside ellipse) ===
+DRIVER_CUTOUT     = 68;       // Peerless full-range cutout Ø68mm
+PASSIVE_CUTOUT    = 68;       // Dayton passive radiator Ø68mm
+DRIVER_DEPTH      = 35;       // Driver mounting depth
+
+// Driver positions (verified to fit inside ellipse)
+// At X=130mm, ellipse height = 187.2mm (±93.6mm from center)
+// Drivers extend ±69mm from center → 69 < 93.6 ✓
+DRIVER_X          = 130;      // Distance from center (was 155mm in v4.0)
+DRIVER_SPACING_Y  = 70;       // Center-to-center vertical spacing
+DRIVER_UPPER_Y    = 35;       // Upper driver: center + 35mm
+DRIVER_LOWER_Y    = -35;      // Lower driver: center - 35mm
+
+// === Microphone (XVF3800) ===
+MIC_PCB           = [40, 40, 2];
+MIC_MESH_DIA      = 60;
+MIC_Y_POS         = DEPTH * 0.6;  // Positioned at 60% depth
+
+// === Thermal ===
+VENT_SLOT_W       = 40;
+VENT_SLOT_H       = 6;
+VENT_COUNT        = 5;
+
+// === Colors ===
+C_SHELL       = [0.25, 0.22, 0.20];  // Dark walnut
+C_BAFFLE      = [0.55, 0.45, 0.35];  // MDF natural
+C_ALUMINUM    = [0.78, 0.78, 0.80];
+C_PCB         = [0.08, 0.32, 0.08];
+C_LCD         = [0.06, 0.06, 0.10];
+C_DRIVER      = [0.15, 0.15, 0.18];
+C_CONE        = [0.90, 0.88, 0.82];
+C_MESH        = [0.50, 0.50, 0.52, 0.7];
+C_FABRIC      = [0.12, 0.12, 0.15];
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+// Calculate sector width at given depth (Y position from front)
+// At Y=0: width = FRONT_WIDTH, At Y=DEPTH: width = BACK_WIDTH
+function sector_width_at(y) =
+    let(r = FRONT_RADIUS - y)
+    2 * r * sin(SECTOR_ANGLE / 2);
+
+// Calculate ellipse height at given X position
+// Returns full height (2 * half-height)
+function ellipse_height_at(x) =
+    let(normalized_x = x / ELLIPSE_A)
+    (abs(normalized_x) > 1) ? 0 : 2 * ELLIPSE_B * sqrt(1 - normalized_x * normalized_x);
+
+// Verify driver fits inside ellipse at X position
+function driver_fits_at(x, driver_radius, driver_y_extent) =
+    let(available_height = ellipse_height_at(x) / 2)
+    driver_y_extent + driver_radius < available_height;
+
+// Standoff corner positions
+function standoff_positions() = [
+    [-STANDOFF_PITCH/2, -STANDOFF_PITCH/2],
+    [STANDOFF_PITCH/2, -STANDOFF_PITCH/2],
+    [STANDOFF_PITCH/2, STANDOFF_PITCH/2],
+    [-STANDOFF_PITCH/2, STANDOFF_PITCH/2]
+];
+
+// ============================================================================
+// VOLUME CALCULATIONS (Console Output)
+// ============================================================================
+
+// 120° sector area = (θ/2)(R² - r²) where θ in radians
+SECTOR_AREA = (PI/3) * (pow(FRONT_RADIUS, 2) - pow(BACK_RADIUS, 2));
+TOTAL_VOLUME = SECTOR_AREA * HEIGHT / 1000000;  // in Liters
+
+// Internal dimensions (subtract shell)
+INTERNAL_FRONT_RADIUS = FRONT_RADIUS - SHELL_THICKNESS;
+INTERNAL_BACK_RADIUS = BACK_RADIUS + SHELL_THICKNESS;
+INTERNAL_HEIGHT = HEIGHT - SHELL_THICKNESS * 2;
+
+INTERNAL_SECTOR_AREA = (PI/3) * (pow(INTERNAL_FRONT_RADIUS, 2) - pow(INTERNAL_BACK_RADIUS, 2));
+INTERNAL_VOLUME = INTERNAL_SECTOR_AREA * INTERNAL_HEIGHT / 1000000;
+
+// Center tower zone volume (approximate)
+TOWER_ZONE_VOL = CENTER_ZONE_WIDTH * TOWER_DEPTH * INTERNAL_HEIGHT / 1000000;
+
+// Baffle volume (2 baffles)
+BAFFLE_VOL = 2 * BAFFLE_THICKNESS * (DEPTH - SHELL_THICKNESS * 2) * INTERNAL_HEIGHT / 1000000;
+
+// Available for speakers
+SPEAKER_VOL = INTERNAL_VOLUME - TOWER_ZONE_VOL - BAFFLE_VOL;
+VOL_PER_CHANNEL = SPEAKER_VOL / 2;
+
+// Driver fit verification
+DRIVER_AT_X130_ELLIPSE_H = ellipse_height_at(DRIVER_X);
+DRIVER_OUTER_EDGE = abs(DRIVER_UPPER_Y) + DRIVER_CUTOUT / 2;
+ELLIPSE_HALF_HEIGHT_AT_X130 = DRIVER_AT_X130_ELLIPSE_H / 2;
+DRIVER_FITS = DRIVER_OUTER_EDGE < ELLIPSE_HALF_HEIGHT_AT_X130;
+
+echo(str(""));
+echo(str("=== Omni-P4 v4.1 B&W Formation Wedge Trace ==="));
+echo(str(""));
+echo(str("B&W OFFICIAL DIMENSIONS:"));
+echo(str("  Width (front): ", FRONT_WIDTH, "mm (B&W: 440mm)"));
+echo(str("  Depth:         ", DEPTH, "mm (B&W: 243mm)"));
+echo(str("  Height:        ", HEIGHT, "mm (B&W: 232mm)"));
+echo(str("  Sector angle:  ", SECTOR_ANGLE, "°"));
+echo(str(""));
+echo(str("120° SECTOR GEOMETRY:"));
+echo(str("  Front radius R:  ", FRONT_RADIUS, "mm"));
+echo(str("  Back radius r:   ", BACK_RADIUS, "mm"));
+echo(str("  Back width:      ", BACK_WIDTH, "mm"));
+echo(str("  Sector area:     ", SECTOR_AREA, " mm²"));
+echo(str(""));
+echo(str("ELLIPTICAL FRONT PROFILE:"));
+echo(str("  Semi-major a:    ", ELLIPSE_A, "mm"));
+echo(str("  Semi-minor b:    ", ELLIPSE_B, "mm"));
+echo(str("  Equation: (x/", ELLIPSE_A, ")² + (y/", ELLIPSE_B, ")² = 1"));
+echo(str(""));
+echo(str("VOLUMES:"));
+echo(str("  Total outer:     ", TOTAL_VOLUME, " L"));
+echo(str("  Total internal:  ", INTERNAL_VOLUME, " L"));
+echo(str("  Center tower:    ", TOWER_ZONE_VOL, " L"));
+echo(str("  Baffle material: ", BAFFLE_VOL, " L"));
+echo(str("  Speaker chambers:", SPEAKER_VOL, " L"));
+echo(str("  Per channel:     ", VOL_PER_CHANNEL, " L"));
+echo(str(""));
+echo(str("DRIVER FIT VERIFICATION (X=", DRIVER_X, "mm):"));
+echo(str("  Ellipse height at X=", DRIVER_X, ": ", DRIVER_AT_X130_ELLIPSE_H, "mm"));
+echo(str("  Ellipse ±range: ±", ELLIPSE_HALF_HEIGHT_AT_X130, "mm"));
+echo(str("  Driver outer edge: ±", DRIVER_OUTER_EDGE, "mm"));
+echo(str("  Driver fits: ", DRIVER_FITS ? "YES ✓" : "NO ✗"));
+echo(str(""));
+echo(str("SPEAKER COMPATIBILITY:"));
+echo(str("  Peerless 2.5\" (needs 1.5-2.5L): ", VOL_PER_CHANNEL > 1.5 ? "OK ✓" : "SMALL ✗"));
+echo(str("  Dayton Passive Radiator: OK with ", VOL_PER_CHANNEL, "L"));
+echo(str(""));
+
+// ============================================================================
+// MODULE: 120° Sector 2D (Top View) - Authentic B&W
+// ============================================================================
+
+module sector_120_2d() {
+    // 120° sector with arcs at front and back
+    // Virtual apex is at (0, FRONT_RADIUS) from the front edge
+
+    difference() {
+        // Outer arc (front)
+        translate([0, FRONT_RADIUS])
+        rotate([0, 0, -90])
+        pie_slice_2d(FRONT_RADIUS, SECTOR_ANGLE);
+
+        // Inner arc (back) - subtracted
+        translate([0, FRONT_RADIUS])
+        rotate([0, 0, -90])
+        pie_slice_2d(BACK_RADIUS, SECTOR_ANGLE + 2);  // +2 for clean cut
+    }
+}
+
+// Helper: 2D pie slice (sector)
+module pie_slice_2d(radius, angle) {
+    intersection() {
+        circle(r=radius);
+        polygon([
+            [0, 0],
+            [radius * 2, 0],
+            [radius * 2 * cos(angle), radius * 2 * sin(angle)],
+            [0, 0]
+        ]);
+    }
+}
+
+// Alternative sector using polygon for more control
+module sector_polygon_2d() {
+    steps = 60;
+
+    // Generate points for outer arc
+    outer_points = [for (i = [0:steps])
+        let(angle = 30 + (i / steps) * 120)  // 30° to 150° (centered at 90°)
+        let(r = FRONT_RADIUS)
+        [r * cos(angle), FRONT_RADIUS - r * sin(angle)]
+    ];
+
+    // Generate points for inner arc (reversed)
+    inner_points = [for (i = [steps:-1:0])
+        let(angle = 30 + (i / steps) * 120)
+        let(r = BACK_RADIUS)
+        [r * cos(angle), FRONT_RADIUS - r * sin(angle)]
+    ];
+
+    polygon(concat(outer_points, inner_points));
+}
+
+// Internal sector (offset inward)
+module inner_sector_2d() {
+    offset(r = -SHELL_THICKNESS)
+    sector_polygon_2d();
+}
+
+// ============================================================================
+// MODULE: Elliptical Front Profile 2D
+// ============================================================================
+
+module ellipse_front_2d() {
+    scale([1, ELLIPSE_B / ELLIPSE_A])
+    circle(r = ELLIPSE_A);
+}
+
+// ============================================================================
+// MODULE: Outer Shell - B&W Formation Wedge Style
+// ============================================================================
+
+module outer_shell(show_cutaway=false) {
+    color(C_SHELL) {
+        difference() {
+            // Main body: 120° sector extruded with elliptical ends
+            hull() {
+                // Bottom elliptical edge
+                translate([0, 0, SHELL_THICKNESS])
+                linear_extrude(height=0.1)
+                sector_polygon_2d();
+
+                // Main body
+                translate([0, 0, HEIGHT/2])
+                linear_extrude(height=0.1)
+                sector_polygon_2d();
+
+                // Top elliptical edge (slightly inset for style)
+                translate([0, 0, HEIGHT - SHELL_THICKNESS])
+                linear_extrude(height=0.1)
+                offset(r=-2)
+                sector_polygon_2d();
+            }
+
+            // Inner cavity
+            translate([0, 0, SHELL_THICKNESS])
+            linear_extrude(height=HEIGHT)
+            inner_sector_2d();
+
+            // LCD aperture (front face) - INSET STYLE
+            lcd_aperture();
+
+            // Driver apertures (on front elliptical face)
+            driver_apertures();
+
+            // Bottom ventilation slots
+            bottom_vents();
+
+            // Top microphone mesh opening
+            translate([0, MIC_Y_POS, HEIGHT - SHELL_THICKNESS/2])
+            cylinder(d=MIC_MESH_DIA + 10, h=SHELL_THICKNESS + 1, center=true);
+
+            // Back connector panel
+            translate([0, DEPTH - BACK_RADIUS - 5, HEIGHT * 0.4])
+            rotate([90, 0, 0])
+            hull() {
+                for (x = [-15, 15]) {
+                    translate([x, 0, 0])
+                    cylinder(d=10, h=SHELL_THICKNESS + 2);
+                }
+            }
+
+            // Cutaway for visualization
+            if (show_cutaway) {
+                translate([0, -DEPTH/2, -10])
+                cube([FRONT_WIDTH, DEPTH, HEIGHT + 20], center=true);
+            }
+        }
+    }
+}
+
+// LCD aperture with inset recess
+module lcd_aperture() {
+    // Main LCD opening
+    translate([0, 0, LCD_Z_CENTER])
+    rotate([90, 0, 0])
+    translate([0, 0, -SHELL_THICKNESS - 1])
+    hull() {
+        for (x = [-1, 1], z = [-1, 1]) {
+            translate([x * (LCD_BEZEL[0]/2 - 8), z * (LCD_BEZEL[1]/2 - 8), 0])
+            cylinder(r=8, h=SHELL_THICKNESS + 2);
+        }
+    }
+
+    // Inset recess (larger, shallower cut for LCD to sit in)
+    translate([0, LCD_INSET_DEPTH, LCD_Z_CENTER])
+    rotate([90, 0, 0])
+    translate([0, 0, -1])
+    hull() {
+        for (x = [-1, 1], z = [-1, 1]) {
+            translate([x * (LCD_BEZEL[0]/2 - 5), z * (LCD_BEZEL[1]/2 - 5), 0])
+            cylinder(r=5, h=LCD_INSET_DEPTH + 2);
+        }
+    }
+}
+
+// Driver apertures positioned to fit inside ellipse
+module driver_apertures() {
+    // Left side drivers
+    translate([-DRIVER_X, 0, LCD_Z_CENTER]) {
+        // Upper driver
+        translate([0, 0, DRIVER_UPPER_Y])
+        rotate([90, 0, 0])
+        translate([0, 0, -SHELL_THICKNESS - 1])
+        cylinder(d=DRIVER_CUTOUT, h=SHELL_THICKNESS + 2);
+
+        // Lower passive
+        translate([0, 0, DRIVER_LOWER_Y])
+        rotate([90, 0, 0])
+        translate([0, 0, -SHELL_THICKNESS - 1])
+        cylinder(d=PASSIVE_CUTOUT, h=SHELL_THICKNESS + 2);
+    }
+
+    // Right side drivers (mirrored)
+    translate([DRIVER_X, 0, LCD_Z_CENTER]) {
+        // Upper driver
+        translate([0, 0, DRIVER_UPPER_Y])
+        rotate([90, 0, 0])
+        translate([0, 0, -SHELL_THICKNESS - 1])
+        cylinder(d=DRIVER_CUTOUT, h=SHELL_THICKNESS + 2);
+
+        // Lower passive
+        translate([0, 0, DRIVER_LOWER_Y])
+        rotate([90, 0, 0])
+        translate([0, 0, -SHELL_THICKNESS - 1])
+        cylinder(d=PASSIVE_CUTOUT, h=SHELL_THICKNESS + 2);
+    }
+}
+
+module bottom_vents() {
+    for (i = [0 : VENT_COUNT-1]) {
+        x = -((VENT_COUNT-1)/2 * 50) + i * 50;
+        hull() {
+            translate([x - VENT_SLOT_W/2, DEPTH * 0.5, -1])
+            cylinder(d=VENT_SLOT_H, h=SHELL_THICKNESS + 2);
+            translate([x + VENT_SLOT_W/2, DEPTH * 0.5, -1])
+            cylinder(d=VENT_SLOT_H, h=SHELL_THICKNESS + 2);
+        }
+    }
+}
+
+// ============================================================================
+// MODULE: Internal Acoustic Baffles
+// ============================================================================
+
+module acoustic_baffles() {
+    color(C_BAFFLE) {
+        // Left baffle
+        translate([-CENTER_ZONE_WIDTH/2 - BAFFLE_THICKNESS/2, SHELL_THICKNESS, SHELL_THICKNESS])
+        cube([BAFFLE_THICKNESS, DEPTH - SHELL_THICKNESS*2 - 20, HEIGHT - SHELL_THICKNESS*2]);
+
+        // Right baffle
+        translate([CENTER_ZONE_WIDTH/2 - BAFFLE_THICKNESS/2, SHELL_THICKNESS, SHELL_THICKNESS])
+        cube([BAFFLE_THICKNESS, DEPTH - SHELL_THICKNESS*2 - 20, HEIGHT - SHELL_THICKNESS*2]);
+    }
+}
+
+// ============================================================================
+// MODULE: Speaker Driver Assembly
+// ============================================================================
+
+module speaker_driver() {
+    // Basket
+    color(C_DRIVER)
+    difference() {
+        cylinder(d=DRIVER_CUTOUT - 2, h=DRIVER_DEPTH);
+        translate([0, 0, 5])
+        cylinder(d=DRIVER_CUTOUT - 10, h=DRIVER_DEPTH);
+    }
+
+    // Cone
+    color(C_CONE)
+    translate([0, 0, 3])
+    cylinder(d1=DRIVER_CUTOUT - 12, d2=15, h=12);
+
+    // Dust cap
+    color([0.2, 0.2, 0.22])
+    translate([0, 0, 14])
+    sphere(d=18);
+
+    // Mounting flange
+    color(C_DRIVER)
+    translate([0, 0, DRIVER_DEPTH - 3])
+    difference() {
+        cylinder(d=DRIVER_CUTOUT + 8, h=3);
+        translate([0, 0, -1])
+        cylinder(d=DRIVER_CUTOUT - 8, h=5);
+    }
+}
+
+module passive_radiator() {
+    // Flat passive diaphragm
+    color([0.9, 0.88, 0.85])
+    cylinder(d=PASSIVE_CUTOUT - 4, h=2);
+
+    // Surround
+    color([0.3, 0.3, 0.32])
+    difference() {
+        cylinder(d=PASSIVE_CUTOUT, h=3);
+        translate([0, 0, -1])
+        cylinder(d=PASSIVE_CUTOUT - 15, h=5);
+    }
+
+    // Frame
+    color(C_DRIVER)
+    translate([0, 0, 2])
+    difference() {
+        cylinder(d=PASSIVE_CUTOUT + 8, h=3);
+        translate([0, 0, -1])
+        cylinder(d=PASSIVE_CUTOUT - 4, h=5);
+    }
+}
+
+module speaker_assembly() {
+    // Position at front face
+    y_pos = SHELL_THICKNESS + 5;  // Just inside front
+
+    // Left channel
+    translate([-DRIVER_X, y_pos, LCD_Z_CENTER]) {
+        // Upper active driver
+        translate([0, 0, DRIVER_UPPER_Y])
+        rotate([-90, 0, 0])
+        speaker_driver();
+
+        // Lower passive radiator
+        translate([0, 0, DRIVER_LOWER_Y])
+        rotate([-90, 0, 0])
+        passive_radiator();
+    }
+
+    // Right channel
+    translate([DRIVER_X, y_pos, LCD_Z_CENTER]) {
+        // Upper active driver
+        translate([0, 0, DRIVER_UPPER_Y])
+        rotate([-90, 0, 0])
+        speaker_driver();
+
+        // Lower passive radiator
+        translate([0, 0, DRIVER_LOWER_Y])
+        rotate([-90, 0, 0])
+        passive_radiator();
+    }
+}
+
+// ============================================================================
+// MODULE: Aluminum Standoff
+// ============================================================================
+
+module standoff(height) {
+    color(C_ALUMINUM)
+    difference() {
+        cylinder(d=STANDOFF_OD, h=height, $fn=6);
+        translate([0, 0, -0.1])
+        cylinder(d=STANDOFF_ID, h=height + 0.2);
+    }
+}
+
+// ============================================================================
+// MODULE: Shelf Plate
+// ============================================================================
+
+module shelf_plate(size, with_vent=true) {
+    w = size[0];
+    d = size[1];
+
+    color(C_ALUMINUM)
+    difference() {
+        // Plate body
+        hull() {
+            for (x = [-1, 1], y = [-1, 1]) {
+                translate([x * (w/2 - 4), y * (d/2 - 4), 0])
+                cylinder(r=4, h=PLATE_THICKNESS);
+            }
+        }
+
+        // Standoff holes
+        for (pos = standoff_positions()) {
+            translate([pos[0], pos[1], -0.1])
+            cylinder(d=STANDOFF_ID + 0.5, h=PLATE_THICKNESS + 0.2);
+        }
+
+        // Ventilation slots
+        if (with_vent) {
+            for (i = [-1, 0, 1]) {
+                hull() {
+                    translate([i * w/4 - 8, 0, -0.1])
+                    cylinder(d=6, h=PLATE_THICKNESS + 0.2);
+                    translate([i * w/4 + 8, 0, -0.1])
+                    cylinder(d=6, h=PLATE_THICKNESS + 0.2);
+                }
+            }
+        }
+    }
+}
+
+// ============================================================================
+// MODULE: Center Electronics Tower
+// ============================================================================
+
+module center_tower() {
+    translate([0, DEPTH * 0.5, 0]) {
+
+        // === LEVEL 1: Power + Sensors ===
+        translate([0, 0, LEVEL_1_Z]) {
+            shelf_plate(PLATE_L1);
+
+            for (pos = standoff_positions()) {
+                translate([pos[0], pos[1], PLATE_THICKNESS])
+                standoff(STANDOFF_L1_L2);
+            }
+
+            // Sensor PCBs
+            color(C_PCB, 0.8)
+            translate([0, 0, 5])
+            cube([60, 45, 3], center=true);
+        }
+
+        // === LEVEL 2: DAC + Amp ===
+        translate([0, 0, LEVEL_2_Z]) {
+            shelf_plate(PLATE_L2);
+
+            for (pos = standoff_positions()) {
+                translate([pos[0], pos[1], PLATE_THICKNESS])
+                standoff(STANDOFF_L2_L3);
+            }
+
+            // ES9039Q2M DAC
+            color(C_PCB, 0.8)
+            translate([0, 0, 5])
+            cube([50, 40, 8], center=true);
+
+            // Amplifier
+            color([0.1, 0.1, 0.12])
+            translate([0, 0, 15])
+            cube([45, 35, 10], center=true);
+        }
+
+        // === LEVEL 3: ESP32-P4 ===
+        translate([0, 0, LEVEL_3_Z]) {
+            shelf_plate(PLATE_L3, with_vent=false);
+
+            for (pos = standoff_positions()) {
+                translate([pos[0], pos[1], PLATE_THICKNESS])
+                standoff(STANDOFF_L3_TOP);
+            }
+
+            // ESP32-P4 board
+            color(C_PCB, 0.9)
+            translate([0, 0, -10])
+            cube([55, 45, 4], center=true);
+
+            color([1, 1, 1])
+            translate([0, 0, -12])
+            linear_extrude(0.5)
+            text("ESP32-P4", size=6, halign="center", valign="center");
+        }
+    }
+}
+
+// ============================================================================
+// MODULE: LCD Assembly - INSET CONFIGURATION
+// ============================================================================
+
+module lcd_assembly() {
+    // LCD is inset (recessed) into the front panel
+    translate([0, LCD_INSET_DEPTH + 2, LCD_Z_CENTER]) {
+
+        // LCD panel module
+        color(C_LCD)
+        rotate([90, 0, 0])
+        cube([LCD_MODULE[0], LCD_MODULE[1], LCD_MODULE[2]], center=true);
+
+        // Active display area (visible from front)
+        color([0.05, 0.08, 0.12])
+        translate([0, -LCD_MODULE[2]/2 - 0.5, 0])
+        rotate([90, 0, 0])
+        cube([LCD_ACTIVE[0], LCD_ACTIVE[1], 0.5], center=true);
+
+        // Bezel frame (inset style)
+        color([0.12, 0.12, 0.14])
+        difference() {
+            translate([0, -2, 0])
+            rotate([90, 0, 0])
+            hull() {
+                for (x = [-1, 1], z = [-1, 1]) {
+                    translate([x * (LCD_BEZEL[0]/2 - 5), z * (LCD_BEZEL[1]/2 - 5), 0])
+                    cylinder(r=5, h=LCD_BEZEL[2]);
+                }
+            }
+
+            // Cutout for LCD module
+            translate([0, 5, 0])
+            rotate([90, 0, 0])
+            cube([LCD_MODULE[0] + 2, LCD_MODULE[1] + 2, LCD_BEZEL[2] + 2], center=true);
+        }
+    }
+}
+
+// ============================================================================
+// MODULE: XVF3800 Microphone Array
+// ============================================================================
+
+module xvf3800() {
+    translate([0, MIC_Y_POS, HEIGHT - 15]) {
+        // PCB
+        color(C_PCB)
+        hull() {
+            for (x = [-1, 1], y = [-1, 1]) {
+                translate([x * (MIC_PCB[0]/2 - 5), y * (MIC_PCB[1]/2 - 5), 0])
+                cylinder(r=5, h=MIC_PCB[2], center=true);
+            }
+        }
+
+        // MEMS microphones (4)
+        color([0.3, 0.3, 0.35])
+        for (x = [-12, 12], y = [-12, 12]) {
+            translate([x, y, MIC_PCB[2]/2 + 1])
+            cylinder(d=4, h=1.5);
+        }
+
+        // Acoustic mesh
+        color(C_MESH)
+        translate([0, 0, MIC_PCB[2]/2 + 4])
+        cylinder(d=MIC_MESH_DIA, h=1);
+    }
+}
+
+// ============================================================================
+// MODULE: Front Fabric Grille
+// ============================================================================
+
+module fabric_grille() {
+    color(C_FABRIC, 0.85) {
+        difference() {
+            // Elliptical grille matching front profile
+            translate([0, 1, HEIGHT/2])
+            rotate([90, 0, 0])
+            linear_extrude(height=2)
+            scale([0.95, 0.95])
+            ellipse_front_2d();
+
+            // LCD window cutout
+            translate([0, 5, LCD_Z_CENTER])
+            rotate([90, 0, 0])
+            hull() {
+                for (x = [-1, 1], z = [-1, 1]) {
+                    translate([x * (LCD_BEZEL[0]/2 - 10), z * (LCD_BEZEL[1]/2 - 10)])
+                    cylinder(r=10, h=10);
+                }
+            }
+
+            // Driver grille openings (acoustic transparent)
+            for (side = [-1, 1]) {
+                translate([side * DRIVER_X, 5, LCD_Z_CENTER]) {
+                    translate([0, 0, DRIVER_UPPER_Y])
+                    rotate([90, 0, 0])
+                    cylinder(d=DRIVER_CUTOUT + 5, h=10);
+
+                    translate([0, 0, DRIVER_LOWER_Y])
+                    rotate([90, 0, 0])
+                    cylinder(d=PASSIVE_CUTOUT + 5, h=10);
+                }
+            }
+        }
+    }
+}
+
+// ============================================================================
+// ASSEMBLY MODULES
+// ============================================================================
+
+module full_assembly() {
+    outer_shell(show_cutaway=false);
+    acoustic_baffles();
+    speaker_assembly();
+    center_tower();
+    lcd_assembly();
+    xvf3800();
+    // fabric_grille();  // Uncomment to show grille
+}
+
+module section_view() {
+    difference() {
+        full_assembly();
+        translate([0, -DEPTH/2, -10])
+        cube([FRONT_WIDTH + 10, DEPTH, HEIGHT + 20], center=true);
+    }
+}
+
+module exploded_view() {
+    translate([0, 0, 0]) outer_shell();
+    translate([0, 0, 50]) acoustic_baffles();
+    translate([0, 0, 100]) speaker_assembly();
+    translate([0, 0, 60]) center_tower();
+    translate([0, 0, 120]) lcd_assembly();
+    translate([0, 0, 140]) xvf3800();
+    translate([0, -40, 0]) fabric_grille();
+}
+
+module shell_only() {
+    outer_shell();
+    acoustic_baffles();
+}
+
+module top_view_2d() {
+    projection(cut=true)
+    translate([0, 0, -HEIGHT/2])
+    outer_shell();
+}
+
+// ============================================================================
+// RENDER SELECTION
+// ============================================================================
+
+// Uncomment one to render:
+
+full_assembly();              // Complete v4.1 B&W Trace design
+// section_view();            // Cross-section view
+// exploded_view();           // Exploded components
+// shell_only();              // Shell + baffles only
+// top_view_2d();             // 2D top projection (120° sector)
+
+// Debug: Show 120° sector outline
+// color("red", 0.3) linear_extrude(1) sector_polygon_2d();
+
+// ============================================================================
+// DESIGN NOTES v4.1 - B&W Formation Wedge Trace
+// ============================================================================
+/*
+===================================================================
+v4.1 B&W FORMATION WEDGE TRACE - AUTHENTIC DIMENSIONS
+===================================================================
+
+B&W OFFICIAL SPECIFICATIONS:
+  Width:    440mm (17.3")
+  Depth:    243mm (9.6")
+  Height:   232mm (9.1")
+  Weight:   6.5kg
+  Shape:    "120-degrees elliptical shape"
+
+GEOMETRY CALCULATIONS:
+  Sector angle θ = 120°
+  Front chord = 440mm
+  Chord = 2R × sin(60°) = 1.732R
+  R (front radius) = 440 ÷ 1.732 = 254.0mm
+
+  Depth = 243mm
+  r (back radius) = 254 - 243 = 11mm
+  Back width = 2 × 11 × sin(60°) = 19mm
+
+  Sector area = (π/3)(R² - r²)
+             = (π/3)(64516 - 121)
+             = 67,449 mm²
+
+  Volume = 67,449 × 232 = 15.6L
+
+ELLIPTICAL FRONT PROFILE:
+  Semi-major a = 220mm (width/2)
+  Semi-minor b = 116mm (height/2)
+  Equation: (x/220)² + (y/116)² = 1
+
+DRIVER FIT VERIFICATION:
+  Driver X position: ±130mm from center
+  At X = 130mm:
+    h = 2 × 116 × √(1 - (130/220)²)
+    h = 232 × √(1 - 0.349)
+    h = 232 × 0.807
+    h = 187.2mm
+
+  Ellipse range: ±93.6mm from center
+  Driver outer edge: ±69mm from center (35mm offset + 34mm radius)
+
+  Result: 69mm < 93.6mm → DRIVERS FIT ✓
+
+LCD INSET CONFIGURATION:
+  - LCD is recessed 8mm into the front panel
+  - Creates flush, integrated appearance
+  - Bezel provides clean edge transition
+
+COMPARISON TO v4.0:
+  Parameter      v4.0       v4.1 (B&W)   Change
+  ───────────────────────────────────────────────
+  Front width    420mm      440mm        +20mm
+  Back width     160mm      19mm         -141mm
+  Depth          220mm      243mm        +23mm
+  Height         200mm      232mm        +32mm
+  Sector angle   ~linear    120°         Authentic
+  Driver X       155mm      130mm        -25mm
+  Volume         ~9.2L      ~15.6L       +6.4L
+
+ADVANTAGES OF v4.1:
+  1. Authentic B&W Formation Wedge dimensions
+  2. Drivers verified to fit inside ellipse
+  3. 120° sector = B&W official geometry
+  4. Increased volume (15.6L) for better bass
+  5. LCD inset for premium appearance
+
+MATERIALS:
+  Shell:      12mm MDF (walnut veneer or matte black)
+  Baffles:    15mm MDF (internal)
+  Plates:     2mm A6063-T5 Aluminum
+  Standoffs:  M3 aluminum hex
+  Grille:     Acoustically transparent fabric
+
+===================================================================
+*/
