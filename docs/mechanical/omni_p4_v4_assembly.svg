@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="-50 -80 800 750" width="800mm" height="750mm">
-  <title>OMNI-P4 v4.0 Exploded Assembly View</title>
-  <desc>120°扇形 + 楕円正面 - 分解組立図</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-50 -100 850 800" width="850mm" height="800mm">
+  <title>OMNI-P4 v4.1 Exploded Assembly View</title>
+  <desc>B&W Formation Wedge完全トレース: 440×243×232mm, 120° Sector</desc>
 
   <style>
     .outline { fill: none; stroke: #000; stroke-width: 0.6; }
@@ -21,265 +21,272 @@
     .callout { font-family: Arial, sans-serif; font-size: 5px; fill: #d00; font-weight: bold; }
     .small { font-family: Arial, sans-serif; font-size: 4px; fill: #555; }
     .calc { font-family: Arial, sans-serif; font-size: 4px; fill: #006600; font-style: italic; }
+    .bw-ref { font-family: Arial, sans-serif; font-size: 6px; fill: #0066cc; font-weight: bold; }
   </style>
 
   <!-- Title -->
-  <text x="350" y="-50" class="title" text-anchor="middle">OMNI-P4 v4.0 分解組立図</text>
-  <text x="350" y="-35" class="subtitle" text-anchor="middle">EXPLODED ASSEMBLY VIEW - 120° Sector + Elliptical Front</text>
-  <line x1="50" y1="-25" x2="650" y2="-25" class="outline"/>
+  <text x="380" y="-70" class="title" text-anchor="middle">OMNI-P4 v4.1 分解組立図</text>
+  <text x="380" y="-55" class="subtitle" text-anchor="middle">EXPLODED ASSEMBLY - B&W Formation Wedge Trace</text>
+  <text x="380" y="-40" class="bw-ref" text-anchor="middle">公式寸法: 440mm × 243mm × 232mm | 120° Sector</text>
+  <line x1="50" y1="-30" x2="710" y2="-30" class="outline"/>
 
-  <!-- ========== 1. TOP SHELL (120° Sector) ========== -->
-  <g transform="translate(200, 0)">
-    <!-- 120° sector shape -->
-    <path d="M -140,20
-             A 180,180 0 0,1 140,20
-             L 15,130
-             A 15,15 0 0,0 -15,130
+  <!-- ========== 1. TOP SHELL (120° Sector - B&W) ========== -->
+  <g transform="translate(220, 0)">
+    <!-- 120° sector shape with narrower back (r=11mm) -->
+    <path d="M -160,20
+             A 200,200 0 0,1 160,20
+             L 8,145
+             A 8,8 0 0,0 -8,145
              Z" class="fill-shell"/>
-    <!-- Inner cavity indication -->
-    <path d="M -130,28
-             A 168,168 0 0,1 130,28
-             L 12,122
-             A 10,10 0 0,0 -12,122
+    <!-- Inner cavity -->
+    <path d="M -150,28
+             A 188,188 0 0,1 150,28
+             L 6,138
+             A 4,4 0 0,0 -6,138
              Z" class="thin" fill="#e8dcc8"/>
 
     <!-- Mic hole -->
-    <circle cx="0" cy="60" r="20" fill="#e8dcc8" stroke="#000" stroke-width="0.3"/>
+    <circle cx="0" cy="65" r="22" fill="#e8dcc8" stroke="#000" stroke-width="0.3"/>
 
     <!-- Leader line -->
-    <line x1="155" y1="50" x2="190" y2="30" class="leader"/>
-    <circle cx="155" cy="50" r="2" fill="#ff0000"/>
-    <text x="195" y="25" class="callout">1</text>
-    <text x="195" y="35" class="annotation">TOP SHELL</text>
-    <text x="195" y="45" class="small">120° Sector</text>
-    <text x="195" y="55" class="small">12mm MDF</text>
+    <line x1="170" y1="55" x2="210" y2="35" class="leader"/>
+    <circle cx="170" cy="55" r="2" fill="#ff0000"/>
+    <text x="215" y="28" class="callout">1</text>
+    <text x="215" y="38" class="annotation">TOP SHELL</text>
+    <text x="215" y="48" class="small">120° Sector (B&W)</text>
+    <text x="215" y="58" class="small">12mm MDF</text>
+    <text x="215" y="68" class="calc">背面幅: 19mm</text>
   </g>
 
-  <!-- ========== 2. LEFT BAFFLE (Angled) ========== -->
-  <g transform="translate(90, 100)">
-    <!-- Angled baffle following sector geometry -->
-    <polygon points="-8,0 8,0 5,140 -5,140" class="fill-baffle"/>
+  <!-- ========== 2. LEFT BAFFLE ========== -->
+  <g transform="translate(100, 110)">
+    <!-- Baffle with driver holes -->
+    <polygon points="-8,0 8,0 6,150 -6,150" class="fill-baffle"/>
     <!-- Driver holes -->
-    <circle cx="0" cy="40" r="28" fill="#e8dcc8" stroke="#000" stroke-width="0.3"/>
-    <circle cx="0" cy="100" r="28" fill="#e8dcc8" stroke="#000" stroke-width="0.3"/>
+    <circle cx="0" cy="45" r="30" fill="#e8dcc8" stroke="#000" stroke-width="0.3"/>
+    <circle cx="0" cy="105" r="30" fill="#e8dcc8" stroke="#000" stroke-width="0.3"/>
 
-    <line x1="-60" y1="70" x2="-15" y2="70" class="leader"/>
-    <circle cx="-60" cy="70" r="2" fill="#ff0000"/>
-    <text x="-110" y="60" class="callout">2</text>
-    <text x="-110" y="70" class="annotation">LEFT BAFFLE</text>
-    <text x="-110" y="80" class="small">15mm MDF</text>
-    <text x="-110" y="90" class="small">2× Ø68 holes</text>
+    <line x1="-65" y1="75" x2="-15" y2="75" class="leader"/>
+    <circle cx="-65" cy="75" r="2" fill="#ff0000"/>
+    <text x="-120" y="65" class="callout">2</text>
+    <text x="-120" y="75" class="annotation">LEFT BAFFLE</text>
+    <text x="-120" y="85" class="small">15mm MDF</text>
+    <text x="-120" y="95" class="small">2× Ø68 holes</text>
   </g>
 
-  <!-- ========== 3. RIGHT BAFFLE (Angled) ========== -->
-  <g transform="translate(310, 100)">
-    <!-- Angled baffle -->
-    <polygon points="-8,0 8,0 5,140 -5,140" class="fill-baffle"/>
-    <!-- Driver holes -->
-    <circle cx="0" cy="40" r="28" fill="#e8dcc8" stroke="#000" stroke-width="0.3"/>
-    <circle cx="0" cy="100" r="28" fill="#e8dcc8" stroke="#000" stroke-width="0.3"/>
+  <!-- ========== 3. RIGHT BAFFLE ========== -->
+  <g transform="translate(340, 110)">
+    <polygon points="-8,0 8,0 6,150 -6,150" class="fill-baffle"/>
+    <circle cx="0" cy="45" r="30" fill="#e8dcc8" stroke="#000" stroke-width="0.3"/>
+    <circle cx="0" cy="105" r="30" fill="#e8dcc8" stroke="#000" stroke-width="0.3"/>
 
-    <line x1="60" y1="70" x2="15" y2="70" class="leader"/>
-    <circle cx="60" cy="70" r="2" fill="#ff0000"/>
-    <text x="65" y="60" class="callout">3</text>
-    <text x="65" y="70" class="annotation">RIGHT BAFFLE</text>
-    <text x="65" y="80" class="small">15mm MDF</text>
+    <line x1="65" y1="75" x2="15" y2="75" class="leader"/>
+    <circle cx="65" cy="75" r="2" fill="#ff0000"/>
+    <text x="70" y="65" class="callout">3</text>
+    <text x="70" y="75" class="annotation">RIGHT BAFFLE</text>
+    <text x="70" y="85" class="small">15mm MDF</text>
   </g>
 
   <!-- ========== 4. LEFT DRIVER ========== -->
-  <g transform="translate(50, 140)">
-    <circle cx="0" cy="0" r="32" class="fill-driver"/>
-    <circle cx="0" cy="0" r="26" class="fill-cone"/>
+  <g transform="translate(55, 155)">
+    <circle cx="0" cy="0" r="34" class="fill-driver"/>
+    <circle cx="0" cy="0" r="28" class="fill-cone"/>
     <circle cx="0" cy="0" r="8" fill="#333"/>
 
-    <line x1="-50" y1="0" x2="-35" y2="0" class="leader"/>
-    <circle cx="-50" cy="0" r="2" fill="#ff0000"/>
-    <text x="-95" y="-8" class="callout">4</text>
-    <text x="-95" y="2" class="annotation">DRIVER (L)</text>
-    <text x="-95" y="12" class="small">Peerless 2.5"</text>
+    <line x1="-55" y1="0" x2="-40" y2="0" class="leader"/>
+    <circle cx="-55" cy="0" r="2" fill="#ff0000"/>
+    <text x="-105" y="-8" class="callout">4</text>
+    <text x="-105" y="2" class="annotation">DRIVER (L)</text>
+    <text x="-105" y="12" class="small">Peerless 2.5"</text>
   </g>
 
   <!-- ========== 5. LEFT PASSIVE ========== -->
-  <g transform="translate(50, 200)">
-    <circle cx="0" cy="0" r="30" class="fill-driver"/>
-    <circle cx="0" cy="0" r="24" fill="#f0ebe0" stroke="#000" stroke-width="0.3"/>
+  <g transform="translate(55, 215)">
+    <circle cx="0" cy="0" r="32" class="fill-driver"/>
+    <circle cx="0" cy="0" r="26" fill="#f0ebe0" stroke="#000" stroke-width="0.3"/>
   </g>
 
   <!-- ========== 6. RIGHT DRIVER ========== -->
-  <g transform="translate(350, 140)">
-    <circle cx="0" cy="0" r="32" class="fill-driver"/>
-    <circle cx="0" cy="0" r="26" class="fill-cone"/>
+  <g transform="translate(385, 155)">
+    <circle cx="0" cy="0" r="34" class="fill-driver"/>
+    <circle cx="0" cy="0" r="28" class="fill-cone"/>
     <circle cx="0" cy="0" r="8" fill="#333"/>
 
-    <line x1="50" y1="0" x2="35" y2="0" class="leader"/>
-    <circle cx="50" cy="0" r="2" fill="#ff0000"/>
-    <text x="55" y="-8" class="callout">5</text>
-    <text x="55" y="2" class="annotation">DRIVER (R)</text>
-    <text x="55" y="12" class="small">Peerless 2.5"</text>
+    <line x1="55" y1="0" x2="40" y2="0" class="leader"/>
+    <circle cx="55" cy="0" r="2" fill="#ff0000"/>
+    <text x="60" y="-8" class="callout">5</text>
+    <text x="60" y="2" class="annotation">DRIVER (R)</text>
+    <text x="60" y="12" class="small">Peerless 2.5"</text>
   </g>
 
   <!-- ========== 7. RIGHT PASSIVE ========== -->
-  <g transform="translate(350, 200)">
-    <circle cx="0" cy="0" r="30" class="fill-driver"/>
-    <circle cx="0" cy="0" r="24" fill="#f0ebe0" stroke="#000" stroke-width="0.3"/>
+  <g transform="translate(385, 215)">
+    <circle cx="0" cy="0" r="32" class="fill-driver"/>
+    <circle cx="0" cy="0" r="26" fill="#f0ebe0" stroke="#000" stroke-width="0.3"/>
 
-    <line x1="50" y1="0" x2="35" y2="0" class="leader"/>
-    <circle cx="50" cy="0" r="2" fill="#ff0000"/>
-    <text x="55" y="-8" class="callout">6</text>
-    <text x="55" y="2" class="annotation">PASSIVE (×2)</text>
-    <text x="55" y="12" class="small">Dayton</text>
+    <line x1="55" y1="0" x2="40" y2="0" class="leader"/>
+    <circle cx="55" cy="0" r="2" fill="#ff0000"/>
+    <text x="60" y="-8" class="callout">6</text>
+    <text x="60" y="2" class="annotation">PASSIVE (×2)</text>
+    <text x="60" y="12" class="small">Dayton</text>
   </g>
 
   <!-- ========== 8. ELECTRONICS TOWER ========== -->
-  <g transform="translate(200, 260)">
+  <g transform="translate(220, 280)">
     <!-- Level 1 - XVF3800 -->
-    <rect x="-30" y="0" width="60" height="30" rx="3" class="fill-aluminum"/>
-    <rect x="-20" y="5" width="40" height="20" class="fill-pcb"/>
-    <text x="0" y="18" class="small" text-anchor="middle" fill="#fff">XVF3800</text>
+    <rect x="-32" y="0" width="64" height="32" rx="3" class="fill-aluminum"/>
+    <rect x="-22" y="5" width="44" height="22" class="fill-pcb"/>
+    <text x="0" y="20" class="small" text-anchor="middle" fill="#fff">XVF3800</text>
 
     <!-- Standoffs -->
-    <rect x="-25" y="30" width="4" height="20" class="fill-aluminum"/>
-    <rect x="21" y="30" width="4" height="20" class="fill-aluminum"/>
+    <rect x="-27" y="32" width="4" height="22" class="fill-aluminum"/>
+    <rect x="23" y="32" width="4" height="22" class="fill-aluminum"/>
 
     <!-- Level 2 -->
-    <rect x="-35" y="50" width="70" height="28" rx="3" class="fill-aluminum"/>
-    <rect x="-25" y="55" width="50" height="18" class="fill-pcb"/>
-    <text x="0" y="68" class="small" text-anchor="middle" fill="#fff">LEVEL 2</text>
+    <rect x="-38" y="54" width="76" height="30" rx="3" class="fill-aluminum"/>
+    <rect x="-28" y="60" width="56" height="18" class="fill-pcb"/>
+    <text x="0" y="73" class="small" text-anchor="middle" fill="#fff">LEVEL 2</text>
 
     <!-- Standoffs -->
-    <rect x="-30" y="78" width="4" height="18" class="fill-aluminum"/>
-    <rect x="26" y="78" width="4" height="18" class="fill-aluminum"/>
+    <rect x="-33" y="84" width="4" height="20" class="fill-aluminum"/>
+    <rect x="29" y="84" width="4" height="20" class="fill-aluminum"/>
 
     <!-- Level 3 - ESP32-P4 -->
-    <rect x="-40" y="96" width="80" height="30" rx="3" class="fill-aluminum"/>
-    <rect x="-30" y="102" width="60" height="18" class="fill-pcb"/>
-    <text x="0" y="114" class="small" text-anchor="middle" fill="#fff">ESP32-P4</text>
+    <rect x="-44" y="104" width="88" height="32" rx="3" class="fill-aluminum"/>
+    <rect x="-34" y="110" width="68" height="20" class="fill-pcb"/>
+    <text x="0" y="124" class="small" text-anchor="middle" fill="#fff">ESP32-P4</text>
 
-    <line x1="-80" y1="65" x2="-45" y2="65" class="leader"/>
-    <circle cx="-80" cy="65" r="2" fill="#ff0000"/>
-    <text x="-130" y="55" class="callout">7</text>
-    <text x="-130" y="65" class="annotation">ELECTRONICS</text>
-    <text x="-130" y="75" class="annotation">TOWER</text>
-    <text x="-130" y="85" class="small">3 Levels + Standoffs</text>
+    <line x1="-90" y1="70" x2="-50" y2="70" class="leader"/>
+    <circle cx="-90" cy="70" r="2" fill="#ff0000"/>
+    <text x="-145" y="60" class="callout">7</text>
+    <text x="-145" y="70" class="annotation">ELECTRONICS</text>
+    <text x="-145" y="80" class="annotation">TOWER</text>
+    <text x="-145" y="90" class="small">3 Levels + Standoffs</text>
   </g>
 
   <!-- ========== 9. LCD MODULE ========== -->
-  <g transform="translate(200, 400)">
-    <rect x="-80" y="0" width="160" height="50" rx="4" class="fill-lcd"/>
-    <rect x="-70" y="5" width="140" height="40" fill="#0a0a15" stroke="#333" stroke-width="0.3"/>
+  <g transform="translate(220, 430)">
+    <rect x="-85" y="0" width="170" height="55" rx="4" class="fill-lcd"/>
+    <rect x="-75" y="5" width="150" height="45" fill="#0a0a15" stroke="#333" stroke-width="0.3"/>
 
-    <line x1="95" y1="25" x2="130" y2="25" class="leader"/>
-    <circle cx="130" cy="25" r="2" fill="#ff0000"/>
-    <text x="135" y="18" class="callout">8</text>
-    <text x="135" y="28" class="annotation">7" LCD</text>
-    <text x="135" y="38" class="small">170×105mm</text>
+    <line x1="100" y1="28" x2="140" y2="28" class="leader"/>
+    <circle cx="140" cy="28" r="2" fill="#ff0000"/>
+    <text x="145" y="20" class="callout">8</text>
+    <text x="145" y="30" class="annotation">7" LCD</text>
+    <text x="145" y="40" class="small">170×105mm</text>
   </g>
 
-  <!-- ========== 10. FRONT PANEL (Elliptical) ========== -->
-  <g transform="translate(200, 470)">
-    <!-- Elliptical front panel -->
-    <ellipse cx="0" cy="50" rx="150" ry="60" class="fill-front"/>
+  <!-- ========== 10. FRONT PANEL (Elliptical - B&W) ========== -->
+  <g transform="translate(220, 505)">
+    <!-- Elliptical front panel 440×232mm scaled -->
+    <ellipse cx="0" cy="58" rx="165" ry="72" class="fill-front"/>
     <!-- LCD opening -->
-    <rect x="-70" y="20" width="140" height="55" rx="5" fill="#0a0a15" stroke="#333"/>
-    <!-- Driver holes -->
-    <circle cx="-110" cy="35" r="28" fill="#222"/>
-    <circle cx="-110" cy="75" r="28" fill="#222"/>
-    <circle cx="110" cy="35" r="28" fill="#222"/>
-    <circle cx="110" cy="75" r="28" fill="#222"/>
+    <rect x="-75" y="28" width="150" height="55" rx="5" fill="#0a0a15" stroke="#333"/>
+    <!-- Driver holes at X=±130 from center (scaled) -->
+    <circle cx="-97" cy="40" r="26" fill="#222"/>
+    <circle cx="-97" cy="78" r="26" fill="#222"/>
+    <circle cx="97" cy="40" r="26" fill="#222"/>
+    <circle cx="97" cy="78" r="26" fill="#222"/>
 
-    <line x1="165" y1="50" x2="200" y2="50" class="leader"/>
-    <circle cx="165" cy="50" r="2" fill="#ff0000"/>
-    <text x="205" y="40" class="callout">9</text>
-    <text x="205" y="50" class="annotation">FRONT PANEL</text>
-    <text x="205" y="60" class="annotation">楕円形</text>
-    <text x="205" y="70" class="small">420×200mm</text>
-    <text x="205" y="80" class="small">12mm MDF</text>
+    <line x1="180" y1="58" x2="220" y2="58" class="leader"/>
+    <circle cx="180" cy="58" r="2" fill="#ff0000"/>
+    <text x="225" y="45" class="callout">9</text>
+    <text x="225" y="55" class="annotation">FRONT PANEL</text>
+    <text x="225" y="65" class="annotation">楕円形 (B&W)</text>
+    <text x="225" y="75" class="small">440×232mm</text>
+    <text x="225" y="85" class="small">12mm MDF</text>
   </g>
 
-  <!-- ========== 11. BOTTOM SHELL (120° Sector) ========== -->
-  <g transform="translate(200, 580)">
+  <!-- ========== 11. BOTTOM SHELL (120° Sector - B&W) ========== -->
+  <g transform="translate(220, 630)">
     <!-- 120° sector shape (inverted) -->
-    <path d="M -140,100
-             A 180,180 0 0,0 140,100
-             L 15,-10
-             A 15,15 0 0,1 -15,-10
+    <path d="M -160,110
+             A 200,200 0 0,0 160,110
+             L 8,-15
+             A 8,8 0 0,1 -8,-15
              Z" class="fill-shell"/>
-    <path d="M -130,92
-             A 168,168 0 0,0 130,92
-             L 12,-2
-             A 10,10 0 0,1 -12,-2
+    <path d="M -150,102
+             A 188,188 0 0,0 150,102
+             L 6,-8
+             A 4,4 0 0,1 -6,-8
              Z" class="thin" fill="#e8dcc8"/>
 
-    <line x1="155" y1="50" x2="190" y2="70" class="leader"/>
-    <circle cx="155" cy="50" r="2" fill="#ff0000"/>
-    <text x="195" y="60" class="callout">10</text>
-    <text x="195" y="70" class="annotation">BOTTOM SHELL</text>
-    <text x="195" y="80" class="small">120° Sector</text>
-    <text x="195" y="90" class="small">12mm MDF</text>
+    <line x1="170" y1="55" x2="210" y2="75" class="leader"/>
+    <circle cx="170" cy="55" r="2" fill="#ff0000"/>
+    <text x="215" y="65" class="callout">10</text>
+    <text x="215" y="75" class="annotation">BOTTOM SHELL</text>
+    <text x="215" y="85" class="small">120° Sector (B&W)</text>
+    <text x="215" y="95" class="small">12mm MDF</text>
   </g>
 
   <!-- ========== ASSEMBLY SEQUENCE ========== -->
-  <g transform="translate(480, 0)">
-    <rect x="0" y="0" width="200" height="250" fill="#fafafa" stroke="#000" stroke-width="0.5"/>
-    <rect x="0" y="0" width="200" height="20" fill="#e0e0e0" stroke="#000" stroke-width="0.5"/>
-    <text x="100" y="14" class="subtitle" text-anchor="middle">組立順序</text>
+  <g transform="translate(520, 0)">
+    <rect x="0" y="0" width="220" height="270" fill="#fafafa" stroke="#000" stroke-width="0.5"/>
+    <rect x="0" y="0" width="220" height="22" fill="#e0e0e0" stroke="#000" stroke-width="0.5"/>
+    <text x="110" y="15" class="subtitle" text-anchor="middle">組立順序</text>
 
-    <text x="10" y="38" class="annotation">1. エレクトロニクスタワー組立</text>
-    <text x="15" y="50" class="small">Level 1-3をスタンドオフで接続</text>
+    <text x="10" y="42" class="annotation">1. エレクトロニクスタワー組立</text>
+    <text x="15" y="55" class="small">Level 1-3をスタンドオフで接続</text>
 
-    <text x="10" y="68" class="annotation">2. ドライバーをバッフルに取付</text>
-    <text x="15" y="80" class="small">Peerless + Dayton ×2</text>
+    <text x="10" y="75" class="annotation">2. ドライバーをバッフルに取付</text>
+    <text x="15" y="88" class="small">Peerless + Dayton ×2 (X=±130mm)</text>
 
-    <text x="10" y="98" class="annotation">3. バッフルを底面シェルに固定</text>
-    <text x="15" y="110" class="small">気密シール必須</text>
+    <text x="10" y="108" class="annotation">3. バッフルを底面シェルに固定</text>
+    <text x="15" y="121" class="small">気密シール必須</text>
 
-    <text x="10" y="128" class="annotation">4. タワーをセンターに配置</text>
+    <text x="10" y="141" class="annotation">4. タワーをセンターに配置</text>
 
-    <text x="10" y="148" class="annotation">5. 全ケーブル接続</text>
-    <text x="15" y="160" class="small">I2S, I2C, Power</text>
+    <text x="10" y="161" class="annotation">5. 全ケーブル接続</text>
+    <text x="15" y="174" class="small">I2S, I2C, Power</text>
 
-    <text x="10" y="178" class="annotation">6. LCDをタワーに取付</text>
+    <text x="10" y="194" class="annotation">6. LCDをタワーに取付</text>
 
-    <text x="10" y="198" class="annotation">7. 正面パネル取付</text>
-    <text x="15" y="210" class="small">楕円形パネル</text>
+    <text x="10" y="214" class="annotation">7. 正面パネル取付</text>
+    <text x="15" y="227" class="small">楕円形 440×232mm (B&W)</text>
 
-    <text x="10" y="228" class="annotation">8. 上面シェル取付</text>
-    <text x="15" y="240" class="small">全接合部をシール</text>
+    <text x="10" y="247" class="annotation">8. 上面シェル取付</text>
+    <text x="15" y="260" class="small">全接合部をシール</text>
   </g>
 
   <!-- ========== BILL OF MATERIALS ========== -->
-  <g transform="translate(480, 270)">
-    <rect x="0" y="0" width="200" height="180" fill="#fafafa" stroke="#000" stroke-width="0.5"/>
-    <rect x="0" y="0" width="200" height="20" fill="#e0e0e0" stroke="#000" stroke-width="0.5"/>
-    <text x="100" y="14" class="subtitle" text-anchor="middle">部品表 (BOM)</text>
+  <g transform="translate(520, 290)">
+    <rect x="0" y="0" width="220" height="200" fill="#fafafa" stroke="#000" stroke-width="0.5"/>
+    <rect x="0" y="0" width="220" height="22" fill="#e0e0e0" stroke="#000" stroke-width="0.5"/>
+    <text x="110" y="15" class="subtitle" text-anchor="middle">部品表 (BOM)</text>
 
-    <text x="10" y="35" class="small" font-weight="bold">数量  部品名              材質/仕様</text>
-    <line x1="5" y1="40" x2="195" y2="40" stroke="#ccc" stroke-width="0.3"/>
+    <text x="10" y="40" class="small" font-weight="bold">数量  部品名              材質/仕様</text>
+    <line x1="5" y1="46" x2="215" y2="46" stroke="#ccc" stroke-width="0.3"/>
 
-    <text x="10" y="55" class="small">2    シェルパネル       12mm MDF (120°)</text>
-    <text x="10" y="70" class="small">1    正面パネル         12mm MDF (楕円)</text>
-    <text x="10" y="85" class="small">2    内部バッフル       15mm MDF</text>
-    <text x="10" y="100" class="small">3    シェルフプレート   2mm Aluminum</text>
-    <text x="10" y="115" class="small">12   M3スタンドオフ     Aluminum</text>
-    <text x="10" y="130" class="small">2    スピーカー         Peerless 2.5"</text>
-    <text x="10" y="145" class="small">2    パッシブラジエーター Dayton</text>
-    <text x="10" y="160" class="small">1    LCDモジュール      7" IPS</text>
-    <text x="10" y="175" class="small">1    XVF3800            4-Mic PCB</text>
+    <text x="10" y="62" class="small">2    シェルパネル       12mm MDF (120°)</text>
+    <text x="10" y="78" class="small">1    正面パネル         12mm MDF (楕円)</text>
+    <text x="10" y="94" class="small">2    内部バッフル       15mm MDF</text>
+    <text x="10" y="110" class="small">3    シェルフプレート   2mm Aluminum</text>
+    <text x="10" y="126" class="small">12   M3スタンドオフ     Aluminum</text>
+    <text x="10" y="142" class="small">2    スピーカー         Peerless 2.5"</text>
+    <text x="10" y="158" class="small">2    パッシブラジエーター Dayton</text>
+    <text x="10" y="174" class="small">1    LCDモジュール      7" IPS</text>
+    <text x="10" y="190" class="small">1    XVF3800            4-Mic PCB</text>
   </g>
 
-  <!-- ========== GEOMETRY SUMMARY ========== -->
-  <g transform="translate(480, 470)">
-    <rect x="0" y="0" width="200" height="130" fill="#f0fff0" stroke="#000" stroke-width="0.5"/>
-    <rect x="0" y="0" width="200" height="20" fill="#d0f0d0" stroke="#000" stroke-width="0.5"/>
-    <text x="100" y="14" class="subtitle" text-anchor="middle">形状仕様</text>
+  <!-- ========== B&W SPECIFICATIONS ========== -->
+  <g transform="translate(520, 510)">
+    <rect x="0" y="0" width="220" height="150" fill="#f0f8ff" stroke="#0066cc" stroke-width="0.5"/>
+    <rect x="0" y="0" width="220" height="22" fill="#0066cc" stroke="#0066cc" stroke-width="0.5"/>
+    <text x="110" y="15" class="subtitle" text-anchor="middle" fill="#fff">B&W Formation Wedge準拠</text>
 
-    <text x="10" y="38" class="annotation">【上面/底面 - 120°扇形】</text>
-    <text x="15" y="52" class="calc">前面幅: 420mm (R=242.5mm)</text>
-    <text x="15" y="64" class="calc">背面幅: 39mm (r=22.5mm)</text>
-    <text x="15" y="76" class="calc">奥行き: 220mm</text>
+    <text x="10" y="42" class="annotation">【公式寸法】</text>
+    <text x="15" y="58" class="calc">Width: 440mm (17.3")</text>
+    <text x="15" y="72" class="calc">Depth: 243mm (9.6")</text>
+    <text x="15" y="86" class="calc">Height: 232mm (9.1")</text>
 
-    <text x="10" y="92" class="annotation">【正面 - 楕円形】</text>
-    <text x="15" y="106" class="calc">長軸 2a: 420mm</text>
-    <text x="15" y="118" class="calc">短軸 2b: 200mm</text>
+    <text x="10" y="106" class="annotation">【120°扇形パラメータ】</text>
+    <text x="15" y="120" class="calc">前面半径 R = 254mm</text>
+    <text x="15" y="134" class="calc">背面半径 r = 11mm</text>
+    <text x="15" y="148" class="calc">背面幅 = 19mm</text>
+
+    <text x="120" y="58" class="annotation">【ドライバー配置】</text>
+    <text x="125" y="72" class="calc">X位置: ±130mm</text>
+    <text x="125" y="86" class="calc">Y間隔: 70mm</text>
+    <text x="125" y="100" class="calc">楕円内収まり: ✓</text>
   </g>
 </svg>

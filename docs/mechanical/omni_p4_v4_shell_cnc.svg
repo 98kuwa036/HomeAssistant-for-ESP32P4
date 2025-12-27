@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="-50 -80 550 400" width="550mm" height="400mm">
-  <title>OMNI-P4 v4.0 Front Panel CNC Pattern</title>
-  <desc>正面パネル (楕円形) - CNC切削パターン - Scale 1:1</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-50 -100 600 450" width="600mm" height="450mm">
+  <title>OMNI-P4 v4.1 Front Panel CNC Pattern</title>
+  <desc>正面パネル (楕円形 440×232mm) - B&W Formation Wedge準拠 - Scale 1:1</desc>
 
   <style>
     .cut { fill: none; stroke: #f00; stroke-width: 0.5; }
@@ -13,114 +13,130 @@
     .annotation { font-family: Arial, sans-serif; font-size: 6px; fill: #333; }
     .calc { font-family: Arial, sans-serif; font-size: 5px; fill: #006600; font-style: italic; }
     .center { fill: none; stroke: #0a0; stroke-width: 0.2; stroke-dasharray: 5,3; }
+    .bw-ref { font-family: Arial, sans-serif; font-size: 6px; fill: #0066cc; font-weight: bold; }
   </style>
 
   <!-- Title Block -->
-  <text x="210" y="-55" class="title" text-anchor="middle">正面パネル CNC切削パターン</text>
-  <text x="210" y="-40" class="subtitle" text-anchor="middle">FRONT PANEL - ELLIPTICAL (Scale 1:1)</text>
-  <text x="210" y="-25" class="annotation" text-anchor="middle">Material: 12mm MDF | RED = Cut Line | BLUE = Engrave | GREEN = Center</text>
+  <text x="220" y="-70" class="title" text-anchor="middle">正面パネル CNC切削パターン v4.1</text>
+  <text x="220" y="-55" class="subtitle" text-anchor="middle">FRONT PANEL - ELLIPTICAL (Scale 1:1)</text>
+  <text x="220" y="-40" class="bw-ref" text-anchor="middle">B&W Formation Wedge準拠: 440mm × 232mm</text>
+  <text x="220" y="-25" class="annotation" text-anchor="middle">Material: 12mm MDF | RED = Cut | BLUE = Engrave | GREEN = Center</text>
 
   <!-- Center lines -->
-  <line x1="210" y1="-15" x2="210" y2="220" class="center"/>
-  <line x1="-10" y1="100" x2="430" y2="100" class="center"/>
+  <line x1="220" y1="-15" x2="220" y2="250" class="center"/>
+  <line x1="-10" y1="116" x2="450" y2="116" class="center"/>
 
   <!-- ==================== OUTER ELLIPSE (CUT) ==================== -->
-  <!-- 楕円: a=210mm, b=100mm → 420mm × 200mm -->
-  <ellipse cx="210" cy="100" rx="210" ry="100" class="cut"/>
+  <!-- 楕円: a=220mm, b=116mm → 440mm × 232mm (B&W公式) -->
+  <ellipse cx="220" cy="116" rx="220" ry="116" class="cut"/>
 
   <!-- ==================== LCD CUTOUT (CUT) ==================== -->
   <!-- 190mm × 108mm, centered, R5 corners -->
-  <rect x="115" y="40" width="190" height="108" rx="5" ry="5" class="cut"/>
+  <rect x="125" y="56" width="190" height="108" rx="5" ry="5" class="cut"/>
 
   <!-- ==================== LEFT DRIVER CUTOUTS (CUT) ==================== -->
-  <!-- Upper driver Ø68mm at X=55, Z=135 (Y=65 in this view) -->
-  <circle cx="55" cy="65" r="34" class="cut"/>
-  <!-- Lower passive Ø68mm at X=55, Z=60 (Y=140 in this view) -->
-  <circle cx="55" cy="140" r="34" class="cut"/>
+  <!-- Drivers at X = center - 130 = 220 - 130 = 90 -->
+  <!-- Upper driver Ø68mm at Y = center - 35 = 116 - 35 = 81 -->
+  <circle cx="90" cy="81" r="34" class="cut"/>
+  <!-- Lower passive Ø68mm at Y = center + 35 = 116 + 35 = 151 -->
+  <circle cx="90" cy="151" r="34" class="cut"/>
 
   <!-- ==================== RIGHT DRIVER CUTOUTS (CUT) ==================== -->
-  <!-- Upper driver Ø68mm at X=365, Z=135 -->
-  <circle cx="365" cy="65" r="34" class="cut"/>
-  <!-- Lower passive Ø68mm at X=365, Z=60 -->
-  <circle cx="365" cy="140" r="34" class="cut"/>
+  <!-- Drivers at X = center + 130 = 220 + 130 = 350 -->
+  <circle cx="350" cy="81" r="34" class="cut"/>
+  <circle cx="350" cy="151" r="34" class="cut"/>
 
   <!-- ==================== LCD MOUNTING HOLES Ø4mm (CUT) ==================== -->
-  <circle cx="120" cy="45" r="2" class="cut"/>
-  <circle cx="300" cy="45" r="2" class="cut"/>
-  <circle cx="120" cy="143" r="2" class="cut"/>
-  <circle cx="300" cy="143" r="2" class="cut"/>
+  <circle cx="130" cy="61" r="2" class="cut"/>
+  <circle cx="310" cy="61" r="2" class="cut"/>
+  <circle cx="130" cy="159" r="2" class="cut"/>
+  <circle cx="310" cy="159" r="2" class="cut"/>
 
   <!-- ==================== DIMENSIONS ==================== -->
 
-  <!-- Width 420mm (長軸) -->
-  <line x1="0" y1="220" x2="420" y2="220" class="dimension"/>
-  <line x1="0" y1="200" x2="0" y2="225" class="dimension"/>
-  <line x1="420" y1="200" x2="420" y2="225" class="dimension"/>
-  <polygon points="0,220 6,217 6,223" fill="#000"/>
-  <polygon points="420,220 414,217 414,223" fill="#000"/>
-  <text x="210" y="238" class="dim-text" text-anchor="middle">420 (2a)</text>
+  <!-- Width 440mm (B&W公式) -->
+  <line x1="0" y1="250" x2="440" y2="250" class="dimension"/>
+  <line x1="0" y1="232" x2="0" y2="255" class="dimension"/>
+  <line x1="440" y1="232" x2="440" y2="255" class="dimension"/>
+  <polygon points="0,250 6,247 6,253" fill="#000"/>
+  <polygon points="440,250 434,247 434,253" fill="#000"/>
+  <text x="220" y="268" class="dim-text" text-anchor="middle">440 (B&W公式)</text>
 
-  <!-- Height 200mm (短軸) -->
-  <line x1="440" y1="0" x2="440" y2="200" class="dimension"/>
-  <line x1="420" y1="0" x2="445" y2="0" class="dimension"/>
-  <line x1="420" y1="200" x2="445" y2="200" class="dimension"/>
-  <polygon points="440,0 437,6 443,6" fill="#000"/>
-  <polygon points="440,200 437,194 443,194" fill="#000"/>
-  <text x="455" y="105" class="dim-text" text-anchor="start">200 (2b)</text>
+  <!-- Height 232mm (B&W公式) -->
+  <line x1="460" y1="0" x2="460" y2="232" class="dimension"/>
+  <line x1="440" y1="0" x2="465" y2="0" class="dimension"/>
+  <line x1="440" y1="232" x2="465" y2="232" class="dimension"/>
+  <polygon points="460,0 457,6 463,6" fill="#000"/>
+  <polygon points="460,232 457,226 463,226" fill="#000"/>
+  <text x="475" y="120" class="dim-text" text-anchor="start">232 (B&W公式)</text>
 
   <!-- LCD width 190mm -->
-  <line x1="115" y1="25" x2="305" y2="25" class="dimension"/>
-  <line x1="115" y1="40" x2="115" y2="20" class="dimension"/>
-  <line x1="305" y1="40" x2="305" y2="20" class="dimension"/>
-  <text x="210" y="18" class="dim-text" text-anchor="middle">190</text>
+  <line x1="125" y1="40" x2="315" y2="40" class="dimension"/>
+  <line x1="125" y1="56" x2="125" y2="35" class="dimension"/>
+  <line x1="315" y1="56" x2="315" y2="35" class="dimension"/>
+  <text x="220" y="32" class="dim-text" text-anchor="middle">190 (LCD)</text>
 
   <!-- LCD height 108mm -->
-  <line x1="320" y1="40" x2="320" y2="148" class="dimension"/>
-  <line x1="305" y1="40" x2="325" y2="40" class="dimension"/>
-  <line x1="305" y1="148" x2="325" y2="148" class="dimension"/>
-  <text x="335" y="98" class="dim-text" text-anchor="start">108</text>
+  <line x1="330" y1="56" x2="330" y2="164" class="dimension"/>
+  <line x1="315" y1="56" x2="335" y2="56" class="dimension"/>
+  <line x1="315" y1="164" x2="335" y2="164" class="dimension"/>
+  <text x="345" y="115" class="dim-text" text-anchor="start">108</text>
 
   <!-- Driver diameter Ø68 -->
-  <line x1="21" y1="65" x2="89" y2="65" class="dimension"/>
-  <text x="55" y="55" class="dim-text" text-anchor="middle">Ø68</text>
+  <line x1="56" y1="81" x2="124" y2="81" class="dimension"/>
+  <text x="90" y="73" class="dim-text" text-anchor="middle">Ø68</text>
 
-  <!-- Driver X position from center -->
-  <line x1="55" y1="185" x2="210" y2="185" class="dimension"/>
-  <line x1="55" y1="174" x2="55" y2="190" class="dimension"/>
-  <line x1="210" y1="100" x2="210" y2="190" class="dimension"/>
-  <text x="132" y="182" class="dim-text" text-anchor="middle">155</text>
+  <!-- Driver X position from center (130mm) -->
+  <line x1="90" y1="200" x2="220" y2="200" class="dimension"/>
+  <line x1="90" y1="185" x2="90" y2="205" class="dimension"/>
+  <line x1="220" y1="116" x2="220" y2="205" class="dimension"/>
+  <text x="155" y="195" class="dim-text" text-anchor="middle">130</text>
 
-  <!-- Driver Y positions -->
-  <line x1="-20" y1="65" x2="0" y2="65" class="dimension"/>
-  <text x="-25" y="68" class="dim-text" text-anchor="end">Z=135</text>
-  <line x1="-20" y1="140" x2="0" y2="140" class="dimension"/>
-  <text x="-25" y="143" class="dim-text" text-anchor="end">Z=60</text>
+  <!-- Driver vertical spacing (70mm center-to-center) -->
+  <line x1="55" y1="81" x2="55" y2="151" class="dimension"/>
+  <line x1="90" y1="81" x2="50" y2="81" class="dimension"/>
+  <line x1="90" y1="151" x2="50" y2="151" class="dimension"/>
+  <text x="45" y="120" class="dim-text" text-anchor="end">70</text>
+
+  <!-- Driver Y positions from center -->
+  <line x1="-25" y1="81" x2="0" y2="81" class="dimension"/>
+  <text x="-30" y="84" class="dim-text" text-anchor="end">+35</text>
+  <line x1="-25" y1="151" x2="0" y2="151" class="dimension"/>
+  <text x="-30" y="154" class="dim-text" text-anchor="end">-35</text>
 
   <!-- ==================== ANNOTATIONS ==================== -->
-  <text x="55" y="260" class="annotation" text-anchor="middle">LEFT SPEAKERS</text>
-  <text x="55" y="272" class="calc" text-anchor="middle">Upper: Peerless Driver</text>
-  <text x="55" y="282" class="calc" text-anchor="middle">Lower: Dayton Passive</text>
+  <text x="90" y="280" class="annotation" text-anchor="middle">LEFT SPEAKERS</text>
+  <text x="90" y="292" class="calc" text-anchor="middle">Upper: Peerless Driver Ø68</text>
+  <text x="90" y="302" class="calc" text-anchor="middle">Lower: Dayton Passive Ø68</text>
 
-  <text x="365" y="260" class="annotation" text-anchor="middle">RIGHT SPEAKERS</text>
-  <text x="365" y="272" class="calc" text-anchor="middle">Upper: Peerless Driver</text>
-  <text x="365" y="282" class="calc" text-anchor="middle">Lower: Dayton Passive</text>
+  <text x="350" y="280" class="annotation" text-anchor="middle">RIGHT SPEAKERS</text>
+  <text x="350" y="292" class="calc" text-anchor="middle">Upper: Peerless Driver Ø68</text>
+  <text x="350" y="302" class="calc" text-anchor="middle">Lower: Dayton Passive Ø68</text>
 
-  <text x="210" y="260" class="annotation" text-anchor="middle">LCD CUTOUT</text>
-  <text x="210" y="272" class="calc" text-anchor="middle">190 × 108mm, R5</text>
+  <text x="220" y="280" class="annotation" text-anchor="middle">LCD CUTOUT</text>
+  <text x="220" y="292" class="calc" text-anchor="middle">190 × 108mm, R5</text>
 
   <!-- Ellipse equation -->
-  <text x="210" y="300" class="calc" text-anchor="middle">楕円方程式: (x/210)² + (y/100)² = 1</text>
+  <text x="220" y="320" class="calc" text-anchor="middle">楕円方程式: (x/220)² + (y/116)² = 1</text>
 
   <!-- Origin mark -->
-  <circle cx="0" cy="100" r="3" class="engrave"/>
-  <line x1="-8" y1="100" x2="8" y2="100" class="engrave"/>
-  <line x1="0" y1="92" x2="0" y2="108" class="engrave"/>
-  <text x="-12" y="115" class="annotation" text-anchor="end">ORIGIN</text>
+  <circle cx="0" cy="116" r="3" class="engrave"/>
+  <line x1="-8" y1="116" x2="8" y2="116" class="engrave"/>
+  <line x1="0" y1="108" x2="0" y2="124" class="engrave"/>
+  <text x="-12" y="130" class="annotation" text-anchor="end">ORIGIN</text>
 
-  <!-- CNC Notes -->
-  <rect x="350" y="250" width="100" height="60" fill="#fffff0" stroke="#999" stroke-width="0.3"/>
-  <text x="400" y="265" class="annotation" text-anchor="middle">CNC NOTES</text>
-  <text x="355" y="280" class="calc">• Tool: 6mm endmill</text>
-  <text x="355" y="290" class="calc">• Tolerance: ±0.5mm</text>
-  <text x="355" y="300" class="calc">• Material: 12mm MDF</text>
+  <!-- ==================== CNC NOTES ==================== -->
+  <rect x="380" y="270" width="110" height="75" fill="#fffff0" stroke="#999" stroke-width="0.3"/>
+  <text x="435" y="285" class="annotation" text-anchor="middle">CNC NOTES</text>
+  <text x="385" y="300" class="calc">• Tool: 6mm endmill</text>
+  <text x="385" y="312" class="calc">• Tolerance: ±0.5mm</text>
+  <text x="385" y="324" class="calc">• Material: 12mm MDF</text>
+  <text x="385" y="336" class="calc">• B&W Formation Wedge準拠</text>
+
+  <!-- ==================== DRIVER FIT VERIFICATION ==================== -->
+  <rect x="-40" y="320" width="180" height="55" fill="#f0fff0" stroke="#999" stroke-width="0.3"/>
+  <text x="50" y="335" class="annotation" text-anchor="middle">ドライバー収まり検証</text>
+  <text x="-35" y="350" class="calc">X=130mm での楕円高さ = 187.2mm</text>
+  <text x="-35" y="362" class="calc">ドライバー外縁 = ±69mm</text>
+  <text x="-35" y="374" class="calc">楕円範囲 = ±93.6mm → 収まる ✓</text>
 </svg>
