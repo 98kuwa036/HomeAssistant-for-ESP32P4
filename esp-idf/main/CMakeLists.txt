@@ -6,11 +6,19 @@ idf_component_register(
         "wifi_manager.c"
         "ha_client.c"
         "sensor_hub.c"
-        "drivers/sen66.c"
+        # I2C Sensors
+        "drivers/scd41.c"
+        "drivers/sgp40.c"
+        "drivers/ens160.c"
+        "drivers/bmp388.c"
+        "drivers/sht40.c"
+        "drivers/sen0428.c"
+        # UART Sensors
         "drivers/sen0395.c"
-        "drivers/vl53l1x.c"
-        "drivers/paj7620.c"
-        "drivers/veml7700.c"
+        "drivers/sen0540.c"
+        # Audio
+        "drivers/es9039.c"
+        "drivers/xvf3800.c"
     INCLUDE_DIRS
         "."
         "drivers"

@@ -1,18 +1,21 @@
 /**
  * @file sensor_hub.h
- * @brief Phase A: Multi-Sensor Integration Hub for ESP32-P4 Console
+ * @brief Omni-P4: Multi-Sensor Integration Hub
  *
- * This module provides unified access to all environmental and interaction sensors:
- *   - SEN66 (I2C): Air quality (CO2, PM2.5, VOC, NOx, Temperature, Humidity)
- *   - SEN0395 (UART): mmWave radar for presence detection and distance
- *   - VL53L1X (I2C): Time-of-Flight distance sensor for proximity detection
- *   - PAJ7620U2 (I2C): Gesture recognition sensor
- *   - VEML7700 (I2C): Ambient light sensor
+ * Unified sensor management for ESP32-P4 Smart Home Console:
+ *   - SCD41 (I2C): CO2, Temperature, Humidity
+ *   - SGP40 (I2C): VOC Index
+ *   - ENS160 (I2C): eCO2, TVOC, AQI
+ *   - BMP388 (I2C): Barometric pressure, Altitude
+ *   - SHT40 (I2C): High-precision Temperature/Humidity
+ *   - SEN0428 (I2C): PM1.0, PM2.5, PM10
+ *   - SEN0395 (UART): mmWave presence detection
+ *   - SEN0540 (UART): Offline voice recognition
  *
  * Architecture:
- *   - Thread-safe data access via mutex protection
- *   - Dual-core task distribution for optimal performance
- *   - Event-driven notifications for gesture and proximity changes
+ *   - Thread-safe data access via mutex
+ *   - Single environment task for all I2C sensors
+ *   - Separate UART processing for presence/voice
  */
 
 #pragma once
@@ -31,330 +34,207 @@ extern "C" {
 // Event Bit Definitions
 // =============================================================================
 
-#define SENSOR_GESTURE_EVENT_BIT    BIT0    // New gesture detected
-#define SENSOR_PROXIMITY_EVENT_BIT  BIT1    // Proximity state changed
-#define SENSOR_PRESENCE_EVENT_BIT   BIT2    // Presence state changed
-#define SENSOR_AIR_QUALITY_BIT      BIT3    // Air quality data updated
-#define SENSOR_LIGHT_CHANGED_BIT    BIT4    // Significant light change
+#define SENSOR_AIR_QUALITY_BIT      BIT0
+#define SENSOR_PRESENCE_EVENT_BIT   BIT1
+#define SENSOR_VOICE_CMD_BIT        BIT2
+#define SENSOR_PRESSURE_CHANGE_BIT  BIT3
+#define SENSOR_DATA_READY_BIT       BIT4
 
 // =============================================================================
-// Gesture Definitions (PAJ7620U2)
-// =============================================================================
-
-typedef enum {
-    GESTURE_NONE = 0,
-    GESTURE_UP,
-    GESTURE_DOWN,
-    GESTURE_LEFT,
-    GESTURE_RIGHT,
-    GESTURE_FORWARD,
-    GESTURE_BACKWARD,
-    GESTURE_CLOCKWISE,
-    GESTURE_COUNTERCLOCKWISE,
-    GESTURE_WAVE,
-} gesture_type_t;
-
-// =============================================================================
-// Air Quality Index Levels
+// Air Quality Index Levels (ENS160 based)
 // =============================================================================
 
 typedef enum {
-    AQI_GOOD = 0,
-    AQI_MODERATE,
-    AQI_UNHEALTHY_SENSITIVE,
-    AQI_UNHEALTHY,
-    AQI_VERY_UNHEALTHY,
-    AQI_HAZARDOUS,
+    AQI_EXCELLENT = 1,
+    AQI_GOOD = 2,
+    AQI_MODERATE = 3,
+    AQI_POOR = 4,
+    AQI_UNHEALTHY = 5,
 } aqi_level_t;
 
 // =============================================================================
-// Unified Sensor Data Structure
+// Data Structures
 // =============================================================================
 
 /**
- * @brief Air quality data from SEN66
+ * @brief CO2 and basic environment data (SCD41)
  */
 typedef struct {
-    float co2_ppm;              // CO2 concentration (400-5000 ppm)
-    float pm1_0;                // PM1.0 concentration (µg/m³)
-    float pm2_5;                // PM2.5 concentration (µg/m³)
-    float pm4_0;                // PM4.0 concentration (µg/m³)
-    float pm10;                 // PM10 concentration (µg/m³)
-    float voc_index;            // VOC Index (1-500)
-    float nox_index;            // NOx Index (1-500)
-    float temperature;          // Temperature (°C)
-    float humidity;             // Relative Humidity (%)
-    aqi_level_t aqi_level;      // Calculated AQI level
-    bool valid;                 // Data validity flag
-    uint32_t timestamp_ms;      // Last update timestamp
-} air_quality_data_t;
+    uint16_t co2_ppm;               // CO2 concentration (400-5000 ppm)
+    float temperature;              // Temperature (°C)
+    float humidity;                 // Relative Humidity (%)
+    bool valid;
+    uint32_t timestamp_ms;
+} co2_data_t;
 
 /**
- * @brief Presence and distance data from SEN0395 and VL53L1X
+ * @brief VOC data (SGP40)
  */
 typedef struct {
-    // SEN0395 mmWave Radar
-    bool is_present;            // Human presence detected
-    uint16_t radar_distance_cm; // Distance from radar (0-900 cm)
-    uint8_t motion_energy;      // Motion energy level (0-100)
-    uint8_t static_energy;      // Static presence energy (0-100)
+    int32_t voc_index;              // VOC Index (1-500, 100 = normal)
+    uint16_t voc_raw;               // Raw sensor value
+    uint32_t timestamp_ms;
+} voc_data_t;
 
-    // VL53L1X ToF Sensor
-    uint16_t tof_distance_mm;   // ToF measured distance (0-4000 mm)
-    bool tof_valid;             // ToF measurement validity
-    uint8_t tof_signal_rate;    // Signal quality indicator
+/**
+ * @brief Air quality data (ENS160)
+ */
+typedef struct {
+    uint16_t eco2;                  // Equivalent CO2 (ppm)
+    uint16_t tvoc;                  // Total VOC (ppb)
+    aqi_level_t aqi;                // Air Quality Index (1-5)
+    uint32_t timestamp_ms;
+} ens_air_quality_t;
 
-    // Hybrid detection state
-    bool approaching;           // Object/person approaching
-    bool leaving;               // Object/person leaving
-    uint32_t presence_duration_ms;  // How long presence detected
-    uint32_t timestamp_ms;      // Last update timestamp
+/**
+ * @brief Barometric data (BMP388)
+ */
+typedef struct {
+    float pressure;                 // Pressure (hPa)
+    float temperature;              // Temperature (°C)
+    float altitude;                 // Calculated altitude (m)
+    uint32_t timestamp_ms;
+} barometric_data_t;
+
+/**
+ * @brief High-precision temperature/humidity (SHT40)
+ */
+typedef struct {
+    float temperature;              // Temperature (°C)
+    float humidity;                 // Relative Humidity (%)
+    uint32_t timestamp_ms;
+} precision_env_data_t;
+
+/**
+ * @brief Particulate matter data (SEN0428)
+ */
+typedef struct {
+    uint16_t pm1_0;                 // PM1.0 (µg/m³)
+    uint16_t pm2_5;                 // PM2.5 (µg/m³)
+    uint16_t pm10;                  // PM10 (µg/m³)
+    uint32_t timestamp_ms;
+} pm_data_t;
+
+/**
+ * @brief Presence detection (SEN0395)
+ */
+typedef struct {
+    bool is_present;                // Human detected
+    bool is_moving;                 // Motion detected
+    uint16_t distance_cm;           // Distance to target
+    uint32_t presence_duration_ms;  // Duration of presence
+    uint32_t timestamp_ms;
 } presence_data_t;
 
 /**
- * @brief Gesture data from PAJ7620U2
+ * @brief Voice command data (SEN0540)
  */
 typedef struct {
-    gesture_type_t last_gesture;    // Most recent gesture
-    uint8_t gesture_count;          // Count of gestures in session
-    uint32_t last_gesture_time_ms;  // Timestamp of last gesture
-    bool gesture_pending;           // Unprocessed gesture available
-} gesture_data_t;
+    uint8_t cmd_id;                 // Command ID
+    char keyword[32];               // Recognized keyword
+    bool pending;                   // New command pending
+    uint32_t timestamp_ms;
+} voice_cmd_data_t;
 
 /**
- * @brief Ambient light data from VEML7700
+ * @brief Complete room environment data
  */
 typedef struct {
-    uint32_t lux;               // Illuminance in lux (0-120000)
-    uint16_t white_level;       // White channel raw value
-    bool is_dark;               // Below darkness threshold
-    bool is_bright;             // Above brightness threshold
-    uint32_t timestamp_ms;      // Last update timestamp
-} ambient_light_data_t;
+    co2_data_t co2;                 // SCD41
+    voc_data_t voc;                 // SGP40
+    ens_air_quality_t ens_aqi;      // ENS160
+    barometric_data_t baro;         // BMP388
+    precision_env_data_t precision; // SHT40
+    pm_data_t pm;                   // SEN0428
+    presence_data_t presence;       // SEN0395
+    voice_cmd_data_t voice;         // SEN0540
 
-/**
- * @brief Complete room environment data structure
- *
- * This is the "Digital Twin" of the room, aggregating all sensor data
- * into a single coherent view of the environment.
- */
-typedef struct {
-    air_quality_data_t air;
-    presence_data_t presence;
-    gesture_data_t gesture;
-    ambient_light_data_t light;
-
-    // System status
+    // Sensor status
     struct {
-        bool sen66_online;
+        bool scd41_online;
+        bool sgp40_online;
+        bool ens160_online;
+        bool bmp388_online;
+        bool sht40_online;
+        bool sen0428_online;
         bool sen0395_online;
-        bool vl53l1x_online;
-        bool paj7620_online;
-        bool veml7700_online;
-    } sensor_status;
+        bool sen0540_online;
+    } status;
 
     uint32_t system_uptime_ms;
 } room_environment_t;
 
 // =============================================================================
-// Configuration Structures
+// Configuration
 // =============================================================================
 
-/**
- * @brief Sensor hub configuration
- */
 typedef struct {
     // I2C Configuration
     int i2c_sda_pin;
     int i2c_scl_pin;
     uint32_t i2c_freq_hz;
 
-    // UART Configuration (SEN0395)
-    int uart_tx_pin;
-    int uart_rx_pin;
-    int uart_num;
-    uint32_t uart_baud_rate;
+    // UART1 Configuration (SEN0395 mmWave)
+    int uart1_tx_pin;
+    int uart1_rx_pin;
+
+    // UART2 Configuration (SEN0540 Voice)
+    int uart2_tx_pin;
+    int uart2_rx_pin;
 
     // Task Configuration
-    uint8_t env_task_core;          // Core for environmental sensor task
-    uint8_t reactive_task_core;     // Core for gesture/ToF task
-    uint8_t env_task_priority;
-    uint8_t reactive_task_priority;
+    uint8_t task_core;
+    uint8_t task_priority;
 
-    // Thresholds
-    uint16_t proximity_threshold_mm;    // VL53L1X proximity threshold
-    uint16_t darkness_threshold_lux;    // VEML7700 darkness threshold
-    uint16_t brightness_threshold_lux;  // VEML7700 brightness threshold
+    // Altitude for pressure compensation
+    uint16_t altitude_m;
 } sensor_hub_config_t;
 
-/**
- * @brief Default configuration macro
- */
 #define SENSOR_HUB_DEFAULT_CONFIG() { \
     .i2c_sda_pin = 7, \
     .i2c_scl_pin = 8, \
     .i2c_freq_hz = 100000, \
-    .uart_tx_pin = 17, \
-    .uart_rx_pin = 18, \
-    .uart_num = 1, \
-    .uart_baud_rate = 115200, \
-    .env_task_core = 0, \
-    .reactive_task_core = 0, \
-    .env_task_priority = 5, \
-    .reactive_task_priority = 10, \
-    .proximity_threshold_mm = 500, \
-    .darkness_threshold_lux = 10, \
-    .brightness_threshold_lux = 500, \
+    .uart1_tx_pin = 17, \
+    .uart1_rx_pin = 18, \
+    .uart2_tx_pin = 4, \
+    .uart2_rx_pin = 5, \
+    .task_core = 0, \
+    .task_priority = 5, \
+    .altitude_m = 0, \
 }
 
 // =============================================================================
-// Callback Types
+// Callbacks
 // =============================================================================
 
-/**
- * @brief Gesture event callback
- */
-typedef void (*gesture_callback_t)(gesture_type_t gesture, void *user_data);
-
-/**
- * @brief Proximity change callback
- */
-typedef void (*proximity_callback_t)(bool is_close, uint16_t distance_mm, void *user_data);
-
-/**
- * @brief Presence change callback
- */
 typedef void (*presence_callback_t)(bool is_present, void *user_data);
+typedef void (*voice_cmd_callback_t)(uint8_t cmd_id, const char *keyword, void *user_data);
 
 // =============================================================================
 // Public API
 // =============================================================================
 
-/**
- * @brief Initialize the sensor hub
- *
- * Initializes all sensors, creates mutex for thread-safe access,
- * and starts the sensor monitoring tasks.
- *
- * @param config Configuration parameters
- * @return ESP_OK on success, error code otherwise
- */
 esp_err_t sensor_hub_init(const sensor_hub_config_t *config);
-
-/**
- * @brief Deinitialize the sensor hub
- *
- * Stops all tasks, releases resources, and powers down sensors.
- *
- * @return ESP_OK on success
- */
 esp_err_t sensor_hub_deinit(void);
 
-/**
- * @brief Get a thread-safe copy of room environment data
- *
- * @param data Pointer to structure to fill with current data
- * @return ESP_OK on success
- */
+// Data retrieval
 esp_err_t sensor_hub_get_data(room_environment_t *data);
-
-/**
- * @brief Get air quality data only
- *
- * @param data Pointer to air quality structure
- * @return ESP_OK on success
- */
-esp_err_t sensor_hub_get_air_quality(air_quality_data_t *data);
-
-/**
- * @brief Get presence data only
- *
- * @param data Pointer to presence structure
- * @return ESP_OK on success
- */
+esp_err_t sensor_hub_get_co2(co2_data_t *data);
+esp_err_t sensor_hub_get_voc(voc_data_t *data);
+esp_err_t sensor_hub_get_aqi(ens_air_quality_t *data);
+esp_err_t sensor_hub_get_barometric(barometric_data_t *data);
+esp_err_t sensor_hub_get_precision_env(precision_env_data_t *data);
+esp_err_t sensor_hub_get_pm(pm_data_t *data);
 esp_err_t sensor_hub_get_presence(presence_data_t *data);
+esp_err_t sensor_hub_get_voice_cmd(voice_cmd_data_t *data);
 
-/**
- * @brief Get latest gesture
- *
- * @param gesture Pointer to store gesture type
- * @return ESP_OK if gesture available, ESP_ERR_NOT_FOUND if no pending gesture
- */
-esp_err_t sensor_hub_get_gesture(gesture_type_t *gesture);
-
-/**
- * @brief Get ambient light data
- *
- * @param data Pointer to light data structure
- * @return ESP_OK on success
- */
-esp_err_t sensor_hub_get_light(ambient_light_data_t *data);
-
-/**
- * @brief Register gesture event callback
- *
- * @param callback Function to call on gesture detection
- * @param user_data User data passed to callback
- * @return ESP_OK on success
- */
-esp_err_t sensor_hub_register_gesture_callback(gesture_callback_t callback, void *user_data);
-
-/**
- * @brief Register proximity change callback
- *
- * @param callback Function to call on proximity change
- * @param user_data User data passed to callback
- * @return ESP_OK on success
- */
-esp_err_t sensor_hub_register_proximity_callback(proximity_callback_t callback, void *user_data);
-
-/**
- * @brief Register presence change callback
- *
- * @param callback Function to call on presence change
- * @param user_data User data passed to callback
- * @return ESP_OK on success
- */
+// Callbacks
 esp_err_t sensor_hub_register_presence_callback(presence_callback_t callback, void *user_data);
+esp_err_t sensor_hub_register_voice_callback(voice_cmd_callback_t callback, void *user_data);
 
-/**
- * @brief Get event group handle for external synchronization
- *
- * @return Event group handle
- */
+// Utilities
 EventGroupHandle_t sensor_hub_get_event_group(void);
-
-/**
- * @brief Check if a specific sensor is online
- *
- * @param sensor_name Name of sensor ("sen66", "sen0395", "vl53l1x", "paj7620", "veml7700")
- * @return true if sensor is online and responding
- */
 bool sensor_hub_is_sensor_online(const char *sensor_name);
-
-/**
- * @brief Force immediate sensor reading
- *
- * Useful for on-demand updates before critical operations.
- *
- * @return ESP_OK on success
- */
-esp_err_t sensor_hub_force_update(void);
-
-/**
- * @brief Get human-readable gesture name
- *
- * @param gesture Gesture type
- * @return Static string with gesture name
- */
-const char *sensor_hub_gesture_to_string(gesture_type_t gesture);
-
-/**
- * @brief Get human-readable AQI level name
- *
- * @param level AQI level
- * @return Static string with AQI level name
- */
 const char *sensor_hub_aqi_to_string(aqi_level_t level);
 
 #ifdef __cplusplus
