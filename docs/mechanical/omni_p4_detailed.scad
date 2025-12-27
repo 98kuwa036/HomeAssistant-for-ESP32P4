@@ -1,21 +1,21 @@
 // ============================================================================
-// Project Omni-P4: Detailed 3D CAD Model v2.0
-// Formation Wedge Style Smart Speaker - Production Ready
+// Project Omni-P4: Formation Wedge Style v3.0
+// Slim Design with Trapezoidal Speaker Boxes
 // ============================================================================
 //
-// This model includes:
-// - Interference checking between components
-// - Cable routing ducts
-// - Thermal management openings
-// - Modular inner frame design
+// v3.0 Changes:
+// - Trapezoidal speaker boxes following 120° wedge angle
+// - Compact tower (55mm pitch, ESP32-P4 under Level 3)
+// - LCD inset 10mm for curved bezel integration
+// - Rounded corners using hull() + offset() for streamlined look
+// - High resolution ($fn=128)
 //
-// Export: F6 to render, then File > Export as STL/STEP
 // ============================================================================
 
-$fn = 96;  // High resolution for production
+$fn = 128;  // High resolution for smooth curves
 
 // ============================================================================
-// MASTER PARAMETERS (All dimensions in mm)
+// MASTER PARAMETERS
 // ============================================================================
 
 // === Outer Shell (Wedge) ===
@@ -23,87 +23,84 @@ FRONT_WIDTH     = 380;
 BACK_WIDTH      = 150;
 DEPTH           = 200;
 HEIGHT          = 180;
-WALL_THICKNESS  = 6;      // MDF outer shell
+WALL_THICKNESS  = 6;
 WEDGE_ANGLE     = 120;
+CORNER_RADIUS   = 10;     // NEW: Corner rounding
 
-// === Center Tower Standoffs ===
-STANDOFF_PITCH  = 75;     // 75mm x 75mm square
-STANDOFF_OD     = 6;      // M3 hex standoff outer dia
-STANDOFF_ID     = 2.5;    // M3 tap hole
+// === Compact Center Tower ===
+STANDOFF_PITCH  = 55;     // CHANGED: 75mm → 55mm (compact)
+STANDOFF_OD     = 5;      // Slightly smaller standoffs
+STANDOFF_ID     = 2.5;
 
-// Standoff heights (between plates)
-STANDOFF_L1_L2  = 40;     // Level 1 to Level 2
-STANDOFF_L2_L3  = 35;     // Level 2 to Level 3
-STANDOFF_L3_TOP = 25;     // Level 3 to LCD mount
+// Standoff heights
+STANDOFF_L1_L2  = 35;     // Reduced for compact design
+STANDOFF_L2_L3  = 30;
+STANDOFF_L3_TOP = 20;
 
-// === Shelf Plates (Aluminum 2mm) ===
+// === Shelf Plates (Compact) ===
 PLATE_THICKNESS = 2.0;
 
-// Level positions (Z from bottom of enclosure)
-LEVEL_1_Z = 20;
+LEVEL_1_Z = 15;
 LEVEL_2_Z = LEVEL_1_Z + STANDOFF_L1_L2 + PLATE_THICKNESS;
 LEVEL_3_Z = LEVEL_2_Z + STANDOFF_L2_L3 + PLATE_THICKNESS;
 
-// Plate dimensions (inverted pyramid - larger at top)
-PLATE_L1 = [80, 60];
-PLATE_L2 = [90, 70];
-PLATE_L3 = [100, 80];
+// Compact plate dimensions
+PLATE_L1 = [60, 50];      // CHANGED: Smaller
+PLATE_L2 = [65, 55];
+PLATE_L3 = [70, 60];
 
-// Cable duct cutouts (corners of plates)
-CABLE_DUCT_SIZE = [12, 8];   // Width x Depth per corner
+CABLE_DUCT_SIZE = [10, 6];
 
-// Ventilation ratio
-VENT_OPEN_RATIO = 0.40;      // 40% open area
-
-// === LCD ===
+// === LCD (Inset Configuration) ===
 LCD_ACTIVE     = [154, 86];
 LCD_MODULE     = [170, 105, 5];
-LCD_BEZEL      = [190, 130, 3];
-LCD_Z_CENTER   = 110;         // Center height of LCD
+LCD_BEZEL      = [190, 130, 4];
+LCD_Z_CENTER   = 110;
+LCD_Y_INSET    = 10;      // NEW: 10mm inset from front
 
-// === Speaker Box (MDF) ===
+// === Trapezoidal Speaker Box ===
 MDF_THICKNESS   = 19;
-SPK_INTERNAL    = [80, 180, 120];   // W x D x H
-SPK_EXTERNAL    = [
-    SPK_INTERNAL[0] + MDF_THICKNESS * 2,
-    SPK_INTERNAL[1] + MDF_THICKNESS * 2,
-    SPK_INTERNAL[2] + MDF_THICKNESS * 2
-];
+
+// Speaker box follows wedge angle
+// Front width > Back width
+SPK_FRONT_W     = 95;     // Width at front face
+SPK_BACK_W      = 70;     // Width at back (narrower)
+SPK_DEPTH       = 170;    // Depth (front to back)
+SPK_HEIGHT      = 130;    // Height
+
+// Driver positions
 DRIVER_DIA      = 65;
-DRIVER_DEPTH    = 35;
 PASSIVE_RAD_DIA = 65;
-PASSIVE_STROKE  = 15;
 
-// Speaker box positioning
-SPK_ANGLE       = 15;         // Toe-in angle
-SPK_X_OFFSET    = 130;        // Distance from center
-SPK_Y_OFFSET    = 40;         // From front
-SPK_Z_OFFSET    = 10;         // From bottom
+// Speaker positioning
+SPK_X_OFFSET    = 115;    // Distance from center (adjusted for compact tower)
+SPK_Y_OFFSET    = 25;     // Closer to front
+SPK_Z_OFFSET    = 12;
 
-// === XVF3800 Microphone ===
+// === XVF3800 ===
 MIC_PCB         = [40, 40, 2];
-MIC_MESH_DIA    = 60;
-MIC_MESH_H      = 1;
-MIC_Z           = HEIGHT - 12;
+MIC_MESH_DIA    = 55;     // Slightly smaller
+MIC_Z           = HEIGHT - 10;
 
-// === Hanenite Vibration Isolation ===
+// === Other ===
 HANENITE_THICKNESS = 5;
 
 // === Colors ===
-C_ALUMINUM  = [0.75, 0.75, 0.78];
-C_MDF       = [0.65, 0.50, 0.35];
-C_MDF_DARK  = [0.45, 0.35, 0.25];
-C_PCB       = [0.1, 0.35, 0.1];
-C_LCD       = [0.08, 0.08, 0.12];
-C_RUBBER    = [0.12, 0.12, 0.12];
-C_MESH      = [0.6, 0.6, 0.62, 0.7];
-C_FRAME     = [0.25, 0.25, 0.28];
+C_ALUMINUM  = [0.78, 0.78, 0.80];
+C_MDF       = [0.60, 0.48, 0.35];
+C_MDF_DARK  = [0.40, 0.32, 0.22];
+C_PCB       = [0.08, 0.32, 0.08];
+C_LCD       = [0.06, 0.06, 0.10];
+C_RUBBER    = [0.10, 0.10, 0.10];
+C_MESH      = [0.55, 0.55, 0.58, 0.6];
+C_FRAME     = [0.22, 0.22, 0.25];
+C_FABRIC    = [0.15, 0.15, 0.18];
 
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
 
-// Wedge polygon points
+// Wedge polygon (basic)
 function wedge_points() = [
     [-FRONT_WIDTH/2, 0],
     [FRONT_WIDTH/2, 0],
@@ -111,7 +108,11 @@ function wedge_points() = [
     [-BACK_WIDTH/2, DEPTH]
 ];
 
-// Standoff positions (from center)
+// Calculate wedge width at given Y position
+function wedge_width_at(y) =
+    FRONT_WIDTH - (FRONT_WIDTH - BACK_WIDTH) * (y / DEPTH);
+
+// Standoff positions
 function standoff_positions() = [
     [-STANDOFF_PITCH/2, -STANDOFF_PITCH/2],
     [STANDOFF_PITCH/2, -STANDOFF_PITCH/2],
@@ -120,283 +121,92 @@ function standoff_positions() = [
 ];
 
 // ============================================================================
-// MODULE: Aluminum Standoff
+// MODULE: Rounded Wedge Shell (Formation Wedge Style)
 // ============================================================================
-module standoff(height) {
-    color(C_ALUMINUM)
-    difference() {
-        // Hex body
-        cylinder(d=STANDOFF_OD, h=height, $fn=6);
-        // M3 through hole
-        translate([0, 0, -0.1])
-        cylinder(d=STANDOFF_ID, h=height + 0.2, $fn=24);
-    }
+module rounded_wedge_2d() {
+    offset(r=CORNER_RADIUS)
+    offset(r=-CORNER_RADIUS)
+    polygon(wedge_points());
 }
 
-// ============================================================================
-// MODULE: Shelf Plate with Cable Ducts
-// ============================================================================
-module shelf_plate(size, with_vent=true, with_cable_ducts=true) {
-    w = size[0];
-    d = size[1];
-
-    color(C_ALUMINUM)
-    difference() {
-        // Main plate
-        cube([w, d, PLATE_THICKNESS], center=true);
-
-        // Standoff mounting holes (M3)
-        for (pos = standoff_positions()) {
-            translate([pos[0], pos[1], 0])
-            cylinder(d=3.2, h=PLATE_THICKNESS + 1, center=true, $fn=24);
-        }
-
-        // Cable duct cutouts (four corners)
-        if (with_cable_ducts) {
-            for (x = [-1, 1]) {
-                for (y = [-1, 1]) {
-                    translate([
-                        x * (w/2 - CABLE_DUCT_SIZE[0]/2 - 3),
-                        y * (d/2 - CABLE_DUCT_SIZE[1]/2 - 3),
-                        0
-                    ])
-                    cube([CABLE_DUCT_SIZE[0], CABLE_DUCT_SIZE[1], PLATE_THICKNESS + 1], center=true);
-                }
-            }
-        }
-
-        // Ventilation slots (40% open area)
-        if (with_vent) {
-            slot_w = w * 0.12;
-            slot_d = d * 0.15;
-            for (x = [-1, 0, 1]) {
-                for (y = [-1, 1]) {
-                    translate([x * w/4, y * d/4, 0])
-                    cube([slot_w, slot_d, PLATE_THICKNESS + 1], center=true);
-                }
-            }
-        }
-    }
-}
-
-// ============================================================================
-// MODULE: Center Electronics Tower
-// ============================================================================
-module center_tower() {
-    // Position at center of wedge
-    translate([0, DEPTH/2, 0]) {
-
-        // === LEVEL 1: Power + Sensors ===
-        translate([0, 0, LEVEL_1_Z]) {
-            shelf_plate(PLATE_L1);
-
-            // Standoffs to Level 2
-            for (pos = standoff_positions()) {
-                translate([pos[0], pos[1], PLATE_THICKNESS/2])
-                standoff(STANDOFF_L1_L2);
-            }
-
-            // Mock sensor array (I2C)
-            color(C_PCB, 0.7)
-            translate([0, 0, 8])
-            cube([60, 40, 2], center=true);
-        }
-
-        // === LEVEL 2: DAC + Amp ===
-        translate([0, 0, LEVEL_2_Z]) {
-            shelf_plate(PLATE_L2);
-
-            // Standoffs to Level 3
-            for (pos = standoff_positions()) {
-                translate([pos[0], pos[1], PLATE_THICKNESS/2])
-                standoff(STANDOFF_L2_L3);
-            }
-
-            // Mock ES9039Q2M DAC
-            color(C_PCB, 0.7)
-            translate([-15, 0, 6])
-            cube([50, 40, 2], center=true);
-
-            // Mock Amplifier
-            color(C_PCB, 0.7)
-            translate([20, 0, 6])
-            cube([30, 35, 15], center=true);
-        }
-
-        // === LEVEL 3: ESP32-P4 ===
-        translate([0, 0, LEVEL_3_Z]) {
-            shelf_plate(PLATE_L3, with_vent=false);
-
-            // Standoffs to LCD mount
-            for (pos = standoff_positions()) {
-                translate([pos[0], pos[1], PLATE_THICKNESS/2])
-                standoff(STANDOFF_L3_TOP);
-            }
-
-            // Mock ESP32-P4
-            color(C_PCB, 0.7)
-            translate([0, 0, 8])
-            cube([55, 45, 3], center=true);
-        }
-    }
-}
-
-// ============================================================================
-// MODULE: Speaker Box (MDF)
-// ============================================================================
-module speaker_box() {
-    color(C_MDF) {
+module outer_shell_rounded(show_cutaway=false) {
+    color(C_MDF_DARK, 0.35) {
         difference() {
-            // Outer box
-            cube(SPK_EXTERNAL);
+            // Rounded outer wedge
+            hull() {
+                // Bottom rounded edge
+                translate([0, 0, CORNER_RADIUS])
+                linear_extrude(height=0.1)
+                rounded_wedge_2d();
 
-            // Inner cavity
-            translate([MDF_THICKNESS, MDF_THICKNESS, MDF_THICKNESS])
-            cube(SPK_INTERNAL);
+                // Main body
+                translate([0, 0, CORNER_RADIUS])
+                linear_extrude(height=HEIGHT - CORNER_RADIUS*2)
+                rounded_wedge_2d();
 
-            // Main driver cutout (front face)
-            translate([SPK_EXTERNAL[0]/2, -1, SPK_EXTERNAL[2] * 0.65])
-            rotate([-90, 0, 0])
-            cylinder(d=DRIVER_DIA, h=MDF_THICKNESS + 2, $fn=64);
-
-            // Passive radiator cutout (front face, below)
-            translate([SPK_EXTERNAL[0]/2, -1, SPK_EXTERNAL[2] * 0.30])
-            rotate([-90, 0, 0])
-            cylinder(d=PASSIVE_RAD_DIA, h=MDF_THICKNESS + 2, $fn=64);
-
-            // Terminal cup (back)
-            translate([SPK_EXTERNAL[0]/2, SPK_EXTERNAL[1] - MDF_THICKNESS - 1, SPK_EXTERNAL[2]/2])
-            rotate([-90, 0, 0])
-            cylinder(d=40, h=MDF_THICKNESS + 2, $fn=32);
-        }
-    }
-
-    // Hanenite pad (bottom)
-    color(C_RUBBER)
-    translate([0, 0, -HANENITE_THICKNESS])
-    cube([SPK_EXTERNAL[0], SPK_EXTERNAL[1], HANENITE_THICKNESS]);
-}
-
-// ============================================================================
-// MODULE: Speaker Box Pair
-// ============================================================================
-module speaker_boxes() {
-    // Left speaker
-    translate([-SPK_X_OFFSET, SPK_Y_OFFSET, SPK_Z_OFFSET])
-    rotate([0, 0, SPK_ANGLE])
-    translate([-SPK_EXTERNAL[0]/2, 0, 0])
-    speaker_box();
-
-    // Right speaker
-    translate([SPK_X_OFFSET, SPK_Y_OFFSET, SPK_Z_OFFSET])
-    rotate([0, 0, -SPK_ANGLE])
-    translate([-SPK_EXTERNAL[0]/2, 0, 0])
-    speaker_box();
-}
-
-// ============================================================================
-// MODULE: 7-inch LCD Assembly
-// ============================================================================
-module lcd_assembly() {
-    translate([0, 0, LCD_Z_CENTER]) {
-        // LCD module
-        color(C_LCD)
-        translate([0, 0, 0])
-        cube([LCD_MODULE[0], LCD_MODULE[2], LCD_MODULE[1]], center=true);
-
-        // Active area (lighter)
-        color([0.15, 0.18, 0.22])
-        translate([0, -2, 0])
-        cube([LCD_ACTIVE[0], 1, LCD_ACTIVE[1]], center=true);
-
-        // Bezel frame (3D printed)
-        color(C_FRAME)
-        difference() {
-            translate([0, -3, 0])
-            cube([LCD_BEZEL[0], LCD_BEZEL[2], LCD_BEZEL[1]], center=true);
-
-            // LCD cutout
-            translate([0, 0, 0])
-            cube([LCD_MODULE[0] + 2, 10, LCD_MODULE[1] + 2], center=true);
-        }
-    }
-}
-
-// ============================================================================
-// MODULE: XVF3800 Microphone Array
-// ============================================================================
-module xvf3800() {
-    translate([0, DEPTH/2, MIC_Z]) {
-        // PCB
-        color(C_PCB)
-        cube([MIC_PCB[0], MIC_PCB[1], MIC_PCB[2]], center=true);
-
-        // MEMS microphones (4x in square)
-        color([0.35, 0.35, 0.38])
-        for (x = [-12, 12]) {
-            for (y = [-12, 12]) {
-                translate([x, y, MIC_PCB[2]/2 + 1])
-                cube([4, 3, 2], center=true);
+                // Top rounded edge
+                translate([0, 0, HEIGHT - CORNER_RADIUS])
+                linear_extrude(height=0.1)
+                offset(r=-2)
+                rounded_wedge_2d();
             }
-        }
-
-        // Acoustic mesh cover
-        color(C_MESH)
-        translate([0, 0, MIC_PCB[2]/2 + 4])
-        cylinder(d=MIC_MESH_DIA, h=MIC_MESH_H, $fn=64);
-    }
-}
-
-// ============================================================================
-// MODULE: Outer Shell (Wedge)
-// ============================================================================
-module outer_shell(show_cutaway=false) {
-    color(C_MDF_DARK, 0.4) {
-        difference() {
-            // Outer wedge
-            linear_extrude(height=HEIGHT)
-            polygon(wedge_points());
 
             // Inner cavity
             translate([0, WALL_THICKNESS, WALL_THICKNESS])
             linear_extrude(height=HEIGHT - WALL_THICKNESS*2) {
                 offset(r=-WALL_THICKNESS)
-                polygon(wedge_points());
+                rounded_wedge_2d();
             }
 
-            // LCD aperture (front)
+            // LCD aperture (front, inset position)
             translate([0, -1, LCD_Z_CENTER])
             rotate([-90, 0, 0])
-            cube([LCD_BEZEL[0] + 4, LCD_BEZEL[1] + 4, WALL_THICKNESS + 2], center=true);
-
-            // Bottom intake vents
-            for (x = [-120, -80, -40, 0, 40, 80, 120]) {
-                translate([x, DEPTH/2, -1])
-                cube([30, 80, WALL_THICKNESS + 2], center=true);
+            hull() {
+                for (x = [-1, 1]) {
+                    for (z = [-1, 1]) {
+                        translate([x * (LCD_BEZEL[0]/2 - 8), z * (LCD_BEZEL[1]/2 - 8), 0])
+                        cylinder(r=8, h=WALL_THICKNESS + 2);
+                    }
+                }
             }
 
-            // Top exhaust gap (around mic)
-            translate([0, DEPTH/2, HEIGHT - WALL_THICKNESS/2])
-            cylinder(d=MIC_MESH_DIA + 20, h=WALL_THICKNESS + 1, center=true, $fn=64);
+            // Bottom intake vents (streamlined slots)
+            for (x = [-100, -50, 0, 50, 100]) {
+                hull() {
+                    translate([x-12, DEPTH/2, -1])
+                    cylinder(d=5, h=WALL_THICKNESS + 2);
+                    translate([x+12, DEPTH/2, -1])
+                    cylinder(d=5, h=WALL_THICKNESS + 2);
+                }
+            }
 
-            // Back panel cutouts (connectors)
-            translate([0, DEPTH - WALL_THICKNESS/2, HEIGHT/2]) {
+            // Top exhaust (organic shape around mic)
+            translate([0, DEPTH/2, HEIGHT - WALL_THICKNESS/2])
+            cylinder(d=MIC_MESH_DIA + 15, h=WALL_THICKNESS + 1, center=true);
+
+            // Back connectors (recessed)
+            translate([0, DEPTH - WALL_THICKNESS/2, HEIGHT * 0.45]) {
                 // DC jack
-                translate([-40, 0, 0])
+                translate([-35, 0, 0])
                 rotate([90, 0, 0])
-                cylinder(d=12, h=WALL_THICKNESS + 2, center=true, $fn=24);
+                cylinder(d=11, h=WALL_THICKNESS + 2, center=true);
 
                 // USB-C
-                translate([0, 0, 0])
-                cube([12, WALL_THICKNESS + 2, 8], center=true);
+                hull() {
+                    for (x = [-3.5, 3.5]) {
+                        translate([x, 0, 0])
+                        rotate([90, 0, 0])
+                        cylinder(d=4, h=WALL_THICKNESS + 2, center=true);
+                    }
+                }
 
                 // SMA antenna
-                translate([40, 0, 0])
+                translate([35, 0, 0])
                 rotate([90, 0, 0])
-                cylinder(d=8, h=WALL_THICKNESS + 2, center=true, $fn=24);
+                cylinder(d=7, h=WALL_THICKNESS + 2, center=true);
             }
 
-            // Cutaway for visualization
+            // Cutaway
             if (show_cutaway) {
                 translate([0, -DEPTH, 0])
                 cube([FRONT_WIDTH, DEPTH, HEIGHT * 2], center=true);
@@ -406,94 +216,360 @@ module outer_shell(show_cutaway=false) {
 }
 
 // ============================================================================
-// MODULE: Inner Frame (3D Printed PETG)
+// MODULE: Compact Standoff
 // ============================================================================
-module inner_frame() {
-    color(C_FRAME, 0.6) {
-        // Tower mounting base
-        translate([0, DEPTH/2, WALL_THICKNESS]) {
-            difference() {
-                cylinder(d=PLATE_L1[0] + 20, h=10, $fn=64);
-                cylinder(d=PLATE_L1[0] - 10, h=11, $fn=64);
+module standoff(height) {
+    color(C_ALUMINUM)
+    difference() {
+        cylinder(d=STANDOFF_OD, h=height, $fn=6);
+        translate([0, 0, -0.1])
+        cylinder(d=STANDOFF_ID, h=height + 0.2, $fn=32);
+    }
+}
+
+// ============================================================================
+// MODULE: Compact Shelf Plate
+// ============================================================================
+module shelf_plate(size, with_vent=true) {
+    w = size[0];
+    d = size[1];
+
+    color(C_ALUMINUM)
+    difference() {
+        // Rounded rectangular plate
+        hull() {
+            for (x = [-1, 1]) {
+                for (y = [-1, 1]) {
+                    translate([x * (w/2 - 3), y * (d/2 - 3), 0])
+                    cylinder(r=3, h=PLATE_THICKNESS);
+                }
             }
         }
 
-        // Speaker box mounting brackets (left)
-        translate([-SPK_X_OFFSET, SPK_Y_OFFSET + SPK_EXTERNAL[1]/2, 0])
-        rotate([0, 0, SPK_ANGLE]) {
-            // L-bracket
-            cube([10, SPK_EXTERNAL[1] - 20, 15], center=true);
+        // Standoff holes
+        for (pos = standoff_positions()) {
+            translate([pos[0], pos[1], -0.1])
+            cylinder(d=3.2, h=PLATE_THICKNESS + 0.2, $fn=32);
         }
 
-        // Speaker box mounting brackets (right)
-        translate([SPK_X_OFFSET, SPK_Y_OFFSET + SPK_EXTERNAL[1]/2, 0])
-        rotate([0, 0, -SPK_ANGLE]) {
-            cube([10, SPK_EXTERNAL[1] - 20, 15], center=true);
+        // Cable ducts (corners, smaller)
+        for (x = [-1, 1]) {
+            for (y = [-1, 1]) {
+                translate([
+                    x * (w/2 - CABLE_DUCT_SIZE[0]/2 - 2),
+                    y * (d/2 - CABLE_DUCT_SIZE[1]/2 - 2),
+                    -0.1
+                ])
+                cube([CABLE_DUCT_SIZE[0], CABLE_DUCT_SIZE[1], PLATE_THICKNESS + 0.2], center=true);
+            }
         }
 
-        // LCD bezel mounting frame
-        translate([0, WALL_THICKNESS + 5, LCD_Z_CENTER])
+        // Ventilation (center slot pattern)
+        if (with_vent) {
+            for (i = [-1, 0, 1]) {
+                hull() {
+                    translate([i * w/4 - 4, 0, -0.1])
+                    cylinder(d=4, h=PLATE_THICKNESS + 0.2);
+                    translate([i * w/4 + 4, 0, -0.1])
+                    cylinder(d=4, h=PLATE_THICKNESS + 0.2);
+                }
+            }
+        }
+    }
+}
+
+// ============================================================================
+// MODULE: Compact Center Tower (ESP32-P4 Under Level 3)
+// ============================================================================
+module center_tower() {
+    translate([0, DEPTH/2, 0]) {
+
+        // === LEVEL 1: Power + Sensors ===
+        translate([0, 0, LEVEL_1_Z]) {
+            shelf_plate(PLATE_L1);
+
+            for (pos = standoff_positions()) {
+                translate([pos[0], pos[1], PLATE_THICKNESS])
+                standoff(STANDOFF_L1_L2);
+            }
+
+            // Sensors (compact arrangement)
+            color(C_PCB, 0.7)
+            translate([0, 0, 6])
+            cube([45, 35, 2], center=true);
+        }
+
+        // === LEVEL 2: DAC + Amp ===
+        translate([0, 0, LEVEL_2_Z]) {
+            shelf_plate(PLATE_L2);
+
+            for (pos = standoff_positions()) {
+                translate([pos[0], pos[1], PLATE_THICKNESS])
+                standoff(STANDOFF_L2_L3);
+            }
+
+            // DAC + Amp stacked
+            color(C_PCB, 0.7)
+            translate([0, 0, 8])
+            cube([45, 38, 12], center=true);
+        }
+
+        // === LEVEL 3: LCD Mount (ESP32-P4 UNDERNEATH) ===
+        translate([0, 0, LEVEL_3_Z]) {
+            shelf_plate(PLATE_L3, with_vent=false);
+
+            // Short standoffs to LCD frame
+            for (pos = standoff_positions()) {
+                translate([pos[0], pos[1], PLATE_THICKNESS])
+                standoff(STANDOFF_L3_TOP);
+            }
+
+            // ESP32-P4 mounted UNDER Level 3 plate
+            color(C_PCB, 0.8)
+            translate([0, 0, -8])
+            cube([50, 42, 3], center=true);
+
+            // Label
+            color([1, 1, 1])
+            translate([0, 0, -9.5])
+            linear_extrude(0.5)
+            text("P4", size=8, halign="center", valign="center");
+        }
+    }
+}
+
+// ============================================================================
+// MODULE: Trapezoidal Speaker Box (Following Wedge Angle)
+// ============================================================================
+module trapezoidal_speaker_box() {
+    // Create trapezoidal cross-section
+    module trapezoid_2d() {
+        polygon([
+            [-SPK_FRONT_W/2, 0],
+            [SPK_FRONT_W/2, 0],
+            [SPK_BACK_W/2, SPK_DEPTH],
+            [-SPK_BACK_W/2, SPK_DEPTH]
+        ]);
+    }
+
+    module inner_trapezoid_2d() {
+        t = MDF_THICKNESS;
+        front_inner = SPK_FRONT_W - t*2;
+        back_inner = SPK_BACK_W - t*2;
+        polygon([
+            [-front_inner/2, t],
+            [front_inner/2, t],
+            [back_inner/2, SPK_DEPTH - t],
+            [-back_inner/2, SPK_DEPTH - t]
+        ]);
+    }
+
+    color(C_MDF) {
+        difference() {
+            // Outer trapezoidal prism
+            linear_extrude(height=SPK_HEIGHT)
+            trapezoid_2d();
+
+            // Inner cavity
+            translate([0, 0, MDF_THICKNESS])
+            linear_extrude(height=SPK_HEIGHT - MDF_THICKNESS*2)
+            inner_trapezoid_2d();
+
+            // Main driver cutout (front)
+            translate([0, -1, SPK_HEIGHT * 0.62])
+            rotate([-90, 0, 0])
+            cylinder(d=DRIVER_DIA, h=MDF_THICKNESS + 2);
+
+            // Passive radiator (front, below driver)
+            translate([0, -1, SPK_HEIGHT * 0.28])
+            rotate([-90, 0, 0])
+            cylinder(d=PASSIVE_RAD_DIA, h=MDF_THICKNESS + 2);
+
+            // Terminal cup (back)
+            translate([0, SPK_DEPTH - MDF_THICKNESS - 1, SPK_HEIGHT * 0.5])
+            rotate([-90, 0, 0])
+            cylinder(d=35, h=MDF_THICKNESS + 2);
+        }
+    }
+
+    // Hanenite pad
+    color(C_RUBBER)
+    translate([0, 0, -HANENITE_THICKNESS])
+    linear_extrude(height=HANENITE_THICKNESS)
+    trapezoid_2d();
+}
+
+// ============================================================================
+// MODULE: Speaker Box Pair (Trapezoidal, Toe-in)
+// ============================================================================
+module speaker_boxes() {
+    // Left speaker
+    translate([-SPK_X_OFFSET, SPK_Y_OFFSET, SPK_Z_OFFSET])
+    rotate([0, 0, 8])  // Slight toe-in
+    trapezoidal_speaker_box();
+
+    // Right speaker (mirrored)
+    translate([SPK_X_OFFSET, SPK_Y_OFFSET, SPK_Z_OFFSET])
+    rotate([0, 0, -8])
+    mirror([1, 0, 0])
+    trapezoidal_speaker_box();
+}
+
+// ============================================================================
+// MODULE: LCD Assembly (Inset 10mm)
+// ============================================================================
+module lcd_assembly() {
+    // Inset position (10mm from front panel)
+    translate([0, WALL_THICKNESS + LCD_Y_INSET, LCD_Z_CENTER]) {
+        // LCD module
+        color(C_LCD)
+        cube([LCD_MODULE[0], LCD_MODULE[2], LCD_MODULE[1]], center=true);
+
+        // Active display
+        color([0.12, 0.15, 0.20])
+        translate([0, -2, 0])
+        cube([LCD_ACTIVE[0], 1, LCD_ACTIVE[1]], center=true);
+
+        // Curved bezel frame (follows front panel curve)
+        color(C_FRAME) {
+            difference() {
+                // Bezel body
+                translate([0, -LCD_Y_INSET/2, 0])
+                hull() {
+                    // Front edge (curved to match shell)
+                    for (x = [-1, 1]) {
+                        for (z = [-1, 1]) {
+                            translate([x * (LCD_BEZEL[0]/2 - 6), -LCD_Y_INSET/2, z * (LCD_BEZEL[1]/2 - 6)])
+                            rotate([90, 0, 0])
+                            cylinder(r=6, h=LCD_BEZEL[2]);
+                        }
+                    }
+                    // Back edge (straight, against LCD)
+                    translate([0, LCD_Y_INSET/2 - 2, 0])
+                    cube([LCD_MODULE[0] + 6, 2, LCD_MODULE[1] + 6], center=true);
+                }
+
+                // LCD cutout
+                cube([LCD_MODULE[0] + 2, LCD_Y_INSET + 10, LCD_MODULE[1] + 2], center=true);
+            }
+        }
+    }
+}
+
+// ============================================================================
+// MODULE: XVF3800 (Top Mount, Streamlined)
+// ============================================================================
+module xvf3800() {
+    translate([0, DEPTH/2, MIC_Z]) {
+        // PCB
+        color(C_PCB)
+        hull() {
+            for (x = [-1, 1]) {
+                for (y = [-1, 1]) {
+                    translate([x * (MIC_PCB[0]/2 - 4), y * (MIC_PCB[1]/2 - 4), 0])
+                    cylinder(r=4, h=MIC_PCB[2], center=true);
+                }
+            }
+        }
+
+        // MEMS mics
+        color([0.35, 0.35, 0.40])
+        for (x = [-10, 10]) {
+            for (y = [-10, 10]) {
+                translate([x, y, MIC_PCB[2]/2 + 0.8])
+                cylinder(d=4, h=1.5);
+            }
+        }
+
+        // Acoustic mesh (flush with top)
+        color(C_MESH)
+        translate([0, 0, MIC_PCB[2]/2 + 3])
+        cylinder(d=MIC_MESH_DIA, h=0.8);
+    }
+}
+
+// ============================================================================
+// MODULE: Fabric Grille (Formation Wedge Style)
+// ============================================================================
+module fabric_grille() {
+    color(C_FABRIC, 0.85) {
+        difference() {
+            // Full front face coverage
+            translate([0, 1, HEIGHT/2])
+            rotate([90, 0, 0])
+            linear_extrude(height=2)
+            hull() {
+                for (x = [-1, 1]) {
+                    translate([x * (FRONT_WIDTH/2 - CORNER_RADIUS - 5), 0])
+                    circle(r=5);
+                    translate([x * (FRONT_WIDTH/2 - CORNER_RADIUS - 5), HEIGHT - CORNER_RADIUS*2])
+                    circle(r=5);
+                }
+            }
+
+            // LCD opening
+            translate([0, 2, LCD_Z_CENTER])
+            rotate([90, 0, 0])
+            hull() {
+                for (x = [-1, 1]) {
+                    for (z = [-1, 1]) {
+                        translate([x * (LCD_BEZEL[0]/2 - 10), z * (LCD_BEZEL[1]/2 - 10)])
+                        cylinder(r=10, h=4);
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ============================================================================
+// MODULE: Inner Frame (Streamlined)
+// ============================================================================
+module inner_frame() {
+    color(C_FRAME, 0.6) {
+        // Tower base (compact)
+        translate([0, DEPTH/2, WALL_THICKNESS]) {
+            difference() {
+                cylinder(d=PLATE_L1[0] + 15, h=8);
+                cylinder(d=PLATE_L1[0] - 8, h=9);
+            }
+        }
+
+        // Speaker cradles (follow trapezoid)
+        for (side = [-1, 1]) {
+            translate([side * SPK_X_OFFSET, SPK_Y_OFFSET + SPK_DEPTH/2, SPK_Z_OFFSET - 3])
+            rotate([0, 0, side * 8])
+            difference() {
+                cube([12, SPK_DEPTH - 30, 8], center=true);
+                cube([8, SPK_DEPTH - 20, 10], center=true);
+            }
+        }
+
+        // LCD frame rails
+        translate([0, WALL_THICKNESS + LCD_Y_INSET, LCD_Z_CENTER])
         rotate([90, 0, 0])
         difference() {
-            cube([LCD_BEZEL[0] + 10, LCD_BEZEL[1] + 10, 8], center=true);
-            cube([LCD_MODULE[0] + 2, LCD_MODULE[1] + 2, 10], center=true);
+            hull() {
+                for (x = [-1, 1]) {
+                    translate([x * (LCD_BEZEL[0]/2 + 3), 0, 0])
+                    cube([6, LCD_BEZEL[1] + 6, 6], center=true);
+                }
+            }
+            cube([LCD_BEZEL[0], LCD_BEZEL[1], 10], center=true);
         }
 
-        // Mic mount ring
-        translate([0, DEPTH/2, HEIGHT - 15])
+        // Mic mount (flush ring)
+        translate([0, DEPTH/2, HEIGHT - 12])
         difference() {
-            cylinder(d=MIC_MESH_DIA + 15, h=8, $fn=64);
-            cylinder(d=MIC_PCB[0] + 2, h=10, $fn=64);
+            cylinder(d=MIC_MESH_DIA + 10, h=6);
+            cylinder(d=MIC_PCB[0] + 1, h=8);
+            // Ventilation slots
+            for (a = [0, 90, 180, 270]) {
+                rotate([0, 0, a + 45])
+                translate([MIC_MESH_DIA/2 + 2, 0, 0])
+                cylinder(d=4, h=8);
+            }
         }
-    }
-}
-
-// ============================================================================
-// MODULE: Cable Routing Visualization
-// ============================================================================
-module cable_routing() {
-    color([1, 0.5, 0], 0.5) {
-        // I2S cable (Level 2 DAC to Level 3 ESP32)
-        translate([STANDOFF_PITCH/2 - 5, DEPTH/2 + STANDOFF_PITCH/2 - 5, LEVEL_2_Z])
-        cylinder(d=4, h=STANDOFF_L2_L3, $fn=12);
-
-        // I2C bus (Level 1 to Level 3)
-        translate([-STANDOFF_PITCH/2 + 5, DEPTH/2 - STANDOFF_PITCH/2 + 5, LEVEL_1_Z])
-        cylinder(d=3, h=LEVEL_3_Z - LEVEL_1_Z + 10, $fn=12);
-
-        // Power cable (bottom to Level 1)
-        translate([0, DEPTH/2, WALL_THICKNESS])
-        cylinder(d=5, h=LEVEL_1_Z - WALL_THICKNESS, $fn=12);
-    }
-
-    color([0, 0.5, 1], 0.5) {
-        // Speaker wire left
-        hull() {
-            translate([-STANDOFF_PITCH/2, DEPTH/2, LEVEL_2_Z + 10])
-            sphere(d=3, $fn=12);
-            translate([-SPK_X_OFFSET + 30, SPK_Y_OFFSET + SPK_EXTERNAL[1] - 20, SPK_Z_OFFSET + 50])
-            sphere(d=3, $fn=12);
-        }
-
-        // Speaker wire right
-        hull() {
-            translate([STANDOFF_PITCH/2, DEPTH/2, LEVEL_2_Z + 10])
-            sphere(d=3, $fn=12);
-            translate([SPK_X_OFFSET - 30, SPK_Y_OFFSET + SPK_EXTERNAL[1] - 20, SPK_Z_OFFSET + 50])
-            sphere(d=3, $fn=12);
-        }
-    }
-}
-
-// ============================================================================
-// MODULE: Interference Check Visualization
-// ============================================================================
-module interference_check() {
-    // Check tower vs speaker boxes
-    color([1, 0, 0, 0.3]) {
-        // Tower bounding cylinder
-        translate([0, DEPTH/2, 0])
-        cylinder(d=PLATE_L3[0] + 20, h=LEVEL_3_Z + 30, $fn=32);
     }
 }
 
@@ -501,26 +577,24 @@ module interference_check() {
 // ASSEMBLY MODES
 // ============================================================================
 
-// Full assembly
 module full_assembly() {
-    outer_shell(show_cutaway=false);
+    outer_shell_rounded(show_cutaway=false);
     center_tower();
     speaker_boxes();
     lcd_assembly();
     xvf3800();
     inner_frame();
+    fabric_grille();
 }
 
-// Exploded view
-module exploded_assembly() {
-    translate([0, 0, 0]) outer_shell(show_cutaway=true);
-    translate([0, 0, 50]) center_tower();
-    translate([0, 0, 30]) speaker_boxes();
-    translate([0, 0, 80]) lcd_assembly();
-    translate([0, 0, 100]) xvf3800();
+module exploded_view() {
+    translate([0, 0, 0]) outer_shell_rounded(show_cutaway=true);
+    translate([0, 0, 60]) center_tower();
+    translate([0, 0, 40]) speaker_boxes();
+    translate([0, 0, 90]) lcd_assembly();
+    translate([0, 0, 110]) xvf3800();
 }
 
-// Section view
 module section_view() {
     difference() {
         full_assembly();
@@ -529,67 +603,61 @@ module section_view() {
     }
 }
 
-// Internal components only
 module internal_only() {
     center_tower();
     speaker_boxes();
     lcd_assembly();
     xvf3800();
     inner_frame();
-    cable_routing();
+}
+
+module top_view() {
+    projection(cut=true)
+    translate([0, 0, -HEIGHT/2])
+    full_assembly();
 }
 
 // ============================================================================
 // RENDER SELECTION
 // ============================================================================
 
-// Uncomment one of these to render:
+// Uncomment one to render:
 
-full_assembly();              // Complete view
-// exploded_assembly();       // Exploded view
+full_assembly();              // Complete Formation Wedge style
+// exploded_view();           // Exploded view
 // section_view();            // Cross-section
-// internal_only();           // Without outer shell
-// interference_check();      // Check clearances
+// internal_only();           // Internal components only
+// top_view();                // 2D top view
 
 // ============================================================================
-// EXPORT INDIVIDUAL PARTS
-// ============================================================================
-
-// Uncomment to export individual parts:
-
-// shelf_plate(PLATE_L1);    // Level 1 plate DXF
-// shelf_plate(PLATE_L2);    // Level 2 plate DXF
-// shelf_plate(PLATE_L3);    // Level 3 plate DXF
-// speaker_box();            // Speaker box
-// inner_frame();            // 3D printed frame
-
-// ============================================================================
-// NOTES FOR PRODUCTION
+// EXPORT NOTES
 // ============================================================================
 /*
-1. Aluminum Plates:
-   - Export as DXF (top view)
-   - Material: A6063-T5, 2mm thick
-   - Finish: Black anodized
-   - Tolerances: ±0.1mm on holes
+v3.0 Formation Wedge Slim Design:
 
-2. MDF Parts:
-   - Speaker boxes: 19mm MDF, CNC routed
-   - Outer shell: 6mm MDF, CNC or laser
+CHANGES FROM v2.0:
+1. Speaker boxes: Trapezoidal (follows 120° wedge)
+   - Front width: 95mm, Back width: 70mm
+   - Better volume utilization, slimmer profile
 
-3. 3D Printed Parts:
-   - Material: PETG or ASA
-   - Layer height: 0.2mm
-   - Infill: 40% for structural, 20% for cosmetic
-   - Orientation: Print LCD bezel face-down
+2. Tower: Compact 55mm pitch
+   - ESP32-P4 mounted UNDER Level 3 plate
+   - Smaller footprint, more speaker room
 
-4. Assembly Order:
-   a. Build center tower (plates + standoffs)
-   b. Install electronics on tower
-   c. Wire tower components
-   d. Install tower in outer shell
-   e. Install speaker boxes with Hanenite
-   f. Connect speaker wires
-   g. Install LCD and XVF3800
-   h. Close outer shell
+3. LCD: 10mm inset
+   - Curved bezel blends with front panel
+   - Better visual integration
+
+4. Corners: Rounded with offset(r=10)
+   - Formation Wedge aesthetic
+   - $fn=128 for smooth curves
+
+SPEAKER BOX VOLUME:
+  Approximate: (95+70)/2 × 170 × 130 × 0.5 = ~1.8L per side
+  (Still adequate for Peerless + passive radiator)
+
+TOWER CLEARANCE:
+  With 55mm pitch, tower envelope: ~80mm diameter
+  Speaker boxes start at X=±115mm
+  Clearance: 115 - 40 - 47.5 = 27.5mm per side (OK)
 */
