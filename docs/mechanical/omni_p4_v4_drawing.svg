@@ -1,0 +1,371 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-100 -100 1200 950" width="1200mm" height="950mm">
+  <title>OMNI-P4 v4.1 Engineering Drawing - B&amp;W Formation Wedge Trace</title>
+  <desc>B&amp;W Formation Wedge完全トレース: 440×243×232mm, 120° Sector</desc>
+
+  <style>
+    .outline { fill: none; stroke: #000; stroke-width: 0.8; }
+    .thin { fill: none; stroke: #000; stroke-width: 0.4; }
+    .dimension { fill: none; stroke: #00f; stroke-width: 0.3; }
+    .dim-text { font-family: Arial, sans-serif; font-size: 7px; fill: #00f; }
+    .title { font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; fill: #000; }
+    .subtitle { font-family: Arial, sans-serif; font-size: 9px; fill: #000; font-weight: bold; }
+    .annotation { font-family: Arial, sans-serif; font-size: 5px; fill: #333; }
+    .small { font-family: Arial, sans-serif; font-size: 4px; fill: #555; }
+    .calc { font-family: Arial, sans-serif; font-size: 4px; fill: #006600; font-style: italic; }
+    .center { fill: none; stroke: #f00; stroke-width: 0.25; stroke-dasharray: 8,2,2,2; }
+    .hidden { fill: none; stroke: #000; stroke-width: 0.4; stroke-dasharray: 4,2; }
+    .construction { fill: none; stroke: #999; stroke-width: 0.2; stroke-dasharray: 2,2; }
+    .fill-chamber { fill: #e8e8e8; stroke: #000; stroke-width: 0.4; }
+    .fill-center { fill: #f0f0f0; stroke: #000; stroke-width: 0.4; }
+    .angle-arc { fill: none; stroke: #c00; stroke-width: 0.4; }
+    .bw-ref { font-family: Arial, sans-serif; font-size: 5px; fill: #0066cc; font-weight: bold; }
+  </style>
+
+  <!-- ==================== TITLE BLOCK ==================== -->
+  <text x="500" y="-70" class="title" text-anchor="middle">OMNI-P4 v4.1 詳細設計図</text>
+  <text x="500" y="-50" class="subtitle" text-anchor="middle">B&amp;W Formation Wedge 完全トレース</text>
+  <text x="500" y="-35" class="bw-ref" text-anchor="middle">公式寸法: 440mm × 243mm × 232mm | 120° Elliptical Shape</text>
+  <line x1="0" y1="-25" x2="1000" y2="-25" class="outline"/>
+
+  <!-- ==================== B&amp;W REFERENCE BOX ==================== -->
+  <rect x="800" y="-20" width="200" height="140" fill="#f0f8ff" stroke="#0066cc" stroke-width="0.5"/>
+  <text x="900" y="-5" class="subtitle" text-anchor="middle" fill="#0066cc">B&amp;W Formation Wedge</text>
+  <text x="900" y="8" class="bw-ref" text-anchor="middle">公式スペック</text>
+
+  <text x="810" y="25" class="annotation">【寸法】</text>
+  <text x="815" y="38" class="calc">Width: 440mm (17.3")</text>
+  <text x="815" y="50" class="calc">Depth: 243mm (9.6")</text>
+  <text x="815" y="62" class="calc">Height: 232mm (9.1")</text>
+  <text x="815" y="74" class="calc">Weight: 6.5kg</text>
+
+  <text x="810" y="90" class="annotation">【形状】</text>
+  <text x="815" y="103" class="calc">"120-degrees elliptical shape"</text>
+  <text x="815" y="115" class="calc">- B&amp;W公式製品説明より</text>
+
+  <!-- ==================== GEOMETRY CALCULATIONS ==================== -->
+  <rect x="800" y="130" width="200" height="130" fill="#fffff0" stroke="#999" stroke-width="0.5"/>
+  <text x="900" y="145" class="subtitle" text-anchor="middle">幾何学計算</text>
+
+  <text x="810" y="162" class="annotation">【120°扇形】</text>
+  <text x="815" y="175" class="calc">前面弦長 = 440mm</text>
+  <text x="815" y="187" class="calc">弦 = 2R·sin(60°) = 1.732R</text>
+  <text x="815" y="199" class="calc">R = 440 ÷ 1.732 = 254.0mm</text>
+  <text x="815" y="211" class="calc">奥行き = 243mm</text>
+  <text x="815" y="223" class="calc">r = 254 - 243 = 11mm</text>
+  <text x="815" y="235" class="calc">背面幅 = 2×11×sin(60°) = 19mm</text>
+  <text x="815" y="250" class="calc">扇形面積 = 66,825 mm²</text>
+
+  <!-- ==================== 1. FRONT VIEW (正面図) - ELLIPSE ==================== -->
+  <text x="220" y="0" class="subtitle">1. 正面図 (FRONT VIEW) - 楕円形</text>
+
+  <!-- Outer ellipse: a=220, b=116 for 440×232mm -->
+  <ellipse cx="220" cy="136" rx="220" ry="116" class="outline"/>
+
+  <!-- Inner ellipse (12mm shell thickness) -->
+  <ellipse cx="220" cy="136" rx="208" ry="104" class="thin"/>
+
+  <!-- Center lines -->
+  <line x1="220" y1="0" x2="220" y2="275" class="center"/>
+  <line x1="-20" y1="136" x2="460" y2="136" class="center"/>
+
+  <!-- LCD opening 190×108mm, centered at Z=130 (slightly above center) -->
+  <rect x="125" y="76" width="190" height="108" rx="5" ry="5" class="thin"/>
+
+  <!-- Left drivers at X=130mm from center (X=90 in drawing coords) -->
+  <!-- Upper driver at Y = center + 35 = 136 - 35 = 101 (in SVG Y is inverted) -->
+  <circle cx="90" cy="101" r="34" class="thin"/>
+  <circle cx="90" cy="101" r="28" class="thin"/>
+  <circle cx="90" cy="101" r="8" class="thin"/>
+  <!-- Lower passive at Y = center - 35 = 136 + 35 = 171 -->
+  <circle cx="90" cy="171" r="34" class="thin"/>
+  <circle cx="90" cy="171" r="28" class="thin"/>
+
+  <!-- Right drivers at X=350 (220+130) -->
+  <circle cx="350" cy="101" r="34" class="thin"/>
+  <circle cx="350" cy="101" r="28" class="thin"/>
+  <circle cx="350" cy="101" r="8" class="thin"/>
+  <circle cx="350" cy="171" r="34" class="thin"/>
+  <circle cx="350" cy="171" r="28" class="thin"/>
+
+  <!-- Verify drivers are inside ellipse -->
+  <!-- At X=90 (130mm from center): -->
+  <!-- Ellipse Y extent = 116 × sqrt(1 - (130/220)²) = 116 × 0.807 = 93.6mm -->
+  <!-- Driver at Y=35 from center, edge at 69mm &lt; 93.6mm ✓ -->
+
+  <!-- Dimensions: Width 440mm -->
+  <line x1="0" y1="270" x2="440" y2="270" class="dimension"/>
+  <line x1="0" y1="252" x2="0" y2="275" class="dimension"/>
+  <line x1="440" y1="252" x2="440" y2="275" class="dimension"/>
+  <polygon points="0,270 8,267 8,273" fill="#00f"/>
+  <polygon points="440,270 432,267 432,273" fill="#00f"/>
+  <text x="220" y="285" class="dim-text" text-anchor="middle">440 (B&amp;W公式)</text>
+
+  <!-- Dimensions: Height 232mm -->
+  <line x1="460" y1="20" x2="460" y2="252" class="dimension"/>
+  <line x1="440" y1="20" x2="465" y2="20" class="dimension"/>
+  <line x1="440" y1="252" x2="465" y2="252" class="dimension"/>
+  <polygon points="460,20 457,28 463,28" fill="#00f"/>
+  <polygon points="460,252 457,244 463,244" fill="#00f"/>
+  <text x="475" y="140" class="dim-text" text-anchor="start">232 (B&amp;W公式)</text>
+
+  <!-- Driver position from center -->
+  <line x1="90" y1="210" x2="220" y2="210" class="dimension"/>
+  <text x="155" y="205" class="dim-text" text-anchor="middle">130</text>
+
+  <!-- Driver diameter -->
+  <line x1="56" y1="101" x2="124" y2="101" class="dimension"/>
+  <text x="90" y="95" class="dim-text" text-anchor="middle">Ø68</text>
+
+  <!-- Driver vertical spacing -->
+  <line x1="55" y1="101" x2="55" y2="171" class="dimension"/>
+  <text x="45" y="140" class="dim-text" text-anchor="end">70</text>
+
+  <!-- Ellipse parameters -->
+  <text x="220" y="300" class="calc" text-anchor="middle">楕円: a=220mm, b=116mm</text>
+  <text x="220" y="312" class="calc" text-anchor="middle">(x/220)² + (y/116)² = 1</text>
+
+  <!-- Annotations -->
+  <text x="220" y="130" class="annotation" text-anchor="middle">7" LCD</text>
+  <text x="90" y="101" class="small" text-anchor="middle">DRIVER</text>
+  <text x="90" y="171" class="small" text-anchor="middle">PASSIVE</text>
+  <text x="350" y="101" class="small" text-anchor="middle">DRIVER</text>
+  <text x="350" y="171" class="small" text-anchor="middle">PASSIVE</text>
+
+  <!-- ==================== 2. TOP VIEW (上面図) - 120° SECTOR ==================== -->
+  <text x="720" y="280" class="subtitle">2. 上面図 (TOP VIEW) - 120°扇形</text>
+
+  <!--
+    B&amp;W Geometry:
+    - Apex at (720, 578) - virtual apex
+    - Front radius R = 254mm, front arc at Y = 578 - 254 = 324
+    - Back radius r = 11mm, back arc at Y = 578 - 11 = 567
+    - Sector angle = 120° (±60° from centerline)
+    - Front half-width = 254 × sin(60°) = 220mm
+    - Back half-width = 11 × sin(60°) = 9.5mm
+  -->
+
+  <!-- Virtual apex point -->
+  <circle cx="720" cy="578" r="2" fill="#999"/>
+  <text x="730" y="585" class="calc">頂点</text>
+
+  <!-- Construction lines showing 120° angle -->
+  <line x1="720" y1="578" x2="500" y2="324" class="construction"/>
+  <line x1="720" y1="578" x2="940" y2="324" class="construction"/>
+
+  <!-- 120° angle arc -->
+  <path d="M 690,548 A 40,40 0 0,1 750,548" class="angle-arc"/>
+  <text x="720" y="540" class="dim-text" text-anchor="middle" fill="#c00">120°</text>
+
+  <!-- Center line -->
+  <line x1="720" y1="305" x2="720" y2="590" class="center"/>
+
+  <!-- Main sector shape - B&amp;W dimensions -->
+  <path d="M 500,324
+           A 254,254 0 0,1 940,324
+           L 729.5,567
+           A 11,11 0 0,0 710.5,567
+           Z" class="outline"/>
+
+  <!-- Inner cavity (12mm shell) -->
+  <path d="M 512,336
+           A 242,242 0 0,1 928,336
+           L 725,563
+           A 5,5 0 0,0 715,563
+           Z" class="thin"/>
+
+  <!-- Internal baffles -->
+  <line x1="660" y1="340" x2="712" y2="565" class="hidden"/>
+  <line x1="780" y1="340" x2="728" y2="565" class="hidden"/>
+
+  <!-- Mic opening -->
+  <circle cx="720" cy="450" r="30" class="thin"/>
+
+  <!-- Dimension: Front width 440mm -->
+  <line x1="500" y1="308" x2="940" y2="308" class="dimension"/>
+  <line x1="500" y1="324" x2="500" y2="303" class="dimension"/>
+  <line x1="940" y1="324" x2="940" y2="303" class="dimension"/>
+  <text x="720" y="298" class="dim-text" text-anchor="middle">440 (B&amp;W公式)</text>
+
+  <!-- Dimension: Back width 19mm -->
+  <line x1="710.5" y1="580" x2="729.5" y2="580" class="dimension"/>
+  <text x="720" y="595" class="dim-text" text-anchor="middle">19</text>
+
+  <!-- Dimension: Depth 243mm -->
+  <line x1="960" y1="324" x2="960" y2="567" class="dimension"/>
+  <line x1="940" y1="324" x2="965" y2="324" class="dimension"/>
+  <line x1="729.5" y1="567" x2="965" y2="567" class="dimension"/>
+  <text x="975" y="450" class="dim-text" text-anchor="start">243 (B&amp;W公式)</text>
+
+  <!-- Dimension: Front radius -->
+  <line x1="720" y1="578" x2="940" y2="324" class="dimension"/>
+  <text x="850" y="470" class="dim-text" transform="rotate(-60, 850, 470)">R = 254</text>
+
+  <!-- Annotations -->
+  <text x="580" y="430" class="annotation" text-anchor="middle">LEFT</text>
+  <text x="580" y="445" class="small" text-anchor="middle">SPEAKER</text>
+  <text x="860" y="430" class="annotation" text-anchor="middle">RIGHT</text>
+  <text x="860" y="445" class="small" text-anchor="middle">SPEAKER</text>
+  <text x="720" y="400" class="annotation" text-anchor="middle">CENTER</text>
+  <text x="720" y="455" class="small" text-anchor="middle">MIC</text>
+
+  <!-- ==================== 3. SIDE VIEW (側面図) ==================== -->
+  <text x="150" y="360" class="subtitle">3. 側面図 (SIDE VIEW)</text>
+
+  <!-- Side profile - elliptical: depth×height = 243×232 -->
+  <ellipse cx="170" cy="495" rx="121.5" ry="116" class="outline"/>
+  <ellipse cx="170" cy="495" rx="109.5" ry="104" class="thin"/>
+
+  <!-- Center lines -->
+  <line x1="170" y1="360" x2="170" y2="630" class="center"/>
+  <line x1="30" y1="495" x2="310" y2="495" class="center"/>
+
+  <!-- Dimension: Depth 243mm -->
+  <line x1="48.5" y1="630" x2="291.5" y2="630" class="dimension"/>
+  <line x1="48.5" y1="611" x2="48.5" y2="635" class="dimension"/>
+  <line x1="291.5" y1="611" x2="291.5" y2="635" class="dimension"/>
+  <text x="170" y="650" class="dim-text" text-anchor="middle">243 (B&amp;W公式)</text>
+
+  <!-- Dimension: Height 232mm -->
+  <line x1="310" y1="379" x2="310" y2="611" class="dimension"/>
+  <line x1="291.5" y1="379" x2="315" y2="379" class="dimension"/>
+  <line x1="291.5" y1="611" x2="315" y2="611" class="dimension"/>
+  <text x="325" y="500" class="dim-text" text-anchor="start">232</text>
+
+  <!-- Annotations -->
+  <text x="60" y="500" class="small">FRONT</text>
+  <text x="260" y="500" class="small">BACK</text>
+
+  <!-- ==================== 4. HORIZONTAL SECTION ==================== -->
+  <text x="480" y="640" class="subtitle">4. 水平断面図 (Z = 116mm)</text>
+
+  <!-- Scaled-down section view -->
+  <g transform="translate(480, 660) scale(0.7)">
+    <!-- Apex at (170, 240) -->
+    <circle cx="170" cy="240" r="1.5" fill="#999"/>
+
+    <!-- Outer sector -->
+    <path d="M 14,50
+             A 180,180 0 0,1 326,50
+             L 177,232
+             A 8,8 0 0,0 163,232
+             Z" class="outline"/>
+
+    <!-- Inner cavity -->
+    <path d="M 22,58
+             A 172,172 0 0,1 318,58
+             L 175,226
+             A 4,4 0 0,0 165,226
+             Z" class="thin"/>
+
+    <!-- Left chamber -->
+    <path d="M 22,58
+             A 172,172 0 0,0 120,150
+             L 163,226
+             L 163,58
+             Z" class="fill-chamber"/>
+
+    <!-- Right chamber -->
+    <path d="M 318,58
+             A 172,172 0 0,1 220,150
+             L 177,226
+             L 177,58
+             Z" class="fill-chamber"/>
+
+    <!-- Center tower -->
+    <path d="M 120,150
+             L 220,150
+             L 177,226
+             A 4,4 0 0,1 163,226
+             Z" class="fill-center"/>
+
+    <!-- Baffles -->
+    <line x1="120" y1="58" x2="163" y2="226" stroke="#000" stroke-width="2"/>
+    <line x1="220" y1="58" x2="177" y2="226" stroke="#000" stroke-width="2"/>
+
+    <!-- Center line -->
+    <line x1="170" y1="40" x2="170" y2="250" class="center"/>
+
+    <!-- Dimensions -->
+    <text x="170" y="35" class="dim-text" text-anchor="middle">440</text>
+    <text x="170" y="260" class="dim-text" text-anchor="middle">19</text>
+  </g>
+
+  <!-- ==================== SPECIFICATIONS TABLE ==================== -->
+  <rect x="0" y="680" width="220" height="160" fill="#fafafa" stroke="#000" stroke-width="0.5"/>
+  <rect x="0" y="680" width="220" height="22" fill="#e0e0e0" stroke="#000" stroke-width="0.5"/>
+  <text x="110" y="696" class="subtitle" text-anchor="middle">仕様一覧 (B&amp;W準拠)</text>
+
+  <text x="10" y="718" class="annotation">【外形寸法 - B&amp;W公式】</text>
+  <text x="15" y="732" class="small">前面幅: 440mm</text>
+  <text x="15" y="744" class="small">背面幅: 19mm</text>
+  <text x="15" y="756" class="small">奥行き: 243mm</text>
+  <text x="15" y="768" class="small">高さ: 232mm</text>
+  <text x="15" y="780" class="small">扇形角度: 120°</text>
+
+  <text x="10" y="798" class="annotation">【ドライバー配置】</text>
+  <text x="15" y="812" class="small">X位置: 中心から±130mm</text>
+  <text x="15" y="824" class="small">Z間隔: 70mm (中心間)</text>
+  <text x="15" y="836" class="small">直径: Ø68mm</text>
+
+  <!-- ==================== DRIVER FIT VERIFICATION ==================== -->
+  <rect x="240" y="680" width="220" height="160" fill="#f0fff0" stroke="#000" stroke-width="0.5"/>
+  <rect x="240" y="680" width="220" height="22" fill="#d0f0d0" stroke="#000" stroke-width="0.5"/>
+  <text x="350" y="696" class="subtitle" text-anchor="middle">ドライバー収まり検証</text>
+
+  <text x="250" y="718" class="annotation">【楕円内収まり確認】</text>
+  <text x="255" y="732" class="calc">楕円: (x/220)² + (y/116)² = 1</text>
+  <text x="255" y="746" class="calc">X = 130mm での楕円高さ:</text>
+  <text x="255" y="760" class="calc">h = 2×116×√(1-(130/220)²)</text>
+  <text x="255" y="774" class="calc">h = 232 × 0.807 = 187.2mm</text>
+  <text x="255" y="788" class="calc">→ 中心から ±93.6mm</text>
+
+  <text x="250" y="806" class="annotation">【ドライバー位置】</text>
+  <text x="255" y="820" class="calc">上側: +35mm + 34mm = 69mm &lt; 93.6mm ✓</text>
+  <text x="255" y="834" class="calc">下側: -35mm - 34mm = -69mm > -93.6mm ✓</text>
+
+  <!-- ==================== COMPARISON WITH PREVIOUS ==================== -->
+  <rect x="480" y="680" width="220" height="160" fill="#fff0f0" stroke="#000" stroke-width="0.5"/>
+  <rect x="480" y="680" width="220" height="22" fill="#f0d0d0" stroke="#000" stroke-width="0.5"/>
+  <text x="590" y="696" class="subtitle" text-anchor="middle">前バージョンとの比較</text>
+
+  <text x="490" y="718" class="annotation">【寸法変更】</text>
+  <text x="495" y="732" class="small">幅: 420mm → 440mm (+20mm)</text>
+  <text x="495" y="744" class="small">奥行き: 220mm → 243mm (+23mm)</text>
+  <text x="495" y="756" class="small">高さ: 200mm → 232mm (+32mm)</text>
+  <text x="495" y="768" class="small">背面: 39mm → 19mm (-20mm)</text>
+
+  <text x="490" y="786" class="annotation">【改善点】</text>
+  <text x="495" y="800" class="small">✓ B&amp;W公式寸法に完全準拠</text>
+  <text x="495" y="812" class="small">✓ ドライバーが楕円内に収まる</text>
+  <text x="495" y="824" class="small">✓ より細い背面 (19mm) で</text>
+  <text x="495" y="836" class="small">  Formation Wedgeらしい形状</text>
+
+  <!-- ==================== TITLE BLOCK ==================== -->
+  <rect x="720" y="680" width="280" height="160" fill="#f5f5f5" stroke="#000" stroke-width="0.5"/>
+  <rect x="720" y="680" width="280" height="22" fill="#0066cc" stroke="#000" stroke-width="0.5"/>
+  <text x="860" y="696" class="subtitle" text-anchor="middle" fill="#fff">OMNI-P4 v4.1 - B&amp;W Trace</text>
+
+  <line x1="720" y1="750" x2="1000" y2="750" stroke="#000" stroke-width="0.3"/>
+  <line x1="860" y1="702" x2="860" y2="840" stroke="#000" stroke-width="0.3"/>
+
+  <text x="730" y="720" class="small">Project:</text>
+  <text x="730" y="735" class="annotation">OMNI-P4 Smart Console</text>
+
+  <text x="870" y="720" class="small">Reference:</text>
+  <text x="870" y="735" class="annotation">B&amp;W Formation Wedge</text>
+
+  <text x="730" y="768" class="small">Designer: Claude</text>
+  <text x="730" y="783" class="small">Version: 4.1 (B&amp;W Trace)</text>
+  <text x="730" y="798" class="small">Date: 2025-01</text>
+
+  <text x="870" y="768" class="small">Scale: NTS</text>
+  <text x="870" y="783" class="small">Units: mm</text>
+  <text x="870" y="798" class="small">Sheet: 1/1</text>
+
+  <text x="730" y="820" class="small">Dimensions:</text>
+  <text x="730" y="835" class="annotation">440 × 243 × 232mm</text>
+
+  <text x="870" y="820" class="small">Angle:</text>
+  <text x="870" y="835" class="annotation">120° Sector</text>
+</svg>

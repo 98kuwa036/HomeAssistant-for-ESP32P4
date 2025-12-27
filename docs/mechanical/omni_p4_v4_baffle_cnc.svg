@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-30 -20 80 220" width="80mm" height="220mm">
+  <title>OMNI-P4 v4.0 Internal Baffle - CNC Pattern</title>
+  <desc>15mm MDF - Quantity: 2 (Left and Right) - Scale 1:1</desc>
+
+  <style>
+    .cutline { fill: none; stroke: #ff0000; stroke-width: 0.5; }
+    .dimension { fill: none; stroke: #0000ff; stroke-width: 0.3; }
+    .dim-text { font-family: Arial, sans-serif; font-size: 4px; fill: #0000ff; }
+    .title { font-family: Arial, sans-serif; font-size: 5px; font-weight: bold; fill: #000; }
+    .annotation { font-family: Arial, sans-serif; font-size: 3px; fill: #333; }
+    .center { fill: none; stroke: #00ff00; stroke-width: 0.2; stroke-dasharray: 3,1; }
+  </style>
+
+  <!-- Title -->
+  <text x="10" y="-8" class="title" text-anchor="middle">INTERNAL BAFFLE</text>
+  <text x="10" y="0" class="annotation" text-anchor="middle">15mm MDF | Qty: 2 | Scale 1:1</text>
+
+  <!-- Center line -->
+  <line x1="0" y1="5" x2="0" y2="185" class="center"/>
+
+  <!-- Outer rectangle - CUT LINE -->
+  <rect x="-7.5" y="10" width="15" height="176" class="cutline"/>
+
+  <!-- Driver cutout (upper) - CUT LINE -->
+  <circle cx="0" cy="53" r="34" class="cutline"/>
+
+  <!-- Passive radiator cutout (lower) - CUT LINE -->
+  <circle cx="0" cy="128" r="34" class="cutline"/>
+
+  <!-- Dimension: Width 15mm -->
+  <line x1="-7.5" y1="195" x2="7.5" y2="195" class="dimension"/>
+  <line x1="-7.5" y1="186" x2="-7.5" y2="198" class="dimension"/>
+  <line x1="7.5" y1="186" x2="7.5" y2="198" class="dimension"/>
+  <text x="0" y="202" class="dim-text" text-anchor="middle">15</text>
+
+  <!-- Dimension: Height 176mm -->
+  <line x1="20" y1="10" x2="20" y2="186" class="dimension"/>
+  <line x1="7.5" y1="10" x2="23" y2="10" class="dimension"/>
+  <line x1="7.5" y1="186" x2="23" y2="186" class="dimension"/>
+  <text x="28" y="98" class="dim-text" text-anchor="start">176</text>
+
+  <!-- Dimension: Driver position from top -->
+  <line x1="-20" y1="10" x2="-20" y2="53" class="dimension"/>
+  <line x1="-7.5" y1="10" x2="-23" y2="10" class="dimension"/>
+  <line x1="-7.5" y1="53" x2="-23" y2="53" class="dimension"/>
+  <text x="-25" y="32" class="dim-text" text-anchor="end">43</text>
+
+  <!-- Dimension: Passive position from top -->
+  <line x1="-20" y1="10" x2="-20" y2="128" class="dimension"/>
+  <line x1="-7.5" y1="128" x2="-23" y2="128" class="dimension"/>
+  <text x="-25" y="70" class="dim-text" text-anchor="end">118</text>
+
+  <!-- Cutout diameter annotations -->
+  <text x="0" y="50" class="annotation" text-anchor="middle">DRIVER</text>
+  <text x="0" y="56" class="annotation" text-anchor="middle">Ø68</text>
+
+  <text x="0" y="125" class="annotation" text-anchor="middle">PASSIVE</text>
+  <text x="0" y="131" class="annotation" text-anchor="middle">Ø68</text>
+</svg>
