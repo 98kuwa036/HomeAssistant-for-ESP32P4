@@ -1,17 +1,28 @@
 {
   "project": "Omni-P4",
-  "version": "1.0",
+  "version": "4.1",
+  "description": "B&W Formation Wedge Trace Design",
   "units": "mm",
 
   "outer_shell": {
-    "front_width": 380,
-    "back_width": 150,
-    "depth": 200,
-    "height": 180,
-    "wedge_angle_degrees": 120,
-    "wall_thickness": 6,
+    "design_reference": "B&W Formation Wedge",
+    "front_width": 440,
+    "back_width": 19,
+    "depth": 243,
+    "height": 232,
+    "sector_angle_degrees": 120,
+    "front_radius": 254,
+    "back_radius": 11,
+    "wall_thickness": 12,
     "material": "MDF",
-    "material_thickness": 6
+    "material_thickness": 12,
+    "finish_options": ["Matte Black Paint", "Walnut Veneer", "Fabric Wrap"]
+  },
+
+  "elliptical_front": {
+    "semi_major_a": 220,
+    "semi_minor_b": 116,
+    "equation": "(x/220)² + (y/116)² = 1"
   },
 
   "lcd": {
@@ -27,16 +38,16 @@
       "depth": 5
     },
     "bezel": {
-      "top": 10,
-      "bottom": 15,
-      "left": 18,
-      "right": 18
+      "width": 190,
+      "height": 108,
+      "depth": 10
     },
+    "inset_depth": 8,
     "position": {
       "x": 0,
-      "y": 5,
-      "z": 110,
-      "reference": "center_front"
+      "y": "front_inset",
+      "z": 116,
+      "reference": "center_vertical"
     }
   },
 
@@ -53,103 +64,97 @@
       "level_1": {
         "name": "Power and Sensors",
         "plate_size": {"width": 80, "depth": 60},
-        "z_position": 20,
-        "clearance_above": 40,
-        "components": ["DFR1015", "WAGO 221", "SCD41", "SGP40", "ENS160", "BMP388", "SHT40", "SEN0428", "SEN0395", "SEN0540"]
+        "z_position": 25,
+        "clearance_above": 53,
+        "components": ["DFR1015", "WAGO 221", "SCD41", "SGP40", "ENS160", "BMP388", "SHT40", "SEN0428", "SEN0395", "SEN0540"],
+        "dxf_file": "shelf_level1_power_sensors.dxf"
       },
       "level_2": {
         "name": "DAC and Amplifier",
         "plate_size": {"width": 85, "depth": 65},
-        "z_position": 62,
-        "clearance_above": 35,
-        "components": ["ES9039Q2M", "Peerless Amp"]
+        "z_position": 80,
+        "clearance_above": 53,
+        "components": ["ES9039Q2M", "TPA3116D2"],
+        "dxf_file": "shelf_level2_dac_amp.dxf"
       },
       "level_3": {
         "name": "MCU and Display Interface",
         "plate_size": {"width": 100, "depth": 80},
-        "z_position": 99,
-        "clearance_above": 25,
-        "components": ["ESP32-P4"]
+        "z_position": 135,
+        "clearance_above": 30,
+        "components": ["ESP32-P4"],
+        "features": ["LCD FPC slot", "ReSpeaker USB cable routing"],
+        "dxf_file": "shelf_level3_mcu_lcd.dxf"
       }
     },
     "shelf_plate": {
       "material": "A6063-T5 Aluminum",
       "thickness": 2.0,
-      "finish": "Black Anodized",
-      "ventilation_ratio": 0.4
+      "finish": "Black Anodized"
     }
   },
 
-  "speaker_box": {
-    "quantity": 2,
-    "material": "MDF",
-    "wall_thickness": 19,
-    "internal_volume_liters": 1.73,
-    "internal_dimensions": {
-      "width": 80,
-      "height": 120,
-      "depth": 180
+  "speakers": {
+    "configuration": "Integrated Acoustic Chamber",
+    "note": "Enclosure IS the speaker box (like B&W Formation Wedge)",
+    "driver": {
+      "model": "Peerless NE65W-04",
+      "type": "2.5 inch Full Range",
+      "impedance_ohms": 4,
+      "power_rms_watts": 15,
+      "cutout_diameter": 68,
+      "quantity": 2,
+      "position_x": 130,
+      "position_y_offset": 35
     },
-    "external_dimensions": {
-      "width": 118,
-      "height": 158,
-      "depth": 218
+    "passive_radiator": {
+      "model": "Dayton Audio ND65PR-4",
+      "type": "2.5 inch Passive Radiator",
+      "cutout_diameter": 68,
+      "quantity": 2,
+      "position_x": 130,
+      "position_y_offset": -35
     },
-    "drivers": {
-      "main": {
-        "type": "Peerless Full Range",
-        "cutout_diameter": 65,
-        "position_from_top": 40
-      },
-      "passive_radiator": {
-        "type": "Dayton Audio",
-        "cutout_diameter": 65,
-        "stroke_clearance": 15,
-        "position_from_bottom": 40
-      }
-    },
-    "vibration_isolation": {
-      "material": "Hanenite",
-      "hardness_shore_a": 45,
-      "thickness": 5
-    },
-    "position_left": {
-      "x": -120,
-      "y": 30,
-      "z": 10,
-      "rotation_degrees": -15
-    },
-    "position_right": {
-      "x": 120,
-      "y": 30,
-      "z": 10,
-      "rotation_degrees": 15
-    }
+    "chamber_volume_per_channel_liters": 6.0,
+    "total_internal_volume_liters": 15.6
   },
 
   "microphone": {
-    "model": "ReSpeaker XVF3800",
-    "pcb_size": 40,
+    "model": "ReSpeaker USB Mic Array v2.0",
+    "interface": "USB",
+    "pcb_diameter": 70,
     "mic_count": 4,
-    "mic_arrangement": "square",
-    "mic_spacing": 24,
+    "mic_arrangement": "circular",
+    "features": ["Beamforming", "Echo Cancellation", "LED Ring"],
     "acoustic_mesh": {
       "material": "Stainless Steel 100-mesh",
-      "diameter": 60
+      "diameter": 65
     },
     "position": {
       "x": 0,
-      "y": 100,
-      "z": 170,
-      "orientation": "horizontal"
-    }
+      "y": 121.5,
+      "z": 220,
+      "orientation": "horizontal",
+      "mounting": "top_surface_center"
+    },
+    "cable_routing": "USB cable routed through Level 3 notch to ESP32-P4"
+  },
+
+  "rubber_feet": {
+    "quantity": 4,
+    "diameter": 20,
+    "height": 8,
+    "material": "Silicone Rubber",
+    "hardness_shore_a": 60,
+    "color": "Black",
+    "mounting": "Self-adhesive (3M VHB)"
   },
 
   "thermal": {
     "intake": {
       "location": "bottom",
-      "slots": 8,
-      "slot_size": {"width": 40, "height": 5}
+      "slots": 5,
+      "slot_size": {"width": 40, "height": 6}
     },
     "exhaust": {
       "location": "top_perimeter",
@@ -158,59 +163,88 @@
     "heat_sources_watts": {
       "esp32_p4": 1.5,
       "es9039_dac": 0.5,
-      "amplifier": 5.0,
+      "tpa3116_amplifier": 5.0,
       "power_regulators": 2.0
     }
   },
 
   "electrical": {
     "power_input": {
-      "voltage": 12,
+      "voltage": 24,
+      "current_max_amps": 3,
       "connector": "DC barrel 5.5x2.1mm"
     },
-    "internal_voltages": [12, 5, 3.3],
+    "internal_voltages": [24, 12, 5, 3.3],
     "i2s_0": {
       "function": "DAC output",
       "pins": {"bclk": 12, "ws": 10, "dout": 9, "mclk": 13}
     },
-    "i2s_1": {
-      "function": "Mic input",
-      "pins": {"bclk": 45, "ws": 46, "din": 47}
+    "usb_host": {
+      "function": "ReSpeaker USB Mic Array",
+      "connector": "USB-A"
     },
     "i2c": {
       "pins": {"sda": 7, "scl": 8},
-      "frequency_hz": 100000
+      "frequency_hz": 100000,
+      "devices": ["SCD41", "SGP40", "ENS160", "BMP388", "SHT40", "SEN0428"]
     },
     "uart_1": {
-      "function": "SEN0395 Radar",
+      "function": "SEN0395 mmWave Radar",
       "pins": {"tx": 17, "rx": 18}
     },
     "uart_2": {
-      "function": "SEN0540 Voice",
+      "function": "SEN0540 Voice Recognition",
       "pins": {"tx": 4, "rx": 5}
     }
   },
 
+  "sensors": {
+    "i2c_sensors": [
+      {"model": "SCD41", "manufacturer": "Sensirion", "function": "CO2, Temperature, Humidity"},
+      {"model": "SGP40", "manufacturer": "Sensirion", "function": "VOC Index"},
+      {"model": "ENS160", "manufacturer": "ScioSense", "function": "eCO2, TVOC, AQI"},
+      {"model": "BMP388", "manufacturer": "Bosch", "function": "Barometric Pressure, Altitude"},
+      {"model": "SHT40", "manufacturer": "Sensirion", "function": "High-Precision Temp/Humidity"},
+      {"model": "SEN0428", "manufacturer": "DFRobot", "function": "PM1.0, PM2.5, PM10"}
+    ],
+    "uart_sensors": [
+      {"model": "SEN0395", "manufacturer": "DFRobot", "function": "mmWave Presence Detection", "uart": 1},
+      {"model": "SEN0540", "manufacturer": "DFRobot", "function": "Offline Voice Recognition", "uart": 2}
+    ]
+  },
+
   "fasteners": {
     "standoff_screws": {
-      "type": "M3x8 Pan Head",
-      "quantity": 24
+      "type": "M3x8 Pan Head Black Oxide",
+      "quantity": 30
     },
-    "threaded_inserts": {
-      "type": "M3 Heat-set",
-      "quantity": 8
+    "standoff_nuts": {
+      "type": "M3 Hex Nut Black Oxide",
+      "quantity": 20
     },
-    "speaker_screws": {
-      "type": "M4x12 Countersunk",
-      "quantity": 8
+    "pcb_screws": {
+      "type": "M2.5x5 Pan Head",
+      "quantity": 16
+    },
+    "wood_screws": {
+      "type": "3.5x20mm Countersunk",
+      "quantity": 12
     }
   },
 
-  "materials_summary": {
-    "aluminum_plate_m2": 0.05,
-    "mdf_19mm_m2": 0.15,
-    "mdf_6mm_m2": 0.25,
-    "petg_filament_kg": 0.3,
-    "acoustic_fabric_m2": 0.2
-  }
+  "design_files": {
+    "primary_scad": "omni_p4_v4.1_bw_trace.scad",
+    "shelf_dxf": [
+      "shelf_level1_power_sensors.dxf",
+      "shelf_level2_dac_amp.dxf",
+      "shelf_level3_mcu_lcd.dxf"
+    ],
+    "deprecated": [
+      "omni_p4_parametric.scad",
+      "omni_p4_detailed.scad"
+    ]
+  },
+
+  "estimated_weight_kg": 3.9,
+  "bw_formation_wedge_weight_kg": 6.5
 }

@@ -97,10 +97,10 @@ DRIVER_SPACING_Y  = 70;       // Center-to-center vertical spacing
 DRIVER_UPPER_Y    = 35;       // Upper driver: center + 35mm
 DRIVER_LOWER_Y    = -35;      // Lower driver: center - 35mm
 
-// === Microphone (XVF3800) ===
-MIC_PCB           = [40, 40, 2];
-MIC_MESH_DIA      = 60;
-MIC_Y_POS         = DEPTH * 0.6;  // Positioned at 60% depth
+// === ReSpeaker USB Mic Array (replaces XVF3800) ===
+MIC_PCB           = [70, 70, 8];   // ReSpeaker circular PCB (Ø70mm)
+MIC_MESH_DIA      = 65;            // Acoustic mesh diameter
+MIC_Y_POS         = DEPTH * 0.5;   // Centered on top surface
 
 // === Thermal ===
 VENT_SLOT_W       = 40;
@@ -686,32 +686,52 @@ module lcd_assembly() {
 }
 
 // ============================================================================
-// MODULE: XVF3800 Microphone Array
+// MODULE: ReSpeaker USB Mic Array (Top Surface Mount)
 // ============================================================================
 
-module xvf3800() {
-    translate([0, MIC_Y_POS, HEIGHT - 15]) {
-        // PCB
+module respeaker() {
+    translate([0, MIC_Y_POS, HEIGHT - SHELL_THICKNESS]) {
+        // ReSpeaker circular PCB (Ø70mm)
         color(C_PCB)
-        hull() {
-            for (x = [-1, 1], y = [-1, 1]) {
-                translate([x * (MIC_PCB[0]/2 - 5), y * (MIC_PCB[1]/2 - 5), 0])
-                cylinder(r=5, h=MIC_PCB[2], center=true);
-            }
-        }
+        cylinder(d=70, h=MIC_PCB[2]);
 
-        // MEMS microphones (4)
+        // Central processor chip
+        color([0.1, 0.1, 0.12])
+        translate([0, 0, MIC_PCB[2]])
+        cylinder(d=12, h=2);
+
+        // MEMS microphones (4) - arranged in corners
         color([0.3, 0.3, 0.35])
-        for (x = [-12, 12], y = [-12, 12]) {
-            translate([x, y, MIC_PCB[2]/2 + 1])
+        for (angle = [45, 135, 225, 315]) {
+            rotate([0, 0, angle])
+            translate([24, 0, MIC_PCB[2]])
             cylinder(d=4, h=1.5);
         }
 
-        // Acoustic mesh
+        // LED ring
+        color([0.2, 0.2, 0.25])
+        translate([0, 0, MIC_PCB[2] + 0.5])
+        difference() {
+            cylinder(d=60, h=1);
+            translate([0, 0, -0.1])
+            cylinder(d=50, h=1.2);
+        }
+
+        // Acoustic mesh (top protection)
         color(C_MESH)
-        translate([0, 0, MIC_PCB[2]/2 + 4])
+        translate([0, 0, MIC_PCB[2] + 2])
         cylinder(d=MIC_MESH_DIA, h=1);
+
+        // USB cable (going down to Level 3)
+        color([0.15, 0.15, 0.18])
+        translate([0, 15, -30])
+        cylinder(d=4, h=35);
     }
+}
+
+// Alias for backwards compatibility
+module xvf3800() {
+    respeaker();
 }
 
 // ============================================================================
@@ -985,8 +1005,9 @@ MATERIALS BOM (Bill of Materials)
 │ Amplifier        │ TPA3116D2 Class-D Stereo               │ 1 pc   │ 2×15W  │
 │                  │ 12-24V input, 4Ω/8Ω compatible         │        │        │
 ├──────────────────┼────────────────────────────────────────┼────────┼────────┤
-│ Microphone Array │ XMOS XVF3800                           │ 1 pc   │ 4-mic  │
-│                  │ Far-field voice capture                │        │ MEMS   │
+│ Microphone Array │ ReSpeaker USB Mic Array v2.0           │ 1 pc   │ USB    │
+│                  │ 4-mic MEMS, Beamforming, LED Ring      │        │ Ø70mm  │
+│                  │ Top surface mount (天面中央)            │        │        │
 ├──────────────────┼────────────────────────────────────────┼────────┼────────┤
 │ Power Supply     │ 24V 3A DC Adapter + Buck Converter     │ 1 set  │ 72W    │
 │                  │ 24V→5V (3A) for ESP32-P4               │        │        │
@@ -1034,8 +1055,8 @@ MATERIALS BOM (Bill of Materials)
 ├──────────────────┼────────────────────────────────────────┼────────┼────────┤
 │ Cable Ties       │ 100mm Nylon Cable Ties                 │ 20 pcs │ Wiring │
 ├──────────────────┼────────────────────────────────────────┼────────┼────────┤
-│ Acoustic Mesh    │ Stainless Steel Mesh Ø60mm             │ 1 pc   │ Mic    │
-│                  │ 100 mesh count                         │        │        │
+│ Acoustic Mesh    │ Stainless Steel Mesh Ø65mm             │ 1 pc   │ Mic    │
+│                  │ 100 mesh count (for ReSpeaker)         │        │        │
 └──────────────────┴────────────────────────────────────────┴────────┴────────┘
 
 ┌─────────────────────────────────────────────────────────────────────────────┐
