@@ -343,9 +343,13 @@ static esp_err_t init_audio(void)
 
     ret = xvf3800_init(&mic_config);
     if (ret == ESP_OK) {
-        xvf3800_start();
-        xEventGroupSetBits(s_app_event_group, EVT_AUDIO_MIC_READY);
-        ESP_LOGI(TAG, "XVF3800 initialized (I2S1 RX, 16kHz)");
+        ret = xvf3800_start();
+        if (ret == ESP_OK) {
+            xEventGroupSetBits(s_app_event_group, EVT_AUDIO_MIC_READY);
+            ESP_LOGI(TAG, "XVF3800 initialized (I2S1 RX, 16kHz)");
+        } else {
+            ESP_LOGW(TAG, "XVF3800 start failed: %s", esp_err_to_name(ret));
+        }
     } else {
         ESP_LOGW(TAG, "XVF3800 init failed: %s", esp_err_to_name(ret));
     }

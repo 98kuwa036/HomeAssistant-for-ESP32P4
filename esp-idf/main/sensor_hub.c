@@ -309,6 +309,9 @@ static void presence_sensor_task(void *pvParameters)
         // Read presence data
         sen0395_data_t radar_data;
         if (sen0395_read_data(&radar_data) == ESP_OK) {
+            bool presence_changed = false;
+            bool is_present = false;
+
             xSemaphoreTake(s_data_mutex, portMAX_DELAY);
 
             s_room_data.presence.is_present = radar_data.is_present;
@@ -327,17 +330,20 @@ static void presence_sensor_task(void *pvParameters)
 
             s_room_data.presence.timestamp_ms = now;
 
-            // Presence change callback
+            // Check for presence change (callback outside mutex to avoid deadlock)
             if (radar_data.is_present != s_prev_is_present) {
                 s_prev_is_present = radar_data.is_present;
+                presence_changed = true;
+                is_present = radar_data.is_present;
                 xEventGroupSetBits(s_event_group, SENSOR_PRESENCE_EVENT_BIT);
-
-                if (s_presence_callback) {
-                    s_presence_callback(radar_data.is_present, s_presence_callback_data);
-                }
             }
 
             xSemaphoreGive(s_data_mutex);
+
+            // Invoke callback outside mutex to prevent deadlock
+            if (presence_changed && s_presence_callback) {
+                s_presence_callback(is_present, s_presence_callback_data);
+            }
         }
 
         vTaskDelayUntil(&last_wake_time, cycle_time);
