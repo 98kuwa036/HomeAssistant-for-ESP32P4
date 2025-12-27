@@ -1,19 +1,19 @@
 // ============================================================================
-// Project Omni-P4: Formation Wedge Style v3.3
-// HiFi Rose / B&O Design Philosophy - Final Refinement
+// Project Omni-P4: Formation Wedge Style v3.4
+// True Wedge Shape - Narrow Back with Smooth Curves
 // ============================================================================
+//
+// v3.4 Changes:
+// - BACK_WIDTH: 150mm → 30mm (true wedge/triangular shape)
+// - Back corner radius: 30mm (smooth continuous curve)
+// - Center tower moved forward to avoid back protrusion
+// - Connectors repositioned to sides
+// - Speaker toe-in: 8° → 15° (follows wedge angle)
 //
 // v3.3 Changes:
 // - Shell thickness: 6mm → 8mm (HiFi Rose monocoque rigidity)
 // - Corner radius: 10mm → 15mm (Formation Wedge smooth curves)
-// - Speaker depth: 120mm → 150mm (target ~0.95L, constrained by wedge)
 // - Tapered LCD bezel with 1mm shadow gap (B&O floating effect)
-// - Cable channels for I2S shielded cables
-// - Enhanced internal reinforcement ribs
-//
-// v3.2 Changes:
-// - MDF thickness: 19mm → 12mm (slim speaker boxes)
-// - Speaker boxes fit entirely inside wedge envelope
 //
 // ============================================================================
 
@@ -23,24 +23,26 @@ $fn = 128;  // High resolution for smooth curves
 // MASTER PARAMETERS
 // ============================================================================
 
-// === Outer Shell (Wedge) - HiFi Rose Monocoque ===
-FRONT_WIDTH     = 380;
-BACK_WIDTH      = 150;
-DEPTH           = 200;
-HEIGHT          = 180;
-WALL_THICKNESS  = 8;      // CHANGED: 6mm → 8mm (structural monocoque)
-WEDGE_ANGLE     = 120;
-CORNER_RADIUS   = 15;     // CHANGED: 10mm → 15mm (Formation Wedge curves)
+// === Outer Shell (True Wedge Shape) ===
+FRONT_WIDTH       = 380;
+BACK_WIDTH        = 30;       // CHANGED: 150mm → 30mm (true wedge)
+DEPTH             = 200;
+HEIGHT            = 180;
+WALL_THICKNESS    = 8;
+WEDGE_ANGLE       = 120;
+CORNER_RADIUS     = 15;       // Front corners
+BACK_CORNER_RADIUS = 30;      // NEW: Larger radius for smooth back curve
 
-// === Compact Center Tower ===
-STANDOFF_PITCH  = 55;     // Compact 55mm pitch
-STANDOFF_OD     = 5;
-STANDOFF_ID     = 2.5;
+// === Center Tower (Moved Forward) ===
+STANDOFF_PITCH    = 55;
+STANDOFF_OD       = 5;
+STANDOFF_ID       = 2.5;
+TOWER_Y_OFFSET    = -25;      // NEW: Move tower 25mm forward from center
 
 // Standoff heights
-STANDOFF_L1_L2  = 35;
-STANDOFF_L2_L3  = 30;
-STANDOFF_L3_TOP = 20;
+STANDOFF_L1_L2    = 35;
+STANDOFF_L2_L3    = 30;
+STANDOFF_L3_TOP   = 20;
 
 // === Shelf Plates (Compact) ===
 PLATE_THICKNESS = 2.0;
@@ -67,24 +69,25 @@ LCD_Y_INSET     = 12;             // CHANGED: 10mm → 12mm (deeper inset)
 LCD_SHADOW_GAP  = 1.0;            // NEW: B&O floating effect
 LCD_TAPER_ANGLE = 15;             // NEW: Bezel taper angle (degrees)
 
-// === Trapezoidal Speaker Box (Optimized v3.3) ===
+// === Trapezoidal Speaker Box (True Wedge v3.4) ===
 MDF_THICKNESS   = 12;
 
-// Speaker box dimensions (maximized within wedge constraint)
-// Target volume: ~0.95L (wedge geometry limits max achievable volume)
-SPK_FRONT_W     = 105;    // CHANGED: 75mm → 105mm
-SPK_BACK_W      = 65;     // CHANGED: 50mm → 65mm
-SPK_DEPTH       = 150;    // CHANGED: 120mm → 150mm (user request)
-SPK_HEIGHT      = 145;    // CHANGED: 115mm → 145mm
+// Speaker box dimensions (adjusted for narrow wedge)
+// With BACK_WIDTH=30mm, speakers must be more forward
+SPK_FRONT_W     = 100;    // Slightly narrower
+SPK_BACK_W      = 55;     // Narrower to follow wedge taper
+SPK_DEPTH       = 120;    // CHANGED: 150mm → 120mm (shorter to fit narrow back)
+SPK_HEIGHT      = 145;
 
 // Driver positions
-DRIVER_DIA      = 65;     // CHANGED: 58mm → 65mm (2.5" full-range)
-PASSIVE_RAD_DIA = 60;     // CHANGED: 55mm → 60mm
+DRIVER_DIA      = 65;
+PASSIVE_RAD_DIA = 60;
 
-// Speaker positioning (optimized for wedge fitment)
-SPK_X_OFFSET    = 68;     // CHANGED: 85mm → 68mm (closer to center for fit)
-SPK_Y_OFFSET    = 15;     // CHANGED: 20mm → 15mm (slightly forward)
+// Speaker positioning (adjusted for true wedge)
+SPK_X_OFFSET    = 75;     // CHANGED: 68mm → 75mm (more outward)
+SPK_Y_OFFSET    = 12;     // CHANGED: 15mm → 12mm (more forward)
 SPK_Z_OFFSET    = 18;
+SPK_TOE_IN      = 15;     // NEW: 8° → 15° (follows wedge angle)
 
 // === XVF3800 ===
 MIC_PCB         = [40, 40, 2];
@@ -153,7 +156,11 @@ SPK_INTERNAL_HEIGHT = SPK_HEIGHT - MDF_THICKNESS * 2;
 SPK_VOLUME_ML = (SPK_INTERNAL_FRONT + SPK_INTERNAL_BACK) / 2 * SPK_INTERNAL_DEPTH * SPK_INTERNAL_HEIGHT / 1000;
 SPK_VOLUME_L = SPK_VOLUME_ML / 1000;
 
-echo(str("=== v3.3 Design Verification ==="));
+echo(str("=== v3.4 True Wedge Design Verification ==="));
+echo(str("Wedge geometry:"));
+echo(str("  Front width: ", FRONT_WIDTH, "mm"));
+echo(str("  Back width: ", BACK_WIDTH, "mm (true wedge)"));
+echo(str("  Taper ratio: ", (FRONT_WIDTH - BACK_WIDTH) / DEPTH, "mm/mm"));
 echo(str("Speaker fitment check:"));
 echo(str("  Speaker back Y: ", SPK_BACK_Y, "mm"));
 echo(str("  Wedge inner half-width at back: ", WEDGE_INNER_HALF, "mm"));
@@ -161,24 +168,52 @@ echo(str("  Speaker outer edge: ", SPK_OUTER_EDGE, "mm"));
 echo(str("  Clearance: ", WEDGE_INNER_HALF - SPK_OUTER_EDGE, "mm"));
 echo(str("  Fits inside: ", WEDGE_INNER_HALF > SPK_OUTER_EDGE ? "YES" : "NO - ADJUST NEEDED"));
 echo(str("Speaker volume:"));
-echo(str("  Internal dimensions: ", SPK_INTERNAL_FRONT, "x", SPK_INTERNAL_BACK, "x", SPK_INTERNAL_DEPTH, "x", SPK_INTERNAL_HEIGHT, "mm"));
 echo(str("  Volume per channel: ", SPK_VOLUME_L, "L"));
-echo(str("Shell thickness: ", WALL_THICKNESS, "mm (monocoque)"));
-echo(str("Corner radius: ", CORNER_RADIUS, "mm"));
+echo(str("  Toe-in angle: ", SPK_TOE_IN, "°"));
+echo(str("Shell: ", WALL_THICKNESS, "mm, Front R=", CORNER_RADIUS, "mm, Back R=", BACK_CORNER_RADIUS, "mm"));
 
 // ============================================================================
-// MODULE: Rounded Wedge Shell (Formation Wedge Style)
+// MODULE: True Wedge Shape with Smooth Back Curve
 // ============================================================================
+
+// Create smooth wedge with large back radius
 module rounded_wedge_2d() {
-    offset(r=CORNER_RADIUS)
-    offset(r=-CORNER_RADIUS)
-    polygon(wedge_points());
+    hull() {
+        // Front left corner
+        translate([-FRONT_WIDTH/2 + CORNER_RADIUS, CORNER_RADIUS])
+        circle(r=CORNER_RADIUS);
+
+        // Front right corner
+        translate([FRONT_WIDTH/2 - CORNER_RADIUS, CORNER_RADIUS])
+        circle(r=CORNER_RADIUS);
+
+        // Back - single large arc for smooth curve
+        translate([0, DEPTH - BACK_CORNER_RADIUS])
+        circle(r=BACK_CORNER_RADIUS);
+    }
+}
+
+// Inner wedge (for cavity)
+module inner_wedge_2d() {
+    hull() {
+        // Front left corner (inset)
+        translate([-FRONT_WIDTH/2 + CORNER_RADIUS + WALL_THICKNESS, CORNER_RADIUS + WALL_THICKNESS])
+        circle(r=CORNER_RADIUS);
+
+        // Front right corner (inset)
+        translate([FRONT_WIDTH/2 - CORNER_RADIUS - WALL_THICKNESS, CORNER_RADIUS + WALL_THICKNESS])
+        circle(r=CORNER_RADIUS);
+
+        // Back - single arc (inset)
+        translate([0, DEPTH - BACK_CORNER_RADIUS - WALL_THICKNESS])
+        circle(r=max(BACK_CORNER_RADIUS - WALL_THICKNESS, 5));
+    }
 }
 
 module outer_shell_rounded(show_cutaway=false) {
     color(C_MDF_DARK, 0.35) {
         difference() {
-            // Rounded outer wedge
+            // Rounded outer wedge with smooth back
             hull() {
                 // Bottom rounded edge
                 translate([0, 0, CORNER_RADIUS])
@@ -197,12 +232,10 @@ module outer_shell_rounded(show_cutaway=false) {
                 rounded_wedge_2d();
             }
 
-            // Inner cavity
-            translate([0, WALL_THICKNESS, WALL_THICKNESS])
-            linear_extrude(height=HEIGHT - WALL_THICKNESS*2) {
-                offset(r=-WALL_THICKNESS)
-                rounded_wedge_2d();
-            }
+            // Inner cavity (follows wedge taper)
+            translate([0, 0, WALL_THICKNESS])
+            linear_extrude(height=HEIGHT - WALL_THICKNESS*2)
+            inner_wedge_2d();
 
             // LCD aperture (front, inset position)
             translate([0, -1, LCD_Z_CENTER])
@@ -216,41 +249,49 @@ module outer_shell_rounded(show_cutaway=false) {
                 }
             }
 
-            // Bottom intake vents (streamlined slots)
+            // Bottom intake vents (forward position, avoid narrow back)
             for (x = [-100, -50, 0, 50, 100]) {
                 hull() {
-                    translate([x-12, DEPTH/2, -1])
+                    translate([x-12, DEPTH * 0.35, -1])
                     cylinder(d=5, h=WALL_THICKNESS + 2);
-                    translate([x+12, DEPTH/2, -1])
+                    translate([x+12, DEPTH * 0.35, -1])
                     cylinder(d=5, h=WALL_THICKNESS + 2);
                 }
             }
 
-            // Top exhaust (organic shape around mic)
-            translate([0, DEPTH/2, HEIGHT - WALL_THICKNESS/2])
+            // Top exhaust (moved forward due to narrow back)
+            translate([0, DEPTH * 0.4, HEIGHT - WALL_THICKNESS/2])
             cylinder(d=MIC_MESH_DIA + 15, h=WALL_THICKNESS + 1, center=true);
 
-            // Back connectors (recessed)
-            translate([0, DEPTH - WALL_THICKNESS/2, HEIGHT * 0.45]) {
-                // DC jack
-                translate([-35, 0, 0])
-                rotate([90, 0, 0])
-                cylinder(d=11, h=WALL_THICKNESS + 2, center=true);
+            // Side connectors (moved from narrow back to sides)
+            // Left side: DC jack + USB-C
+            translate([-FRONT_WIDTH/4, 0, HEIGHT * 0.35]) {
+                // Connector panel area on angled side
+                rotate([0, 0, -30])  // Follow wedge angle
+                translate([0, -1, 0]) {
+                    // DC jack
+                    translate([0, 0, 15])
+                    rotate([-90, 0, 0])
+                    cylinder(d=11, h=WALL_THICKNESS + 2);
 
-                // USB-C
-                hull() {
-                    for (x = [-3.5, 3.5]) {
-                        translate([x, 0, 0])
-                        rotate([90, 0, 0])
-                        cylinder(d=4, h=WALL_THICKNESS + 2, center=true);
+                    // USB-C
+                    translate([0, 0, -10])
+                    rotate([-90, 0, 0])
+                    hull() {
+                        for (x = [-3.5, 3.5]) {
+                            translate([x, 0, 0])
+                            cylinder(d=4, h=WALL_THICKNESS + 2);
+                        }
                     }
                 }
-
-                // SMA antenna
-                translate([35, 0, 0])
-                rotate([90, 0, 0])
-                cylinder(d=7, h=WALL_THICKNESS + 2, center=true);
             }
+
+            // Right side: SMA antenna
+            translate([FRONT_WIDTH/4, 0, HEIGHT * 0.35])
+            rotate([0, 0, 30])
+            translate([0, -1, 0])
+            rotate([-90, 0, 0])
+            cylinder(d=7, h=WALL_THICKNESS + 2);
 
             // Cutaway
             if (show_cutaway) {
@@ -439,10 +480,10 @@ module reinforced_top_plate() {
 // This eliminates the need for a separate internal frame.
 
 module monocoque_bolt_points() {
-    // 8 bolt points connecting plates to shell
+    // 8 bolt points connecting plates to shell (aligned with forward tower)
     color([0.6, 0.6, 0.65]) {
         // Bottom plate to shell bolts (corners)
-        translate([0, DEPTH/2, BOTTOM_PLATE_THICK/2])
+        translate([0, DEPTH/2 + TOWER_Y_OFFSET, BOTTOM_PLATE_THICK/2])
         for (x = [-1, 1]) {
             for (y = [-1, 1]) {
                 translate([x * (PLATE_L1[0]/2 + 15), y * (PLATE_L1[1]/2 + 15), 0])
@@ -451,7 +492,7 @@ module monocoque_bolt_points() {
         }
 
         // Top plate to shell bolts (corners)
-        translate([0, DEPTH/2, HEIGHT - TOP_PLATE_THICK/2])
+        translate([0, DEPTH/2 + TOWER_Y_OFFSET, HEIGHT - TOP_PLATE_THICK/2])
         for (x = [-1, 1]) {
             for (y = [-1, 1]) {
                 translate([x * (PLATE_L3[0]/2 + 15), y * (PLATE_L3[1]/2 + 15), 0])
@@ -556,10 +597,11 @@ module shelf_plate(size, with_vent=true) {
 }
 
 // ============================================================================
-// MODULE: Compact Center Tower (ESP32-P4 Under Level 3)
+// MODULE: Compact Center Tower (Moved Forward for True Wedge)
 // ============================================================================
 module center_tower() {
-    translate([0, DEPTH/2, 0]) {
+    // Tower moved forward to avoid narrow back
+    translate([0, DEPTH/2 + TOWER_Y_OFFSET, 0]) {
 
         // === LEVEL 1: Power + Sensors ===
         translate([0, 0, LEVEL_1_Z]) {
@@ -677,17 +719,17 @@ module trapezoidal_speaker_box() {
 }
 
 // ============================================================================
-// MODULE: Speaker Box Pair (Trapezoidal, Toe-in)
+// MODULE: Speaker Box Pair (Strong Toe-in for True Wedge)
 // ============================================================================
 module speaker_boxes() {
-    // Left speaker
+    // Left speaker (stronger toe-in follows wedge angle)
     translate([-SPK_X_OFFSET, SPK_Y_OFFSET, SPK_Z_OFFSET])
-    rotate([0, 0, 8])  // Slight toe-in
+    rotate([0, 0, SPK_TOE_IN])
     trapezoidal_speaker_box();
 
-    // Right speaker (mirrored)
+    // Right speaker (mirrored with same toe-in)
     translate([SPK_X_OFFSET, SPK_Y_OFFSET, SPK_Z_OFFSET])
-    rotate([0, 0, -8])
+    rotate([0, 0, -SPK_TOE_IN])
     mirror([1, 0, 0])
     trapezoidal_speaker_box();
 }
@@ -763,10 +805,11 @@ module lcd_assembly() {
 }
 
 // ============================================================================
-// MODULE: XVF3800 (Top Mount, Streamlined)
+// MODULE: XVF3800 (Top Mount, Moved Forward)
 // ============================================================================
 module xvf3800() {
-    translate([0, DEPTH/2, MIC_Z]) {
+    // Mic array moved forward with tower
+    translate([0, DEPTH/2 + TOWER_Y_OFFSET, MIC_Z]) {
         // PCB
         color(C_PCB)
         hull() {
@@ -829,22 +872,22 @@ module fabric_grille() {
 }
 
 // ============================================================================
-// MODULE: Inner Frame (Streamlined)
+// MODULE: Inner Frame (Adjusted for True Wedge)
 // ============================================================================
 module inner_frame() {
     color(C_FRAME, 0.6) {
-        // Tower base (compact)
-        translate([0, DEPTH/2, WALL_THICKNESS]) {
+        // Tower base (moved forward)
+        translate([0, DEPTH/2 + TOWER_Y_OFFSET, WALL_THICKNESS]) {
             difference() {
                 cylinder(d=PLATE_L1[0] + 15, h=8);
                 cylinder(d=PLATE_L1[0] - 8, h=9);
             }
         }
 
-        // Speaker cradles (follow trapezoid)
+        // Speaker cradles (follow strong toe-in angle)
         for (side = [-1, 1]) {
             translate([side * SPK_X_OFFSET, SPK_Y_OFFSET + SPK_DEPTH/2, SPK_Z_OFFSET - 3])
-            rotate([0, 0, side * 8])
+            rotate([0, 0, side * SPK_TOE_IN])
             difference() {
                 cube([12, SPK_DEPTH - 30, 8], center=true);
                 cube([8, SPK_DEPTH - 20, 10], center=true);
@@ -864,8 +907,8 @@ module inner_frame() {
             cube([LCD_BEZEL[0], LCD_BEZEL[1], 10], center=true);
         }
 
-        // Mic mount (flush ring)
-        translate([0, DEPTH/2, HEIGHT - 12])
+        // Mic mount (moved forward with tower)
+        translate([0, DEPTH/2 + TOWER_Y_OFFSET, HEIGHT - 12])
         difference() {
             cylinder(d=MIC_MESH_DIA + 10, h=6);
             cylinder(d=MIC_PCB[0] + 1, h=8);
@@ -960,7 +1003,52 @@ full_assembly();              // Complete Formation Wedge style
 // ============================================================================
 /*
 ===================================================================
-v3.3 HiFi Rose / B&O Design Philosophy - Final Refinement
+v3.4 True Wedge Shape - Formation Wedge Authentic
+===================================================================
+
+KEY CHANGES FROM v3.3:
+
+1. TRUE WEDGE GEOMETRY:
+   - BACK_WIDTH: 150mm → 30mm (dramatic narrowing)
+   - Creates authentic Formation Wedge triangular profile
+   - Taper ratio: 1.75mm/mm (350mm over 200mm depth)
+
+2. SMOOTH BACK CURVE:
+   - Back corner radius: 30mm (vs 15mm front)
+   - Single large arc at back creates teardrop profile
+   - hull() with 3 circles: 2 front corners + 1 back center
+
+3. COMPONENT REPOSITIONING:
+   - Center tower: moved 25mm forward (TOWER_Y_OFFSET)
+   - XVF3800 mic: follows tower forward
+   - Connectors: moved to angled sides (no longer on narrow back)
+   - DC jack + USB-C: left side at -30° angle
+   - SMA antenna: right side at +30° angle
+
+4. SPEAKER TOE-IN:
+   - Angle: 8° → 15° (follows steeper wedge taper)
+   - Speaker depth: 150mm → 120mm (fits narrow back)
+   - Better acoustic imaging with strong toe-in
+
+WEDGE PROFILE (Top View):
+         ┌──────────────────────────┐
+        ╱                            ╲
+       ╱                              ╲  ← FRONT_WIDTH = 380mm
+      │      ○ Speaker    Speaker ○    │
+      │           ○ Tower ○            │  ← Tower moved forward
+       ╲          ○ Mic                ╱
+        ╲                            ╱
+         ╲                          ╱
+          ╲        ●               ╱   ← BACK_WIDTH = 30mm
+           ╲______●●●_____________╱      (with R=30mm curve)
+
+CONNECTOR PLACEMENT:
+  Left side (-30°):  DC jack, USB-C
+  Right side (+30°): SMA antenna
+  (Back too narrow for connectors)
+
+===================================================================
+v3.3 HiFi Rose / B&O Design Philosophy:
 ===================================================================
 
 KEY CHANGES FROM v3.2:
