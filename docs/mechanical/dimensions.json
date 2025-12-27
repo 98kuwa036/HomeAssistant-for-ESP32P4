@@ -1,0 +1,216 @@
+{
+  "project": "Omni-P4",
+  "version": "1.0",
+  "units": "mm",
+
+  "outer_shell": {
+    "front_width": 380,
+    "back_width": 150,
+    "depth": 200,
+    "height": 180,
+    "wedge_angle_degrees": 120,
+    "wall_thickness": 6,
+    "material": "MDF",
+    "material_thickness": 6
+  },
+
+  "lcd": {
+    "model": "7-inch MIPI-DSI IPS",
+    "resolution": "1024x600",
+    "active_area": {
+      "width": 154,
+      "height": 86
+    },
+    "module_size": {
+      "width": 170,
+      "height": 105,
+      "depth": 5
+    },
+    "bezel": {
+      "top": 10,
+      "bottom": 15,
+      "left": 18,
+      "right": 18
+    },
+    "position": {
+      "x": 0,
+      "y": 5,
+      "z": 110,
+      "reference": "center_front"
+    }
+  },
+
+  "center_tower": {
+    "standoff": {
+      "material": "A6063 Aluminum",
+      "finish": "Black Anodized",
+      "thread": "M3",
+      "outer_diameter": 6,
+      "shape": "hex",
+      "pitch": 75
+    },
+    "levels": {
+      "level_1": {
+        "name": "Power and Sensors",
+        "plate_size": {"width": 80, "depth": 60},
+        "z_position": 20,
+        "clearance_above": 40,
+        "components": ["DFR1015", "WAGO 221", "SCD41", "SGP40", "ENS160", "BMP388", "SHT40", "SEN0428", "SEN0395", "SEN0540"]
+      },
+      "level_2": {
+        "name": "DAC and Amplifier",
+        "plate_size": {"width": 85, "depth": 65},
+        "z_position": 62,
+        "clearance_above": 35,
+        "components": ["ES9039Q2M", "Peerless Amp"]
+      },
+      "level_3": {
+        "name": "MCU and Display Interface",
+        "plate_size": {"width": 100, "depth": 80},
+        "z_position": 99,
+        "clearance_above": 25,
+        "components": ["ESP32-P4"]
+      }
+    },
+    "shelf_plate": {
+      "material": "A6063-T5 Aluminum",
+      "thickness": 2.0,
+      "finish": "Black Anodized",
+      "ventilation_ratio": 0.4
+    }
+  },
+
+  "speaker_box": {
+    "quantity": 2,
+    "material": "MDF",
+    "wall_thickness": 19,
+    "internal_volume_liters": 1.73,
+    "internal_dimensions": {
+      "width": 80,
+      "height": 120,
+      "depth": 180
+    },
+    "external_dimensions": {
+      "width": 118,
+      "height": 158,
+      "depth": 218
+    },
+    "drivers": {
+      "main": {
+        "type": "Peerless Full Range",
+        "cutout_diameter": 65,
+        "position_from_top": 40
+      },
+      "passive_radiator": {
+        "type": "Dayton Audio",
+        "cutout_diameter": 65,
+        "stroke_clearance": 15,
+        "position_from_bottom": 40
+      }
+    },
+    "vibration_isolation": {
+      "material": "Hanenite",
+      "hardness_shore_a": 45,
+      "thickness": 5
+    },
+    "position_left": {
+      "x": -120,
+      "y": 30,
+      "z": 10,
+      "rotation_degrees": -15
+    },
+    "position_right": {
+      "x": 120,
+      "y": 30,
+      "z": 10,
+      "rotation_degrees": 15
+    }
+  },
+
+  "microphone": {
+    "model": "ReSpeaker XVF3800",
+    "pcb_size": 40,
+    "mic_count": 4,
+    "mic_arrangement": "square",
+    "mic_spacing": 24,
+    "acoustic_mesh": {
+      "material": "Stainless Steel 100-mesh",
+      "diameter": 60
+    },
+    "position": {
+      "x": 0,
+      "y": 100,
+      "z": 170,
+      "orientation": "horizontal"
+    }
+  },
+
+  "thermal": {
+    "intake": {
+      "location": "bottom",
+      "slots": 8,
+      "slot_size": {"width": 40, "height": 5}
+    },
+    "exhaust": {
+      "location": "top_perimeter",
+      "gap_width": 3
+    },
+    "heat_sources_watts": {
+      "esp32_p4": 1.5,
+      "es9039_dac": 0.5,
+      "amplifier": 5.0,
+      "power_regulators": 2.0
+    }
+  },
+
+  "electrical": {
+    "power_input": {
+      "voltage": 12,
+      "connector": "DC barrel 5.5x2.1mm"
+    },
+    "internal_voltages": [12, 5, 3.3],
+    "i2s_0": {
+      "function": "DAC output",
+      "pins": {"bclk": 12, "ws": 10, "dout": 9, "mclk": 13}
+    },
+    "i2s_1": {
+      "function": "Mic input",
+      "pins": {"bclk": 45, "ws": 46, "din": 47}
+    },
+    "i2c": {
+      "pins": {"sda": 7, "scl": 8},
+      "frequency_hz": 100000
+    },
+    "uart_1": {
+      "function": "SEN0395 Radar",
+      "pins": {"tx": 17, "rx": 18}
+    },
+    "uart_2": {
+      "function": "SEN0540 Voice",
+      "pins": {"tx": 4, "rx": 5}
+    }
+  },
+
+  "fasteners": {
+    "standoff_screws": {
+      "type": "M3x8 Pan Head",
+      "quantity": 24
+    },
+    "threaded_inserts": {
+      "type": "M3 Heat-set",
+      "quantity": 8
+    },
+    "speaker_screws": {
+      "type": "M4x12 Countersunk",
+      "quantity": 8
+    }
+  },
+
+  "materials_summary": {
+    "aluminum_plate_m2": 0.05,
+    "mdf_19mm_m2": 0.15,
+    "mdf_6mm_m2": 0.25,
+    "petg_filament_kg": 0.3,
+    "acoustic_fabric_m2": 0.2
+  }
+}
