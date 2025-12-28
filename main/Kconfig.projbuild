@@ -1,0 +1,285 @@
+menu "Omni-P4 Configuration"
+
+    config OMNI_P4_BOARD_NAME
+        string "Board Name"
+        default "ESP32-P4-Function-EV-Board"
+        help
+            Name of the target board for logging and identification.
+
+    menu "Audio Configuration"
+        config OMNI_P4_AUDIO_ENABLED
+            bool "Enable Audio Pipeline"
+            default y
+            help
+                Enable the dual I2S audio pipeline (ES9039Q2M DAC + ReSpeaker).
+
+        menu "I2S0 - DAC Output (ES9039Q2M)"
+            depends on OMNI_P4_AUDIO_ENABLED
+
+            config I2S0_BCK_GPIO
+                int "I2S0 BCK (Bit Clock) GPIO"
+                default 12
+                range 0 54
+
+            config I2S0_WS_GPIO
+                int "I2S0 WS (Word Select/LRCK) GPIO"
+                default 13
+                range 0 54
+
+            config I2S0_DOUT_GPIO
+                int "I2S0 Data Out GPIO"
+                default 14
+                range 0 54
+
+            config I2S0_MCLK_GPIO
+                int "I2S0 MCLK GPIO"
+                default 11
+                range 0 54
+
+            config I2S0_SAMPLE_RATE
+                int "I2S0 Sample Rate (Hz)"
+                default 48000
+                range 8000 192000
+
+            config I2S0_BIT_WIDTH
+                int "I2S0 Bit Width"
+                default 32
+                range 16 32
+        endmenu
+
+        menu "I2S1 - Mic Input (ReSpeaker XVF3800)"
+            depends on OMNI_P4_AUDIO_ENABLED
+
+            config I2S1_BCK_GPIO
+                int "I2S1 BCK (Bit Clock) GPIO"
+                default 15
+                range 0 54
+
+            config I2S1_WS_GPIO
+                int "I2S1 WS (Word Select/LRCK) GPIO"
+                default 16
+                range 0 54
+
+            config I2S1_DIN_GPIO
+                int "I2S1 Data In GPIO"
+                default 17
+                range 0 54
+
+            config I2S1_MCLK_GPIO
+                int "I2S1 MCLK GPIO"
+                default 18
+                range 0 54
+
+            config I2S1_SAMPLE_RATE
+                int "I2S1 Sample Rate (Hz)"
+                default 16000
+                range 8000 48000
+        endmenu
+
+        config DAC_I2C_ADDR
+            hex "ES9039Q2M I2C Address"
+            default 0x48
+            depends on OMNI_P4_AUDIO_ENABLED
+    endmenu
+
+    menu "Display Configuration"
+        config OMNI_P4_DISPLAY_ENABLED
+            bool "Enable MIPI-DSI Display"
+            default y
+            help
+                Enable the 7-inch MIPI-DSI LCD with LVGL.
+
+        config DISPLAY_H_RES
+            int "Horizontal Resolution"
+            default 1024
+            depends on OMNI_P4_DISPLAY_ENABLED
+
+        config DISPLAY_V_RES
+            int "Vertical Resolution"
+            default 600
+            depends on OMNI_P4_DISPLAY_ENABLED
+
+        config DISPLAY_REFRESH_HZ
+            int "Refresh Rate (Hz)"
+            default 60
+            depends on OMNI_P4_DISPLAY_ENABLED
+
+        config DISPLAY_BACKLIGHT_GPIO
+            int "Backlight Control GPIO"
+            default 26
+            range -1 54
+            depends on OMNI_P4_DISPLAY_ENABLED
+            help
+                GPIO for LCD backlight PWM control. Set -1 to disable.
+
+        config DISPLAY_TOUCH_I2C_ADDR
+            hex "Touch Panel I2C Address"
+            default 0x5D
+            depends on OMNI_P4_DISPLAY_ENABLED
+    endmenu
+
+    menu "LED Ring Configuration"
+        config OMNI_P4_LED_ENABLED
+            bool "Enable WS2812B LED Ring"
+            default y
+            help
+                Enable the Phantom LED ring (Nest Mini style).
+
+        config LED_STRIP_GPIO
+            int "LED Strip Data GPIO"
+            default 21
+            range 0 54
+            depends on OMNI_P4_LED_ENABLED
+
+        config LED_STRIP_COUNT
+            int "Number of LEDs"
+            default 12
+            range 1 60
+            depends on OMNI_P4_LED_ENABLED
+
+        config LED_STRIP_RMT_CHANNEL
+            int "RMT Channel"
+            default 0
+            range 0 7
+            depends on OMNI_P4_LED_ENABLED
+    endmenu
+
+    menu "Sensor Hub Configuration"
+        config OMNI_P4_SENSORS_ENABLED
+            bool "Enable Sensor Hub"
+            default y
+            help
+                Enable the multi-sensor hub (I2C + UART sensors).
+
+        menu "I2C Bus Configuration"
+            depends on OMNI_P4_SENSORS_ENABLED
+
+            config SENSOR_I2C_PORT
+                int "I2C Port Number"
+                default 0
+                range 0 1
+
+            config SENSOR_I2C_SDA_GPIO
+                int "I2C SDA GPIO"
+                default 7
+                range 0 54
+
+            config SENSOR_I2C_SCL_GPIO
+                int "I2C SCL GPIO"
+                default 8
+                range 0 54
+
+            config SENSOR_I2C_FREQ_HZ
+                int "I2C Frequency (Hz)"
+                default 100000
+                range 100000 400000
+        endmenu
+
+        menu "I2C Sensor Addresses"
+            depends on OMNI_P4_SENSORS_ENABLED
+
+            config SHT40_I2C_ADDR
+                hex "SHT40 I2C Address"
+                default 0x44
+
+            config BMP388_I2C_ADDR
+                hex "BMP388 I2C Address"
+                default 0x77
+
+            config SCD41_I2C_ADDR
+                hex "SCD41 I2C Address"
+                default 0x62
+
+            config ENS160_I2C_ADDR
+                hex "ENS160 I2C Address"
+                default 0x53
+
+            config SGP40_I2C_ADDR
+                hex "SGP40 I2C Address"
+                default 0x59
+
+            config BH1750_I2C_ADDR
+                hex "BH1750 I2C Address"
+                default 0x23
+        endmenu
+
+        menu "UART1 - mmWave Radar (LD2410)"
+            depends on OMNI_P4_SENSORS_ENABLED
+
+            config LD2410_UART_PORT
+                int "UART Port Number"
+                default 1
+                range 1 2
+
+            config LD2410_UART_TX_GPIO
+                int "UART TX GPIO"
+                default 43
+                range 0 54
+
+            config LD2410_UART_RX_GPIO
+                int "UART RX GPIO"
+                default 44
+                range 0 54
+
+            config LD2410_UART_BAUD
+                int "UART Baud Rate"
+                default 256000
+        endmenu
+
+        menu "UART2 - Voice Recognition (SEN0540)"
+            depends on OMNI_P4_SENSORS_ENABLED
+
+            config SEN0540_UART_PORT
+                int "UART Port Number"
+                default 2
+                range 1 2
+
+            config SEN0540_UART_TX_GPIO
+                int "UART TX GPIO"
+                default 45
+                range 0 54
+
+            config SEN0540_UART_RX_GPIO
+                int "UART RX GPIO"
+                default 46
+                range 0 54
+
+            config SEN0540_UART_BAUD
+                int "UART Baud Rate"
+                default 9600
+        endmenu
+
+        config SENSOR_READ_INTERVAL_MS
+            int "Sensor Read Interval (ms)"
+            default 5000
+            range 1000 60000
+            depends on OMNI_P4_SENSORS_ENABLED
+    endmenu
+
+    menu "Network Configuration"
+        config WIFI_SSID
+            string "WiFi SSID"
+            default "your_ssid"
+            help
+                SSID of the WiFi network to connect to.
+
+        config WIFI_PASSWORD
+            string "WiFi Password"
+            default "your_password"
+            help
+                Password for the WiFi network.
+
+        config MQTT_BROKER_URI
+            string "MQTT Broker URI"
+            default "mqtt://homeassistant.local:1883"
+            help
+                URI of the MQTT broker for Home Assistant integration.
+
+        config MQTT_TOPIC_PREFIX
+            string "MQTT Topic Prefix"
+            default "omni_p4"
+            help
+                Prefix for all MQTT topics.
+    endmenu
+
+endmenu
