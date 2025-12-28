@@ -58,7 +58,7 @@
       "thread": "M3",
       "outer_diameter": 6,
       "shape": "hex",
-      "pitch": 75
+      "pitch": 55
     },
     "levels": {
       "level_1": {
@@ -239,9 +239,8 @@
       "shelf_level2_dac_amp.dxf",
       "shelf_level3_mcu_lcd.dxf"
     ],
-    "deprecated": [
-      "omni_p4_parametric.scad",
-      "omni_p4_detailed.scad"
+    "archived": [
+      "archive/omni_p4_detailed.scad"
     ]
   },
 

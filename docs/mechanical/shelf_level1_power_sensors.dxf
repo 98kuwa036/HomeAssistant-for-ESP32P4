@@ -125,7 +125,7 @@ TEXT
 40
 2
 1
-Standoff Pitch: 75mm (M3)
+Standoff Pitch: 55mm (M3)
 0
 LWPOLYLINE
 8
@@ -155,9 +155,9 @@ CIRCLE
 8
 STANDOFF_M3
 10
--37.5
+-27.5
 20
--37.5
+-27.5
 40
 1.6
 0
@@ -165,9 +165,9 @@ CIRCLE
 8
 STANDOFF_M3
 10
-37.5
+27.5
 20
--37.5
+-27.5
 40
 1.6
 0
@@ -175,9 +175,9 @@ CIRCLE
 8
 STANDOFF_M3
 10
-37.5
+27.5
 20
-37.5
+27.5
 40
 1.6
 0
@@ -185,9 +185,9 @@ CIRCLE
 8
 STANDOFF_M3
 10
--37.5
+-27.5
 20
-37.5
+27.5
 40
 1.6
 0
