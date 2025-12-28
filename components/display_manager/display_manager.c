@@ -17,6 +17,7 @@
 #include "driver/ledc.h"
 #include "lvgl.h"
 #include "sdkconfig.h"
+#include "ui/ui_app.h"
 
 static const char *TAG = "display_mgr";
 
@@ -402,15 +403,18 @@ esp_err_t display_manager_init(void)
     // Initialize backlight
     init_backlight();
 
-    // Create UI screens
+    // Create UI screens (legacy)
     create_home_screen();
     create_sensor_screen();
     create_music_screen();
     create_notification_popup();
 
-    // Set initial screen
+    // Initialize advanced UI (TileView + Glass Cockpit)
+    ui_app_init();
+    ESP_LOGI(TAG, "Advanced UI initialized");
+
+    // Set initial screen (advanced UI takes over)
     s_disp.current_screen = SCREEN_HOME;
-    lv_screen_load(s_disp.screens[SCREEN_HOME]);
 
     s_disp.brightness = 80;
     s_disp.power_on = true;

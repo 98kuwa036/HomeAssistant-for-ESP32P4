@@ -1,0 +1,44 @@
+{
+  "appliances": [
+    {
+      "id": "living_room_light",
+      "name": "Living Room Light",
+      "type": "LIGHT",
+      "signals": {
+        "on": "5d8f7a2e1b3c4d5e",
+        "off": "5d8f7a2e1b3c4d5f"
+      }
+    },
+    {
+      "id": "living_room_ac",
+      "name": "Living Room AC",
+      "type": "AC",
+      "signals": {
+        "on": "6a7b8c9d0e1f2a3b",
+        "off": "6a7b8c9d0e1f2a3c",
+        "cool_25": "6a7b8c9d0e1f2a3d",
+        "heat_22": "6a7b8c9d0e1f2a3e"
+      }
+    },
+    {
+      "id": "bedroom_light",
+      "name": "Bedroom Light",
+      "type": "LIGHT",
+      "signals": {
+        "on": "7b8c9d0e1f2a3b4c",
+        "off": "7b8c9d0e1f2a3b4d"
+      }
+    },
+    {
+      "id": "tv",
+      "name": "TV",
+      "type": "TV",
+      "signals": {
+        "power": "8c9d0e1f2a3b4c5d",
+        "vol_up": "8c9d0e1f2a3b4c5e",
+        "vol_down": "8c9d0e1f2a3b4c5f"
+      }
+    }
+  ],
+  "remo_ip_hint": ""
+}
