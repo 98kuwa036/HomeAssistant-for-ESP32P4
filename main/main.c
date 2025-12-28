@@ -49,6 +49,7 @@
 #include "led_effect.h"
 #include "display_manager.h"
 #include "command_cache.h"
+#include "remo_client.h"
 
 static const char *TAG = "omni_p4";
 
@@ -374,6 +375,16 @@ static void network_task(void *pvParameters)
 
     // TODO: Implement WiFi and MQTT initialization
     // For now, just mark as placeholder
+
+    // Initialize Nature Remo client
+    // This will mount SPIFFS and attempt mDNS discovery
+    esp_err_t remo_ret = remo_client_init();
+    if (remo_ret == ESP_OK) {
+        ESP_LOGI(TAG, "Remo client initialized, available: %s",
+                 remo_client_is_available() ? "yes" : "no");
+    } else {
+        ESP_LOGW(TAG, "Remo client init failed: %s", esp_err_to_name(remo_ret));
+    }
 
     while (1) {
         // Update system state

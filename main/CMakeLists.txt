@@ -12,4 +12,8 @@ idf_component_register(
         led_effect
         display_manager
         command_cache
+        remo_client
 )
+
+# Create SPIFFS partition image from spiffs_image folder
+spiffs_create_partition_image(storage ../spiffs_image FLASH_IN_PROJECT)
