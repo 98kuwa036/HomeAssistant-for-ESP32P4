@@ -55,7 +55,7 @@ CENTER_ZONE_WIDTH = 120;      // Width reserved for electronics tower
 BAFFLE_SETBACK    = 30;       // Distance from front for baffle
 
 // === Center Tower ===
-STANDOFF_PITCH    = 75;       // M3 standoff spacing
+STANDOFF_PITCH    = 55;       // M3 standoff spacing (minimized tower)
 STANDOFF_OD       = 6;        // Standoff outer diameter
 STANDOFF_ID       = 3;        // M3 thread
 TOWER_WIDTH       = 100;      // Plate width
