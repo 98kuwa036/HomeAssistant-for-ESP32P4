@@ -598,3 +598,132 @@ bool sensor_hub_is_initialized(void)
 {
     return s_hub.initialized;
 }
+
+// ============================================================================
+// Additional API implementations (declared in header)
+// ============================================================================
+
+esp_err_t sensor_hub_read_climate(sensor_data_t *data)
+{
+    if (!s_hub.initialized || !data) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (xSemaphoreTake(s_hub.mutex, pdMS_TO_TICKS(100)) != pdTRUE) {
+        return ESP_ERR_TIMEOUT;
+    }
+
+    memset(data, 0, sizeof(sensor_data_t));
+    data->timestamp_us = esp_timer_get_time();
+
+    // Read climate sensors only
+    if (s_hub.status.sht40_present) {
+        read_sht40(data);
+    }
+    if (s_hub.status.bmp388_present) {
+        read_bmp388(data);
+    }
+
+    xSemaphoreGive(s_hub.mutex);
+    return ESP_OK;
+}
+
+esp_err_t sensor_hub_read_air_quality(sensor_data_t *data)
+{
+    if (!s_hub.initialized || !data) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (xSemaphoreTake(s_hub.mutex, pdMS_TO_TICKS(100)) != pdTRUE) {
+        return ESP_ERR_TIMEOUT;
+    }
+
+    memset(data, 0, sizeof(sensor_data_t));
+    data->timestamp_us = esp_timer_get_time();
+
+    // Read air quality sensors only
+    if (s_hub.status.scd41_present) {
+        read_scd41(data);
+    }
+    if (s_hub.status.ens160_present) {
+        read_ens160(data);
+    }
+    if (s_hub.status.sgp40_present) {
+        read_sgp40(data);
+    }
+
+    xSemaphoreGive(s_hub.mutex);
+    return ESP_OK;
+}
+
+esp_err_t sensor_hub_read_presence(sensor_data_t *data)
+{
+    if (!s_hub.initialized || !data) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    // LD2410 data is updated asynchronously via UART task
+    memset(data, 0, sizeof(sensor_data_t));
+    data->timestamp_us = esp_timer_get_time();
+    data->ld2410_valid = s_hub.status.ld2410_present;
+
+    return ESP_OK;
+}
+
+esp_err_t sensor_hub_read_light(sensor_data_t *data)
+{
+    if (!s_hub.initialized || !data) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (xSemaphoreTake(s_hub.mutex, pdMS_TO_TICKS(100)) != pdTRUE) {
+        return ESP_ERR_TIMEOUT;
+    }
+
+    memset(data, 0, sizeof(sensor_data_t));
+    data->timestamp_us = esp_timer_get_time();
+
+    if (s_hub.status.bh1750_present) {
+        read_bh1750(data);
+    }
+
+    xSemaphoreGive(s_hub.mutex);
+    return ESP_OK;
+}
+
+esp_err_t sensor_hub_calibrate_co2(uint16_t reference_co2)
+{
+    if (!s_hub.initialized || !s_hub.dev_scd41) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    ESP_LOGI(TAG, "Calibrating CO2 sensor with reference: %d ppm", reference_co2);
+
+    // Stop periodic measurement first
+    esp_err_t ret = i2c_write_cmd(s_hub.dev_scd41, SCD41_CMD_STOP_MEASUREMENT);
+    if (ret != ESP_OK) return ret;
+
+    vTaskDelay(pdMS_TO_TICKS(500));
+
+    // Send forced recalibration command (0x362F) followed by reference value
+    uint8_t cmd[5];
+    cmd[0] = 0x36;
+    cmd[1] = 0x2F;
+    cmd[2] = (reference_co2 >> 8) & 0xFF;
+    cmd[3] = reference_co2 & 0xFF;
+    cmd[4] = 0x00;  // CRC placeholder
+
+    ret = i2c_master_transmit(s_hub.dev_scd41, cmd, 5, 100);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "CO2 calibration failed");
+        return ret;
+    }
+
+    vTaskDelay(pdMS_TO_TICKS(400));
+
+    // Restart periodic measurement
+    ret = i2c_write_cmd(s_hub.dev_scd41, SCD41_CMD_START_MEASUREMENT);
+
+    ESP_LOGI(TAG, "CO2 calibration complete");
+    return ret;
+}
