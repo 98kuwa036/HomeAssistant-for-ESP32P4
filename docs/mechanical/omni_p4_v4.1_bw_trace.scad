@@ -102,6 +102,12 @@ MIC_PCB           = [70, 70, 8];   // ReSpeaker circular PCB (Ø70mm)
 MIC_MESH_DIA      = 65;            // Acoustic mesh diameter
 MIC_Y_POS         = DEPTH * 0.5;   // Centered on top surface
 
+// === LED Diffuser Ring (Nest Mini style) ===
+DIFFUSER_OD       = 68;            // Outer diameter (covers LED ring)
+DIFFUSER_ID       = 50;            // Inner diameter (mic hole stays open)
+DIFFUSER_H        = 3;             // Thickness (milky acrylic)
+DIFFUSER_Z_OFFSET = 3;             // Height above ReSpeaker PCB top
+
 // === Thermal ===
 VENT_SLOT_W       = 40;
 VENT_SLOT_H       = 6;
@@ -124,6 +130,7 @@ C_CONE        = [0.90, 0.88, 0.82];
 C_MESH        = [0.50, 0.50, 0.52, 0.7];
 C_FABRIC      = [0.12, 0.12, 0.15];
 C_RUBBER      = [0.08, 0.08, 0.10];  // Black rubber
+C_DIFFUSER    = [0.95, 0.95, 0.98, 0.6];  // Milky acrylic (translucent)
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -335,9 +342,13 @@ module outer_shell(show_cutaway=false) {
             // Bottom ventilation slots
             bottom_vents();
 
-            // Top microphone mesh opening
+            // Top microphone/diffuser opening (sized for diffuser ring)
             translate([0, MIC_Y_POS, HEIGHT - SHELL_THICKNESS/2])
-            cylinder(d=MIC_MESH_DIA + 10, h=SHELL_THICKNESS + 1, center=true);
+            cylinder(d=DIFFUSER_OD + 4, h=SHELL_THICKNESS + 1, center=true);
+
+            // Diffuser seating recess (3mm deep ledge for diffuser ring)
+            translate([0, MIC_Y_POS, HEIGHT - DIFFUSER_H])
+            cylinder(d=DIFFUSER_OD + 2, h=DIFFUSER_H + 1);
 
             // Back connector panel
             translate([0, DEPTH - BACK_RADIUS - 5, HEIGHT * 0.4])
@@ -689,6 +700,21 @@ module lcd_assembly() {
 // MODULE: ReSpeaker USB Mic Array (Top Surface Mount)
 // ============================================================================
 
+// ============================================================================
+// MODULE: LED Diffuser Ring (Nest Mini Style)
+// ============================================================================
+
+module led_diffuser_ring() {
+    // Donut-shaped milky acrylic diffuser
+    // Sits on top of ReSpeaker, covers LED ring, leaves center open for mics
+    color(C_DIFFUSER)
+    difference() {
+        cylinder(d=DIFFUSER_OD, h=DIFFUSER_H);
+        translate([0, 0, -0.1])
+        cylinder(d=DIFFUSER_ID, h=DIFFUSER_H + 0.2);
+    }
+}
+
 module respeaker() {
     translate([0, MIC_Y_POS, HEIGHT - SHELL_THICKNESS]) {
         // ReSpeaker circular PCB (Ø70mm)
@@ -708,7 +734,7 @@ module respeaker() {
             cylinder(d=4, h=1.5);
         }
 
-        // LED ring
+        // LED ring (12 LEDs in ring pattern)
         color([0.2, 0.2, 0.25])
         translate([0, 0, MIC_PCB[2] + 0.5])
         difference() {
@@ -717,10 +743,22 @@ module respeaker() {
             cylinder(d=50, h=1.2);
         }
 
-        // Acoustic mesh (top protection)
+        // Individual LEDs (12 RGB LEDs)
+        for (i = [0:11]) {
+            rotate([0, 0, i * 30])
+            translate([27.5, 0, MIC_PCB[2] + 1])
+            color([1, 1, 1, 0.9])  // White glow (can be any color)
+            cylinder(d=3, h=0.5);
+        }
+
+        // LED Diffuser Ring (Nest Mini style)
+        translate([0, 0, MIC_PCB[2] + DIFFUSER_Z_OFFSET])
+        led_diffuser_ring();
+
+        // Acoustic mesh (center, for microphones)
         color(C_MESH)
-        translate([0, 0, MIC_PCB[2] + 2])
-        cylinder(d=MIC_MESH_DIA, h=1);
+        translate([0, 0, MIC_PCB[2] + DIFFUSER_Z_OFFSET + DIFFUSER_H + 0.5])
+        cylinder(d=DIFFUSER_ID - 5, h=1);
 
         // USB cable (going down to Level 3)
         color([0.15, 0.15, 0.18])
@@ -1057,6 +1095,12 @@ MATERIALS BOM (Bill of Materials)
 ├──────────────────┼────────────────────────────────────────┼────────┼────────┤
 │ Acoustic Mesh    │ Stainless Steel Mesh Ø65mm             │ 1 pc   │ Mic    │
 │                  │ 100 mesh count (for ReSpeaker)         │        │        │
+├──────────────────┼────────────────────────────────────────┼────────┼────────┤
+│ LED Diffuser     │ Milky Acrylic (Opal/Frosted) 3mm       │ 1 pc   │ Laser  │
+│ Ring             │ Donut: OD=68mm, ID=50mm                │        │ Cut    │
+│                  │ Material: PMMA (Polymethyl Methacrylate)│       │        │
+│                  │ Light transmission: 30-50%             │        │        │
+│                  │ Purpose: Nest Mini style LED diffusion │        │        │
 └──────────────────┴────────────────────────────────────────┴────────┴────────┘
 
 ┌─────────────────────────────────────────────────────────────────────────────┐
