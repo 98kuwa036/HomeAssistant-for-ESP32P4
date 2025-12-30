@@ -2,11 +2,13 @@
 # Raspberry Pi 4B + Google AI Studio 専用構成
 #
 # ボード: ESP32-P4-Function-EV-Board v1.5
-# オーディオ: ES8311 Codec + NS4150B Amplifier
+# マイク: ReSpeaker USB Mic Array v2.0 (USB Host経由)
+# オーディオ出力: ES8311 Codec + NS4150B Amplifier
 # 通信: ESP32-C6-MINI-1 (WiFi 6 / BLE 5)
 #
 # 特徴:
-#   - ES8311コーデック最適化
+#   - USB Audio Host (ReSpeaker対応)
+#   - 48kHz→16kHz自動ダウンサンプリング
 #   - クラウドオフロード（STT/TTS/LLM）
 #   - 日本語音声対応
 #   - Raspberry Pi 4B向け軽量設計
@@ -53,6 +55,13 @@ esphome:
       - delay: 1s
       - light.turn_off: status_led
 
+# ===== USB Microphone External Component =====
+external_components:
+  - source:
+      type: local
+      path: ../components
+    components: [usb_microphone]
+
 esp32:
   board: esp32-p4-function-ev-board
   variant: esp32p4
@@ -71,6 +80,10 @@ esp32:
 
       # === Audio Optimization ===
       CONFIG_ESP_TASK_WDT_TIMEOUT_S: "30"
+
+      # === USB Host (ReSpeaker USB Mic Array) ===
+      CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK: y
+      CONFIG_AUDIO_INPUT_USB: y
 
       # === WiFi (via ESP32-C6) ===
       CONFIG_ESP32_WIFI_STATIC_RX_BUFFER_NUM: "6"
@@ -124,17 +137,12 @@ i2s_audio:
     i2s_bclk_pin: ${i2s_bclk_pin}
     i2s_mclk_pin: ${i2s_mclk_pin}
 
-# ===== Microphone (ES8311 ADC) =====
+# ===== Microphone (USB Audio - ReSpeaker USB Mic Array) =====
+# Uses usb_audio_input ESP-IDF component via USB Host
+# Audio is automatically downsampled from 48kHz stereo to 16kHz mono
 microphone:
-  - platform: i2s_audio
-    id: mic_es8311
-    i2s_audio_id: i2s_audio_bus
-    i2s_din_pin: ${i2s_din_pin}
-    adc_type: external
-    pdm: false
-    channel: left
-    bits_per_sample: 16bit
-    sample_rate: 16000
+  - platform: usb_microphone
+    id: mic_usb
 
 # ===== Speaker (ES8311 DAC + NS4150B Amp) =====
 speaker:
@@ -150,7 +158,7 @@ speaker:
 # ===== Voice Assistant =====
 voice_assistant:
   id: voice_assist
-  microphone: mic_es8311
+  microphone: mic_usb
   speaker: speaker_es8311
   use_wake_word: true
   noise_suppression_level: 2

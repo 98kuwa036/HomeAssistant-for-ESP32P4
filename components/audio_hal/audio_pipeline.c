@@ -290,12 +290,117 @@ static void mic_read_task(void *arg)
 // ============================================================================
 
 #ifdef CONFIG_AUDIO_INPUT_USB
+
+// USB Audio is always 48kHz stereo from ReSpeaker
+#define USB_AUDIO_SAMPLE_RATE   48000
+#define USB_AUDIO_CHANNELS      2
+#define USB_DOWNSAMPLE_RATIO    (USB_AUDIO_SAMPLE_RATE / CONFIG_PROCESSED_SAMPLE_RATE)
+
+// Separate counter for USB audio downsampling
+static uint32_t s_usb_downsample_counter = 0;
+
 /**
- * @brief USB Audio data callback - forwards audio to process_mic_data
+ * @brief Convert USB stereo 48kHz to mono 16kHz
+ *
+ * USB Audio from ReSpeaker is always 48kHz stereo.
+ * This function converts it to 16kHz mono for Home Assistant.
+ */
+static size_t usb_stereo_to_mono_16k(const int16_t *input, int16_t *output, size_t stereo_frames)
+{
+    size_t out_idx = 0;
+
+    for (size_t i = 0; i < stereo_frames; i++) {
+        // Each stereo frame: [Left, Right]
+        int16_t left = input[i * 2];
+        int16_t right = input[i * 2 + 1];
+
+        // Mix to mono (average both channels)
+        int32_t mono = ((int32_t)left + (int32_t)right) / 2;
+
+        // Downsample 48kHz -> 16kHz (take every 3rd sample)
+        s_usb_downsample_counter++;
+        if (s_usb_downsample_counter >= USB_DOWNSAMPLE_RATIO) {
+            s_usb_downsample_counter = 0;
+            output[out_idx++] = (int16_t)mono;
+        }
+    }
+
+    return out_idx;
+}
+
+/**
+ * @brief Process USB audio data (always 48kHz stereo)
+ *
+ * Stores raw stereo data and downsampled 16kHz mono data.
+ */
+static void process_usb_audio_data(const uint8_t *data, size_t len)
+{
+    if (!s_audio.initialized || len == 0) return;
+
+    // USB audio: 48kHz, 16-bit, stereo
+    size_t stereo_frames = len / (2 * USB_AUDIO_CHANNELS);  // 2 bytes per sample, 2 channels
+
+    if (xSemaphoreTake(s_audio.mutex, pdMS_TO_TICKS(5))) {
+        // ========================================
+        // 1. Store raw 48kHz stereo data
+        // ========================================
+        size_t raw_space = (s_audio.raw_read_pos - s_audio.raw_write_pos - 1 + RAW_BUFFER_SIZE) % RAW_BUFFER_SIZE;
+        if (len <= raw_space) {
+            size_t first_chunk = RAW_BUFFER_SIZE - s_audio.raw_write_pos;
+            if (len <= first_chunk) {
+                memcpy(s_audio.input_buffer_raw + s_audio.raw_write_pos, data, len);
+            } else {
+                memcpy(s_audio.input_buffer_raw + s_audio.raw_write_pos, data, first_chunk);
+                memcpy(s_audio.input_buffer_raw, data + first_chunk, len - first_chunk);
+            }
+            s_audio.raw_write_pos = (s_audio.raw_write_pos + len) % RAW_BUFFER_SIZE;
+        } else {
+            s_audio.raw_overruns++;
+        }
+
+        // ========================================
+        // 2. Convert to 16kHz mono for Home Assistant
+        // ========================================
+        int16_t mono_buf[stereo_frames / USB_DOWNSAMPLE_RATIO + 1];
+        size_t mono_samples = usb_stereo_to_mono_16k(
+            (const int16_t *)data,
+            mono_buf,
+            stereo_frames
+        );
+        size_t mono_bytes = mono_samples * sizeof(int16_t);
+
+        size_t proc_space = (s_audio.processed_read_pos - s_audio.processed_write_pos - 1 + PROCESSED_BUFFER_SIZE) % PROCESSED_BUFFER_SIZE;
+        if (mono_bytes <= proc_space) {
+            size_t first_chunk = PROCESSED_BUFFER_SIZE - s_audio.processed_write_pos;
+            if (mono_bytes <= first_chunk) {
+                memcpy(s_audio.input_buffer_processed + s_audio.processed_write_pos, mono_buf, mono_bytes);
+            } else {
+                memcpy(s_audio.input_buffer_processed + s_audio.processed_write_pos, mono_buf, first_chunk);
+                memcpy(s_audio.input_buffer_processed, (uint8_t*)mono_buf + first_chunk, mono_bytes - first_chunk);
+            }
+            s_audio.processed_write_pos = (s_audio.processed_write_pos + mono_bytes) % PROCESSED_BUFFER_SIZE;
+
+            // Legacy alias sync
+            s_audio.input_write_pos = s_audio.processed_write_pos;
+        } else {
+            s_audio.overruns++;
+        }
+
+        xSemaphoreGive(s_audio.mutex);
+
+        // Update VAD with 16kHz mono data
+        if (mono_samples > 0) {
+            update_vad(mono_buf, mono_samples);
+        }
+    }
+}
+
+/**
+ * @brief USB Audio data callback - handles 48kHz stereo from ReSpeaker
  */
 static void usb_audio_data_callback(const uint8_t *data, size_t len, void *user_ctx)
 {
-    process_mic_data(data, len);
+    process_usb_audio_data(data, len);
 }
 
 /**
@@ -1087,8 +1192,9 @@ void audio_pipeline_get_buffer_levels(uint8_t *output_level, uint8_t *input_leve
         *output_level = (used * 100) / AUDIO_BUFFER_SIZE;
     }
     if (input_level) {
-        size_t used = (s_audio.input_write_pos - s_audio.input_read_pos + AUDIO_BUFFER_SIZE) % AUDIO_BUFFER_SIZE;
-        *input_level = (used * 100) / AUDIO_BUFFER_SIZE;
+        // Use processed buffer size (16kHz mono) for input level
+        size_t used = (s_audio.processed_write_pos - s_audio.processed_read_pos + PROCESSED_BUFFER_SIZE) % PROCESSED_BUFFER_SIZE;
+        *input_level = (used * 100) / PROCESSED_BUFFER_SIZE;
     }
 }
 
