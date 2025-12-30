@@ -1,9 +1,11 @@
 /**
  * @file audio_pipeline.c
- * @brief Audio Pipeline Implementation with I2S Mic + I2S DAC
+ * @brief Audio Pipeline Implementation with I2S/USB Mic + I2S DAC
  *
  * Audio Flow:
- *   I2S1 Microphone (48kHz mono/stereo) --> I2S RX --> Dual Buffers
+ *   [USB Audio] ReSpeaker USB (48kHz) --> usb_host_uac --> Dual Buffers
+ *       OR
+ *   [I2S Audio] I2S1 Microphone (48kHz) --> I2S RX --> Dual Buffers
  *                                                        |
  *                                       ┌────────────────┴────────────────┐
  *                                       |                                 |
@@ -13,13 +15,14 @@
  *   Output Buffer --> I2S0 --> ES9038Q2M DAC --> Peerless Speaker
  *
  * Supported Microphones:
- *   - INMP441: I2S MEMS microphone (mono, needs L/R select)
- *   - SPH0645: I2S MEMS microphone (mono)
- *   - ICS-43434: I2S MEMS microphone (stereo)
- *   - PDM microphones via ESP32-P4 PDM interface
+ *   USB (CONFIG_AUDIO_INPUT_USB):
+ *     - ReSpeaker USB Mic Array v2.0 (with beamforming)
+ *     - Any UAC 1.0 compatible USB microphone
  *
- * Note: USB Audio Class Host is NOT supported on ESP32-P4.
- *       The usb_stream component only supports ESP32-S2/S3.
+ *   I2S (CONFIG_AUDIO_INPUT_I2S):
+ *     - INMP441: I2S MEMS microphone (mono)
+ *     - SPH0645: I2S MEMS microphone (mono)
+ *     - ICS-43434: I2S MEMS microphone (stereo)
  */
 
 #include "audio_pipeline.h"
@@ -35,6 +38,11 @@
 #include "esp_check.h"
 #include "esp_heap_caps.h"
 #include "sdkconfig.h"
+
+// Include USB Audio Input when enabled
+#ifdef CONFIG_AUDIO_INPUT_USB
+#include "usb_audio_input.h"
+#endif
 
 static const char *TAG = "audio_pipe";
 
@@ -149,11 +157,11 @@ static size_t mono_downsample(const int16_t *input, int16_t *output, size_t in_s
 static void update_vad(const int16_t *samples, size_t num_samples);
 
 // ============================================================================
-// I2S Microphone Task
+// Audio Data Processing (shared by both USB and I2S input)
 // ============================================================================
 
 /**
- * @brief Process incoming audio data from I2S microphone
+ * @brief Process incoming audio data from microphone (USB or I2S)
  *
  * Stores raw data to RAW buffer and processed (downsampled) data to Processed buffer.
  */
@@ -231,6 +239,11 @@ static void process_mic_data(const uint8_t *data, size_t len)
     }
 }
 
+// ============================================================================
+// I2S Microphone Task (only when I2S input is enabled)
+// ============================================================================
+
+#ifndef CONFIG_AUDIO_INPUT_USB
 /**
  * @brief I2S Microphone reading task
  *
@@ -270,6 +283,70 @@ static void mic_read_task(void *arg)
     ESP_LOGI(TAG, "Microphone task stopped");
     vTaskDelete(NULL);
 }
+#endif  // !CONFIG_AUDIO_INPUT_USB (I2S mic task)
+
+// ============================================================================
+// USB Audio Input Callbacks (when USB input is enabled)
+// ============================================================================
+
+#ifdef CONFIG_AUDIO_INPUT_USB
+/**
+ * @brief USB Audio data callback - forwards audio to process_mic_data
+ */
+static void usb_audio_data_callback(const uint8_t *data, size_t len, void *user_ctx)
+{
+    process_mic_data(data, len);
+}
+
+/**
+ * @brief USB Audio connection callback
+ */
+static void usb_audio_connect_callback(bool connected, const usb_audio_input_info_t *info, void *user_ctx)
+{
+    if (connected && info) {
+        ESP_LOGI(TAG, "USB Audio connected!");
+        ESP_LOGI(TAG, "  VID: 0x%04X, PID: 0x%04X", info->vid, info->pid);
+        ESP_LOGI(TAG, "  Format: %lu Hz, %d ch, %d-bit",
+                 info->sample_rate, info->channels, info->bit_depth);
+        if (info->is_respeaker) {
+            ESP_LOGI(TAG, "  ReSpeaker USB Mic Array detected - Beamforming enabled!");
+        }
+
+        s_audio.mic_ready = true;
+
+        // Auto-start streaming
+        usb_audio_input_start();
+        s_audio.mic_streaming = true;
+    } else {
+        ESP_LOGW(TAG, "USB Audio disconnected");
+        s_audio.mic_ready = false;
+        s_audio.mic_streaming = false;
+    }
+}
+
+static esp_err_t init_usb_audio_input(void)
+{
+    ESP_LOGI(TAG, "Initializing USB Audio Input...");
+    ESP_LOGI(TAG, "  Waiting for USB microphone connection...");
+    ESP_LOGI(TAG, "  Supported: ReSpeaker USB Mic Array, UAC 1.0 devices");
+
+    usb_audio_input_config_t config = {
+        .data_cb = usb_audio_data_callback,
+        .connect_cb = usb_audio_connect_callback,
+        .user_ctx = NULL,
+        .preferred_sample_rate = 48000,
+        .preferred_channels = 2,  // Stereo for ReSpeaker
+    };
+
+    esp_err_t ret = usb_audio_input_init(&config);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "USB Audio Input init failed: %s", esp_err_to_name(ret));
+        return ret;
+    }
+
+    return ESP_OK;
+}
+#endif  // CONFIG_AUDIO_INPUT_USB
 
 // ============================================================================
 // Audio Processing: Stereo to Mono + Downsampling
@@ -528,7 +605,11 @@ esp_err_t audio_pipeline_init(void)
 
     ESP_LOGI(TAG, "============================================");
     ESP_LOGI(TAG, "Initializing Omni-P4 Audio Pipeline");
+#ifdef CONFIG_AUDIO_INPUT_USB
+    ESP_LOGI(TAG, "  Input:  USB Audio (ReSpeaker/UAC 1.0)");
+#else
     ESP_LOGI(TAG, "  Input:  I2S Microphone (I2S1)");
+#endif
     ESP_LOGI(TAG, "  Output: ES9038Q2M DAC (I2S0)");
     ESP_LOGI(TAG, "============================================");
 
@@ -583,13 +664,28 @@ esp_err_t audio_pipeline_init(void)
     }
 
     // ========================================
-    // Initialize I2S1 Microphone Input
+    // Initialize Microphone Input (USB or I2S)
     // ========================================
+#ifdef CONFIG_AUDIO_INPUT_USB
+    // USB Audio Input (ReSpeaker, UAC 1.0 devices)
+    ret = init_usb_audio_input();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "USB Audio Input init failed");
+        return ret;
+    }
+    // USB audio will be ready when device connects (async)
+    s_audio.mic_ready = false;
+    s_audio.mic_streaming = false;
+#else
+    // I2S Microphone Input (INMP441, etc.)
     ret = init_i2s1_microphone();
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "I2S1 Microphone init failed");
         return ret;
     }
+    s_audio.mic_ready = true;
+    s_audio.mic_streaming = false;
+#endif
 
     // Set defaults
     s_audio.volume = 70;
@@ -597,8 +693,6 @@ esp_err_t audio_pipeline_init(void)
     s_audio.energy_threshold = -40.0f;  // dB threshold for VAD
     s_audio.state = AUDIO_STATE_IDLE;
     s_audio.downsample_counter = 0;
-    s_audio.mic_ready = true;
-    s_audio.mic_streaming = false;
 
     // Reset buffer positions
     s_audio.raw_write_pos = 0;
@@ -610,8 +704,11 @@ esp_err_t audio_pipeline_init(void)
 
     s_audio.initialized = true;
 
-    // Enable I2S channels
+    // Enable I2S output channel (DAC)
     i2s_channel_enable(s_audio.i2s0_tx_handle);
+
+#ifndef CONFIG_AUDIO_INPUT_USB
+    // Enable I2S input channel and start mic task (I2S mode only)
     i2s_channel_enable(s_audio.i2s1_rx_handle);
 
     // Start microphone reading task
@@ -629,15 +726,22 @@ esp_err_t audio_pipeline_init(void)
         ESP_LOGE(TAG, "Failed to create mic task");
         return ESP_FAIL;
     }
+#endif
 
     xEventGroupSetBits(s_audio.event_group, AUDIO_READY_BIT);
 
     ESP_LOGI(TAG, "============================================");
     ESP_LOGI(TAG, "Audio pipeline initialized successfully");
     ESP_LOGI(TAG, "  Dual buffer mode enabled:");
+#ifdef CONFIG_AUDIO_INPUT_USB
+    ESP_LOGI(TAG, "    - Raw 48kHz stereo -> Local LLM (Qwen2.5)");
+    ESP_LOGI(TAG, "    - Processed 16kHz mono -> ESPHome/Whisper");
+    ESP_LOGI(TAG, "  USB Audio: Waiting for device connection...");
+#else
     ESP_LOGI(TAG, "    - Raw %d Hz %s  -> Local LLM (Qwen2.5)",
              CONFIG_MIC_SAMPLE_RATE, INPUT_CHANNELS == 2 ? "stereo" : "mono");
     ESP_LOGI(TAG, "    - Processed 16kHz mono -> ESPHome/Whisper");
+#endif
     ESP_LOGI(TAG, "============================================");
     return ESP_OK;
 }
@@ -648,7 +752,11 @@ void audio_pipeline_deinit(void)
 
     ESP_LOGI(TAG, "Deinitializing audio pipeline...");
 
-    // Stop microphone task
+#ifdef CONFIG_AUDIO_INPUT_USB
+    // Deinit USB Audio Input
+    usb_audio_input_deinit();
+#else
+    // Stop I2S microphone task
     s_audio.mic_ready = false;
     if (s_audio.mic_task_handle) {
         // Wait for task to exit
@@ -662,6 +770,7 @@ void audio_pipeline_deinit(void)
         i2s_del_channel(s_audio.i2s1_rx_handle);
         s_audio.i2s1_rx_handle = NULL;
     }
+#endif
 
     // Disable and delete I2S output channel (DAC)
     if (s_audio.i2s0_tx_handle) {

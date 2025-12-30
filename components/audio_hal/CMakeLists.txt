@@ -1,22 +1,22 @@
+# Audio Pipeline Component for Omni-P4
+#
+# Supports two microphone input modes:
+#   1. USB Audio (CONFIG_AUDIO_INPUT_USB) - ReSpeaker USB Mic Array, UAC 1.0
+#   2. I2S Audio (default) - INMP441, SPH0645, ICS-43434
+#
+# Audio Flow:
+#   [USB/I2S] Microphone -> Dual Buffers -> ESPHome/LLM
+#   Output Buffer -> I2S0 -> ES9038Q2M DAC -> Speaker
+
+set(REQUIRES driver esp_timer freertos esp_psram heap)
+
+# Add usb_audio_input dependency when USB audio is enabled
+if(CONFIG_AUDIO_INPUT_USB)
+    list(APPEND REQUIRES usb_audio_input)
+endif()
+
 idf_component_register(
     SRCS "audio_pipeline.c"
     INCLUDE_DIRS "."
-    REQUIRES driver esp_timer freertos esp_psram heap
+    REQUIRES ${REQUIRES}
 )
-
-# Audio Pipeline for Omni-P4
-#
-# Dependencies:
-#   - driver: I2S driver for microphone input and DAC output
-#
-# Audio Flow:
-#   I2S1 Microphone (48kHz) -> Dual Buffers -> ESPHome/LLM
-#   Output Buffer -> I2S0 -> ES9038Q2M DAC -> Speaker
-#
-# Supported Microphones:
-#   - INMP441: I2S MEMS microphone (mono)
-#   - SPH0645: I2S MEMS microphone (mono)
-#   - ICS-43434: I2S MEMS microphone (stereo)
-#
-# Note: USB Audio Class Host is NOT supported on ESP32-P4.
-#       The usb_stream component only supports ESP32-S2/S3.

@@ -11,7 +11,28 @@ menu "Omni-P4 Configuration"
             bool "Enable Audio Pipeline"
             default y
             help
-                Enable the dual I2S audio pipeline (ES9039Q2M DAC + ReSpeaker).
+                Enable the audio pipeline (ES9039Q2M DAC + Microphone).
+
+        choice AUDIO_INPUT_SOURCE
+            prompt "Microphone Input Source"
+            default AUDIO_INPUT_USB
+            depends on OMNI_P4_AUDIO_ENABLED
+            help
+                Select the microphone input source.
+
+            config AUDIO_INPUT_USB
+                bool "USB Audio (ReSpeaker USB Mic Array)"
+                help
+                    Use USB Audio Class (UAC 1.0) for microphone input.
+                    Supports ReSpeaker USB Mic Array v2.0 with beamforming.
+                    Uses the usb_host_uac component (ESP32-P4 compatible).
+
+            config AUDIO_INPUT_I2S
+                bool "I2S Microphone (INMP441/SPH0645)"
+                help
+                    Use I2S microphone for audio input.
+                    Supports INMP441, SPH0645, ICS-43434, etc.
+        endchoice
 
         menu "I2S0 - DAC Output (ES9039Q2M)"
             depends on OMNI_P4_AUDIO_ENABLED
@@ -48,7 +69,7 @@ menu "Omni-P4 Configuration"
         endmenu
 
         menu "I2S1 - Microphone Input (INMP441/PDM)"
-            depends on OMNI_P4_AUDIO_ENABLED
+            depends on OMNI_P4_AUDIO_ENABLED && AUDIO_INPUT_I2S
 
             config I2S1_BCK_GPIO
                 int "I2S1 BCK (Bit Clock) GPIO"
