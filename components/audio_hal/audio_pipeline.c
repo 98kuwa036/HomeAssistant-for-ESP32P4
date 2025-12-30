@@ -1,9 +1,20 @@
 /**
  * @file audio_pipeline.c
- * @brief Dual I2S Audio Pipeline Implementation
+ * @brief Audio Pipeline Implementation with USB Host + I2S DAC
+ *
+ * Audio Flow:
+ *   ReSpeaker USB (48kHz stereo) --> USB Audio Host --> Dual Buffers
+ *                                                        |
+ *                                       ┌────────────────┴────────────────┐
+ *                                       |                                 |
+ *                                 RAW (48kHz)                    Processed (16kHz)
+ *                                 Local LLM                      ESPHome/HA
+ *
+ *   Output Buffer --> I2S0 --> ES9038Q2M DAC --> Peerless Speaker
  */
 
 #include "audio_pipeline.h"
+#include "usb_audio_host.h"
 #include <string.h>
 #include <math.h>
 #include "freertos/FreeRTOS.h"
@@ -11,7 +22,6 @@
 #include "freertos/semphr.h"
 #include "freertos/event_groups.h"
 #include "driver/i2s_std.h"
-#include "driver/i2s_tdm.h"
 #include "driver/gpio.h"
 #include "esp_log.h"
 #include "esp_check.h"
@@ -25,7 +35,13 @@ static const char *TAG = "audio_pipe";
 // ============================================================================
 
 // Downsampling ratio: 48kHz -> 16kHz = 3:1
-#define DOWNSAMPLE_RATIO    (CONFIG_I2S1_INPUT_SAMPLE_RATE / CONFIG_I2S1_SAMPLE_RATE)
+#ifndef CONFIG_USB_AUDIO_SAMPLE_RATE
+#define CONFIG_USB_AUDIO_SAMPLE_RATE    48000
+#endif
+#ifndef CONFIG_PROCESSED_SAMPLE_RATE
+#define CONFIG_PROCESSED_SAMPLE_RATE    16000
+#endif
+#define DOWNSAMPLE_RATIO    (CONFIG_USB_AUDIO_SAMPLE_RATE / CONFIG_PROCESSED_SAMPLE_RATE)
 
 // Input is stereo (2 channels)
 #define INPUT_CHANNELS      2
@@ -45,9 +61,12 @@ static const char *TAG = "audio_pipe";
 // ============================================================================
 
 typedef struct {
-    // I2S handles
-    i2s_chan_handle_t i2s0_tx_handle;   // Output to DAC
-    i2s_chan_handle_t i2s1_rx_handle;   // Input from Mic
+    // I2S handle (output only - DAC)
+    i2s_chan_handle_t i2s0_tx_handle;   // Output to ES9038Q2M DAC
+
+    // USB Audio state (input - ReSpeaker)
+    bool usb_audio_ready;
+    bool usb_audio_streaming;
 
     // State
     audio_state_t state;
@@ -108,50 +127,93 @@ static audio_pipeline_state_t s_audio = {0};
 #define AUDIO_RECORDING_BIT BIT2
 
 // ============================================================================
-// USB VBUS Power Control
+// USB Audio Callbacks
 // ============================================================================
 
 /**
- * @brief Enable USB VBUS power for ReSpeaker
- *
- * ESP32-P4-Function-EV-Board requires GPIO to be set HIGH
- * to enable 5V power to USB devices.
+ * @brief USB Audio data callback - processes incoming audio from ReSpeaker
  */
-static esp_err_t enable_usb_vbus(void)
+static void usb_audio_data_callback(const uint8_t *data, size_t len, void *user_ctx)
 {
-#if CONFIG_USB_VBUS_EN_GPIO >= 0
-    ESP_LOGI(TAG, "Enabling USB VBUS power on GPIO%d", CONFIG_USB_VBUS_EN_GPIO);
+    if (!s_audio.initialized || len == 0) return;
 
-    gpio_config_t io_conf = {
-        .pin_bit_mask = (1ULL << CONFIG_USB_VBUS_EN_GPIO),
-        .mode = GPIO_MODE_OUTPUT,
-        .pull_up_en = GPIO_PULLUP_DISABLE,
-        .pull_down_en = GPIO_PULLDOWN_DISABLE,
-        .intr_type = GPIO_INTR_DISABLE,
-    };
+    size_t stereo_frames = len / (2 * INPUT_CHANNELS);  // 2 bytes per sample, 2 channels
 
-    esp_err_t ret = gpio_config(&io_conf);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to configure USB VBUS GPIO: %s", esp_err_to_name(ret));
-        return ret;
+    if (xSemaphoreTake(s_audio.mutex, pdMS_TO_TICKS(5))) {
+        // ========================================
+        // 1. Store raw 48kHz stereo data (high quality)
+        // ========================================
+        size_t raw_space = (s_audio.raw_read_pos - s_audio.raw_write_pos - 1 + RAW_BUFFER_SIZE) % RAW_BUFFER_SIZE;
+        if (len <= raw_space) {
+            size_t first_chunk = RAW_BUFFER_SIZE - s_audio.raw_write_pos;
+            if (len <= first_chunk) {
+                memcpy(s_audio.input_buffer_raw + s_audio.raw_write_pos, data, len);
+            } else {
+                memcpy(s_audio.input_buffer_raw + s_audio.raw_write_pos, data, first_chunk);
+                memcpy(s_audio.input_buffer_raw, data + first_chunk, len - first_chunk);
+            }
+            s_audio.raw_write_pos = (s_audio.raw_write_pos + len) % RAW_BUFFER_SIZE;
+        } else {
+            s_audio.raw_overruns++;
+        }
+
+        // ========================================
+        // 2. Convert & store 16kHz mono (ESPHome compatible)
+        // ========================================
+        int16_t rx_buf_mono[stereo_frames / DOWNSAMPLE_RATIO + 1];
+        size_t mono_samples = stereo_to_mono_downsample(
+            (const int16_t *)data,
+            rx_buf_mono,
+            stereo_frames
+        );
+        size_t mono_bytes = mono_samples * sizeof(int16_t);
+
+        size_t proc_space = (s_audio.processed_read_pos - s_audio.processed_write_pos - 1 + PROCESSED_BUFFER_SIZE) % PROCESSED_BUFFER_SIZE;
+        if (mono_bytes <= proc_space) {
+            size_t first_chunk = PROCESSED_BUFFER_SIZE - s_audio.processed_write_pos;
+            if (mono_bytes <= first_chunk) {
+                memcpy(s_audio.input_buffer_processed + s_audio.processed_write_pos, rx_buf_mono, mono_bytes);
+            } else {
+                memcpy(s_audio.input_buffer_processed + s_audio.processed_write_pos, rx_buf_mono, first_chunk);
+                memcpy(s_audio.input_buffer_processed, (uint8_t*)rx_buf_mono + first_chunk, mono_bytes - first_chunk);
+            }
+            s_audio.processed_write_pos = (s_audio.processed_write_pos + mono_bytes) % PROCESSED_BUFFER_SIZE;
+
+            // Legacy alias sync
+            s_audio.input_write_pos = s_audio.processed_write_pos;
+        } else {
+            s_audio.overruns++;
+        }
+
+        xSemaphoreGive(s_audio.mutex);
+
+        // Update VAD with mono data
+        if (mono_samples > 0) {
+            update_vad(rx_buf_mono, mono_samples);
+        }
     }
+}
 
-    // Set VBUS enable level (HIGH or LOW depending on board design)
-    ret = gpio_set_level(CONFIG_USB_VBUS_EN_GPIO, CONFIG_USB_VBUS_EN_LEVEL);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to set USB VBUS GPIO level: %s", esp_err_to_name(ret));
-        return ret;
+/**
+ * @brief USB Audio connection callback
+ */
+static void usb_audio_connect_callback(bool connected, const usb_audio_device_info_t *info, void *user_ctx)
+{
+    if (connected && info) {
+        ESP_LOGI(TAG, "USB Audio connected: %s", info->product);
+        ESP_LOGI(TAG, "  VID: 0x%04X, PID: 0x%04X", info->vid, info->pid);
+        ESP_LOGI(TAG, "  Format: %lu Hz, %d-bit, %d ch",
+                 info->sample_rate, info->bit_depth, info->channels);
+        s_audio.usb_audio_ready = true;
+
+        // Auto-start streaming
+        usb_audio_host_start();
+        s_audio.usb_audio_streaming = true;
+    } else {
+        ESP_LOGW(TAG, "USB Audio disconnected");
+        s_audio.usb_audio_ready = false;
+        s_audio.usb_audio_streaming = false;
     }
-
-    ESP_LOGI(TAG, "USB VBUS power enabled (GPIO%d = %d)",
-             CONFIG_USB_VBUS_EN_GPIO, CONFIG_USB_VBUS_EN_LEVEL);
-
-    // Wait for USB device to power up
-    vTaskDelay(pdMS_TO_TICKS(500));
-#else
-    ESP_LOGI(TAG, "USB VBUS control disabled (external power assumed)");
-#endif
-    return ESP_OK;
 }
 
 // ============================================================================
@@ -278,54 +340,36 @@ static esp_err_t init_i2s0_output(void)
     return ESP_OK;
 }
 
-static esp_err_t init_i2s1_input(void)
+static esp_err_t init_usb_audio_input(void)
 {
-    ESP_LOGI(TAG, "Initializing I2S1 (Mic input)...");
+    ESP_LOGI(TAG, "Initializing USB Audio Host for ReSpeaker...");
 
-    // I2S1 channel config (RX only, slave mode)
-    i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_1, I2S_ROLE_SLAVE);
-    chan_cfg.dma_desc_num = AUDIO_DMA_DESC_NUM;
-    chan_cfg.dma_frame_num = AUDIO_DMA_FRAME_NUM;
-
-    ESP_RETURN_ON_ERROR(
-        i2s_new_channel(&chan_cfg, NULL, &s_audio.i2s1_rx_handle),
-        TAG, "Failed to create I2S1 RX channel"
-    );
-
-    // Standard I2S config for ReSpeaker
-    // ReSpeaker USB outputs 48kHz 16-bit stereo
-    // We receive at 48kHz and downsample to 16kHz in software
-    i2s_std_config_t std_cfg = {
-        .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(CONFIG_I2S1_INPUT_SAMPLE_RATE),
-        .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(
-            I2S_DATA_BIT_WIDTH_16BIT,
-            I2S_SLOT_MODE_STEREO
-        ),
-        .gpio_cfg = {
-            .mclk = CONFIG_I2S1_MCLK_GPIO,
-            .bclk = CONFIG_I2S1_BCK_GPIO,
-            .ws = CONFIG_I2S1_WS_GPIO,
-            .dout = GPIO_NUM_NC,
-            .din = CONFIG_I2S1_DIN_GPIO,
-            .invert_flags = {
-                .mclk_inv = false,
-                .bclk_inv = false,
-                .ws_inv = false,
-            },
-        },
+    usb_audio_host_config_t usb_config = {
+#ifdef CONFIG_USB_VBUS_EN_GPIO
+        .vbus_gpio = CONFIG_USB_VBUS_EN_GPIO,
+#else
+        .vbus_gpio = 44,  // Default for ESP32-P4-Function-EV-Board
+#endif
+#ifdef CONFIG_USB_VBUS_EN_LEVEL
+        .vbus_active_level = CONFIG_USB_VBUS_EN_LEVEL,
+#else
+        .vbus_active_level = 1,
+#endif
+        .data_cb = usb_audio_data_callback,
+        .connect_cb = usb_audio_connect_callback,
+        .user_ctx = NULL,
     };
 
-    ESP_RETURN_ON_ERROR(
-        i2s_channel_init_std_mode(s_audio.i2s1_rx_handle, &std_cfg),
-        TAG, "Failed to init I2S1 STD mode"
-    );
+    esp_err_t ret = usb_audio_host_init(&usb_config);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "USB Audio Host init failed: %s", esp_err_to_name(ret));
+        return ret;
+    }
 
-    ESP_LOGI(TAG, "I2S1 initialized: %d Hz stereo -> %d Hz mono (downsample %d:1)",
-             CONFIG_I2S1_INPUT_SAMPLE_RATE,
-             CONFIG_I2S1_SAMPLE_RATE,
-             DOWNSAMPLE_RATIO);
-    ESP_LOGI(TAG, "  BCK=GPIO%d, WS=GPIO%d, DIN=GPIO%d",
-             CONFIG_I2S1_BCK_GPIO, CONFIG_I2S1_WS_GPIO, CONFIG_I2S1_DIN_GPIO);
+    ESP_LOGI(TAG, "USB Audio Host initialized");
+    ESP_LOGI(TAG, "  Waiting for ReSpeaker USB Mic Array connection...");
+    ESP_LOGI(TAG, "  Expected format: %d Hz, %d-bit, stereo",
+             USB_AUDIO_SAMPLE_RATE, USB_AUDIO_BIT_DEPTH);
 
     return ESP_OK;
 }
@@ -387,21 +431,17 @@ esp_err_t audio_pipeline_init(void)
         return ESP_OK;
     }
 
-    ESP_LOGI(TAG, "Initializing audio pipeline...");
-    ESP_LOGI(TAG, "  ReSpeaker USB Mic Array v2.0 + ES9038Q2M DAC");
-
-    // ========================================
-    // Step 1: Enable USB VBUS power for ReSpeaker
-    // ========================================
-    esp_err_t ret = enable_usb_vbus();
-    if (ret != ESP_OK) {
-        ESP_LOGW(TAG, "USB VBUS enable failed, continuing anyway");
-    }
+    ESP_LOGI(TAG, "============================================");
+    ESP_LOGI(TAG, "Initializing Omni-P4 Audio Pipeline");
+    ESP_LOGI(TAG, "  Input:  ReSpeaker USB Mic Array v2.0 (USB Host)");
+    ESP_LOGI(TAG, "  Output: ES9038Q2M DAC (I2S0)");
+    ESP_LOGI(TAG, "============================================");
 
     // Create synchronization primitives
     s_audio.event_group = xEventGroupCreate();
     s_audio.mutex = xSemaphoreCreateMutex();
     if (!s_audio.event_group || !s_audio.mutex) {
+        ESP_LOGE(TAG, "Failed to create sync primitives");
         return ESP_ERR_NO_MEM;
     }
 
@@ -416,14 +456,14 @@ esp_err_t audio_pipeline_init(void)
         return ESP_ERR_NO_MEM;
     }
 
-    // Raw input buffer: 48kHz stereo (high quality)
+    // Raw input buffer: 48kHz stereo (high quality for local LLM)
     s_audio.input_buffer_raw = heap_caps_malloc(RAW_BUFFER_SIZE, MALLOC_CAP_SPIRAM);
     if (!s_audio.input_buffer_raw) {
         ESP_LOGE(TAG, "Failed to allocate raw input buffer");
         return ESP_ERR_NO_MEM;
     }
 
-    // Processed input buffer: 16kHz mono (ESPHome compatible)
+    // Processed input buffer: 16kHz mono (ESPHome/Whisper compatible)
     s_audio.input_buffer_processed = heap_caps_malloc(PROCESSED_BUFFER_SIZE, MALLOC_CAP_SPIRAM);
     if (!s_audio.input_buffer_processed) {
         ESP_LOGE(TAG, "Failed to allocate processed input buffer");
@@ -434,20 +474,26 @@ esp_err_t audio_pipeline_init(void)
     s_audio.input_buffer = s_audio.input_buffer_processed;
 
     ESP_LOGI(TAG, "Buffers allocated in PSRAM:");
-    ESP_LOGI(TAG, "  Raw (48kHz stereo):    %d KB", RAW_BUFFER_SIZE / 1024);
+    ESP_LOGI(TAG, "  Output (DAC):           %d KB", AUDIO_BUFFER_SIZE / 1024);
+    ESP_LOGI(TAG, "  Raw (48kHz stereo):     %d KB", RAW_BUFFER_SIZE / 1024);
     ESP_LOGI(TAG, "  Processed (16kHz mono): %d KB", PROCESSED_BUFFER_SIZE / 1024);
 
-    // Initialize I2S channels
-    ret = init_i2s0_output();
+    // ========================================
+    // Initialize I2S0 Output (DAC)
+    // ========================================
+    esp_err_t ret = init_i2s0_output();
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "I2S0 init failed");
+        ESP_LOGE(TAG, "I2S0 (DAC) init failed");
         return ret;
     }
 
-    ret = init_i2s1_input();
+    // ========================================
+    // Initialize USB Audio Host (ReSpeaker)
+    // ========================================
+    ret = init_usb_audio_input();
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "I2S1 init failed");
-        return ret;
+        ESP_LOGE(TAG, "USB Audio Host init failed");
+        // Continue anyway - USB device may connect later
     }
 
     // Set defaults
@@ -456,6 +502,8 @@ esp_err_t audio_pipeline_init(void)
     s_audio.energy_threshold = -40.0f;  // dB threshold for VAD
     s_audio.state = AUDIO_STATE_IDLE;
     s_audio.downsample_counter = 0;
+    s_audio.usb_audio_ready = false;
+    s_audio.usb_audio_streaming = false;
 
     // Reset buffer positions
     s_audio.raw_write_pos = 0;
@@ -467,14 +515,17 @@ esp_err_t audio_pipeline_init(void)
 
     s_audio.initialized = true;
 
-    // Enable channels
+    // Enable I2S output channel
     i2s_channel_enable(s_audio.i2s0_tx_handle);
-    i2s_channel_enable(s_audio.i2s1_rx_handle);
 
     xEventGroupSetBits(s_audio.event_group, AUDIO_READY_BIT);
 
+    ESP_LOGI(TAG, "============================================");
     ESP_LOGI(TAG, "Audio pipeline initialized successfully");
-    ESP_LOGI(TAG, "  Dual buffer mode: Raw 48kHz + Processed 16kHz");
+    ESP_LOGI(TAG, "  Dual buffer mode enabled:");
+    ESP_LOGI(TAG, "    - Raw 48kHz stereo  -> Local LLM (Qwen2.5)");
+    ESP_LOGI(TAG, "    - Processed 16kHz   -> ESPHome/Whisper");
+    ESP_LOGI(TAG, "============================================");
     return ESP_OK;
 }
 
@@ -482,15 +533,16 @@ void audio_pipeline_deinit(void)
 {
     if (!s_audio.initialized) return;
 
-    // Disable and delete channels
+    ESP_LOGI(TAG, "Deinitializing audio pipeline...");
+
+    // Stop and deinit USB Audio Host
+    usb_audio_host_stop();
+    usb_audio_host_deinit();
+
+    // Disable and delete I2S output channel
     if (s_audio.i2s0_tx_handle) {
         i2s_channel_disable(s_audio.i2s0_tx_handle);
         i2s_del_channel(s_audio.i2s0_tx_handle);
-    }
-
-    if (s_audio.i2s1_rx_handle) {
-        i2s_channel_disable(s_audio.i2s1_rx_handle);
-        i2s_del_channel(s_audio.i2s1_rx_handle);
     }
 
     // Free buffers
@@ -513,6 +565,7 @@ void audio_pipeline_deinit(void)
     }
 
     memset(&s_audio, 0, sizeof(s_audio));
+    ESP_LOGI(TAG, "Audio pipeline deinitialized");
 }
 
 esp_err_t audio_pipeline_wait_ready(uint32_t timeout_ms)
@@ -535,73 +588,9 @@ void audio_pipeline_process(void)
     if (!s_audio.initialized) return;
 
     // ========================================
-    // Read from mic (I2S1) - 48kHz stereo input
+    // Note: Audio input is handled by USB Audio Host callbacks
+    // (usb_audio_data_callback) - no need to poll here
     // ========================================
-    // Buffer for raw stereo 48kHz data
-    // 1024 bytes = 256 stereo frames (better for high-quality audio)
-    uint8_t rx_buf_stereo[1024];
-    size_t bytes_read = 0;
-
-    esp_err_t ret = i2s_channel_read(s_audio.i2s1_rx_handle, rx_buf_stereo,
-                                      sizeof(rx_buf_stereo), &bytes_read, pdMS_TO_TICKS(10));
-
-    if (ret == ESP_OK && bytes_read > 0) {
-        size_t stereo_frames = bytes_read / (2 * INPUT_CHANNELS);  // 2 bytes per sample, 2 channels
-
-        if (xSemaphoreTake(s_audio.mutex, pdMS_TO_TICKS(10))) {
-            // ========================================
-            // 1. Store raw 48kHz stereo data (high quality)
-            // ========================================
-            size_t raw_space = (s_audio.raw_read_pos - s_audio.raw_write_pos - 1 + RAW_BUFFER_SIZE) % RAW_BUFFER_SIZE;
-            if (bytes_read <= raw_space) {
-                size_t first_chunk = RAW_BUFFER_SIZE - s_audio.raw_write_pos;
-                if (bytes_read <= first_chunk) {
-                    memcpy(s_audio.input_buffer_raw + s_audio.raw_write_pos, rx_buf_stereo, bytes_read);
-                } else {
-                    memcpy(s_audio.input_buffer_raw + s_audio.raw_write_pos, rx_buf_stereo, first_chunk);
-                    memcpy(s_audio.input_buffer_raw, rx_buf_stereo + first_chunk, bytes_read - first_chunk);
-                }
-                s_audio.raw_write_pos = (s_audio.raw_write_pos + bytes_read) % RAW_BUFFER_SIZE;
-            } else {
-                s_audio.raw_overruns++;
-            }
-
-            // ========================================
-            // 2. Convert & store 16kHz mono (ESPHome compatible)
-            // ========================================
-            int16_t rx_buf_mono[stereo_frames / DOWNSAMPLE_RATIO + 1];
-            size_t mono_samples = stereo_to_mono_downsample(
-                (const int16_t *)rx_buf_stereo,
-                rx_buf_mono,
-                stereo_frames
-            );
-            size_t mono_bytes = mono_samples * sizeof(int16_t);
-
-            size_t proc_space = (s_audio.processed_read_pos - s_audio.processed_write_pos - 1 + PROCESSED_BUFFER_SIZE) % PROCESSED_BUFFER_SIZE;
-            if (mono_bytes <= proc_space) {
-                size_t first_chunk = PROCESSED_BUFFER_SIZE - s_audio.processed_write_pos;
-                if (mono_bytes <= first_chunk) {
-                    memcpy(s_audio.input_buffer_processed + s_audio.processed_write_pos, rx_buf_mono, mono_bytes);
-                } else {
-                    memcpy(s_audio.input_buffer_processed + s_audio.processed_write_pos, rx_buf_mono, first_chunk);
-                    memcpy(s_audio.input_buffer_processed, (uint8_t*)rx_buf_mono + first_chunk, mono_bytes - first_chunk);
-                }
-                s_audio.processed_write_pos = (s_audio.processed_write_pos + mono_bytes) % PROCESSED_BUFFER_SIZE;
-
-                // Legacy alias sync
-                s_audio.input_write_pos = s_audio.processed_write_pos;
-            } else {
-                s_audio.overruns++;
-            }
-
-            xSemaphoreGive(s_audio.mutex);
-
-            // Update VAD with mono data (outside mutex for performance)
-            if (mono_samples > 0) {
-                update_vad(rx_buf_mono, mono_samples);
-            }
-        }
-    }
 
     // Write to DAC (I2S0) if playing
     if (s_audio.state == AUDIO_STATE_PLAYING || s_audio.state == AUDIO_STATE_DUPLEX) {
@@ -806,8 +795,8 @@ size_t audio_pipeline_read_raw(uint8_t *data, size_t len, uint32_t timeout_ms)
  */
 void audio_pipeline_get_raw_format(uint32_t *sample_rate, uint8_t *channels, uint8_t *bit_depth)
 {
-    if (sample_rate) *sample_rate = CONFIG_I2S1_INPUT_SAMPLE_RATE;
-    if (channels) *channels = INPUT_CHANNELS;
+    if (sample_rate) *sample_rate = CONFIG_USB_AUDIO_SAMPLE_RATE;  // 48000 Hz
+    if (channels) *channels = INPUT_CHANNELS;  // 2 (stereo)
     if (bit_depth) *bit_depth = 16;
 }
 
@@ -820,8 +809,8 @@ void audio_pipeline_get_raw_format(uint32_t *sample_rate, uint8_t *channels, uin
  */
 void audio_pipeline_get_processed_format(uint32_t *sample_rate, uint8_t *channels, uint8_t *bit_depth)
 {
-    if (sample_rate) *sample_rate = CONFIG_I2S1_SAMPLE_RATE;
-    if (channels) *channels = 1;
+    if (sample_rate) *sample_rate = CONFIG_PROCESSED_SAMPLE_RATE;  // 16000 Hz
+    if (channels) *channels = 1;  // mono
     if (bit_depth) *bit_depth = 16;
 }
 
