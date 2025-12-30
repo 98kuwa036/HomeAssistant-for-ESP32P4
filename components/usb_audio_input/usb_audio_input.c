@@ -14,15 +14,71 @@
 #include "freertos/event_groups.h"
 #include "esp_log.h"
 #include "esp_check.h"
+#include "driver/gpio.h"
 #include "usb/usb_host.h"
 #include "usb_host_uac.h"
 
 static const char *TAG = "usb_audio_in";
 
 // ============================================================================
+// ESP32-P4 Function EV Board USB VBUS Power Control
+// ============================================================================
+
+// GPIO 54 controls USB VBUS power on ESP32-P4 Function EV Board
+#define USB_VBUS_EN_GPIO    54
+
+/**
+ * @brief Enable USB VBUS power
+ *
+ * On ESP32-P4 Function EV Board, GPIO 54 must be set HIGH
+ * to supply power to the USB port.
+ */
+static esp_err_t usb_vbus_power_enable(void)
+{
+    ESP_LOGI(TAG, "Enabling USB VBUS power (GPIO %d)...", USB_VBUS_EN_GPIO);
+
+    gpio_config_t io_conf = {
+        .pin_bit_mask = (1ULL << USB_VBUS_EN_GPIO),
+        .mode = GPIO_MODE_OUTPUT,
+        .pull_up_en = GPIO_PULLUP_DISABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .intr_type = GPIO_INTR_DISABLE,
+    };
+
+    esp_err_t ret = gpio_config(&io_conf);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to configure VBUS GPIO: %s", esp_err_to_name(ret));
+        return ret;
+    }
+
+    ret = gpio_set_level(USB_VBUS_EN_GPIO, 1);  // HIGH = VBUS ON
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to set VBUS GPIO high: %s", esp_err_to_name(ret));
+        return ret;
+    }
+
+    ESP_LOGI(TAG, "USB VBUS power enabled");
+
+    // Wait for power to stabilize
+    vTaskDelay(pdMS_TO_TICKS(100));
+
+    return ESP_OK;
+}
+
+/**
+ * @brief Disable USB VBUS power
+ */
+static void usb_vbus_power_disable(void)
+{
+    gpio_set_level(USB_VBUS_EN_GPIO, 0);  // LOW = VBUS OFF
+    ESP_LOGI(TAG, "USB VBUS power disabled");
+}
+
+// ============================================================================
 // Internal State
 // ============================================================================
 
+// Internal context structure (different from public enum usb_audio_input_state_t)
 typedef struct {
     // Callbacks
     usb_audio_input_data_cb_t data_cb;
@@ -33,7 +89,7 @@ typedef struct {
     uint32_t preferred_sample_rate;
     uint8_t preferred_channels;
 
-    // State
+    // State (uses public enum type)
     usb_audio_input_state_t state;
     bool initialized;
     bool streaming;
@@ -50,9 +106,9 @@ typedef struct {
 
     // Event group for USB Host events
     EventGroupHandle_t event_group;
-} usb_audio_input_state_t;
+} usb_audio_ctx_t;
 
-static usb_audio_input_state_t s_usb_audio = {0};
+static usb_audio_ctx_t s_usb_audio = {0};
 
 // Event bits
 #define USB_HOST_LIB_EVENT      BIT0
@@ -250,6 +306,13 @@ esp_err_t usb_audio_input_init(const usb_audio_input_config_t *config)
 
     ESP_LOGI(TAG, "Initializing USB Audio Input...");
 
+    // Enable USB VBUS power (required for ESP32-P4 Function EV Board)
+    esp_err_t ret = usb_vbus_power_enable();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to enable USB VBUS power");
+        return ret;
+    }
+
     // Store configuration
     s_usb_audio.data_cb = config->data_cb;
     s_usb_audio.connect_cb = config->connect_cb;
@@ -271,7 +334,7 @@ esp_err_t usb_audio_input_init(const usb_audio_input_config_t *config)
         .intr_flags = ESP_INTR_FLAG_LEVEL1,
     };
 
-    esp_err_t ret = usb_host_install(&host_config);
+    ret = usb_host_install(&host_config);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "USB Host install failed: %s", esp_err_to_name(ret));
         return ret;
@@ -353,6 +416,9 @@ void usb_audio_input_deinit(void)
 
     // Uninstall USB Host
     usb_host_uninstall();
+
+    // Disable USB VBUS power
+    usb_vbus_power_disable();
 
     // Clean up
     if (s_usb_audio.mutex) {
