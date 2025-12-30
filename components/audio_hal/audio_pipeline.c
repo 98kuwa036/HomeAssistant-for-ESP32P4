@@ -31,6 +31,16 @@ static const char *TAG = "audio_pipe";
 #define INPUT_CHANNELS      2
 
 // ============================================================================
+// Buffer Size Configuration
+// ============================================================================
+
+// Raw buffer: 48kHz stereo (high quality for local LLM)
+#define RAW_BUFFER_SIZE         (64 * 1024)   // 64KB (~170ms at 48kHz stereo)
+
+// Processed buffer: 16kHz mono (for ESPHome)
+#define PROCESSED_BUFFER_SIZE   (16 * 1024)   // 16KB (~500ms at 16kHz mono)
+
+// ============================================================================
 // Internal State
 // ============================================================================
 
@@ -57,12 +67,31 @@ typedef struct {
     // Statistics
     uint32_t underruns;
     uint32_t overruns;
+    uint32_t raw_overruns;
 
-    // Buffers (in PSRAM)
+    // Output buffer (to DAC)
     uint8_t *output_buffer;
-    uint8_t *input_buffer;
     size_t output_write_pos;
     size_t output_read_pos;
+
+    // =========================================
+    // Dual Input Buffers (for different use cases)
+    // =========================================
+
+    // Raw buffer: 48kHz stereo (high quality)
+    // Use case: Local LLM (Qwen2.5), high-quality recording
+    uint8_t *input_buffer_raw;
+    size_t raw_write_pos;
+    size_t raw_read_pos;
+
+    // Processed buffer: 16kHz mono (ESPHome compatible)
+    // Use case: ESPHome voice assistant, cloud STT
+    uint8_t *input_buffer_processed;
+    size_t processed_write_pos;
+    size_t processed_read_pos;
+
+    // Legacy alias (points to processed buffer for compatibility)
+    uint8_t *input_buffer;
     size_t input_write_pos;
     size_t input_read_pos;
 
@@ -359,6 +388,7 @@ esp_err_t audio_pipeline_init(void)
     }
 
     ESP_LOGI(TAG, "Initializing audio pipeline...");
+    ESP_LOGI(TAG, "  ReSpeaker USB Mic Array v2.0 + ES9038Q2M DAC");
 
     // ========================================
     // Step 1: Enable USB VBUS power for ReSpeaker
@@ -375,13 +405,37 @@ esp_err_t audio_pipeline_init(void)
         return ESP_ERR_NO_MEM;
     }
 
+    // ========================================
     // Allocate buffers in PSRAM
+    // ========================================
+
+    // Output buffer (to DAC)
     s_audio.output_buffer = heap_caps_malloc(AUDIO_BUFFER_SIZE, MALLOC_CAP_SPIRAM);
-    s_audio.input_buffer = heap_caps_malloc(AUDIO_BUFFER_SIZE, MALLOC_CAP_SPIRAM);
-    if (!s_audio.output_buffer || !s_audio.input_buffer) {
-        ESP_LOGE(TAG, "Failed to allocate audio buffers");
+    if (!s_audio.output_buffer) {
+        ESP_LOGE(TAG, "Failed to allocate output buffer");
         return ESP_ERR_NO_MEM;
     }
+
+    // Raw input buffer: 48kHz stereo (high quality)
+    s_audio.input_buffer_raw = heap_caps_malloc(RAW_BUFFER_SIZE, MALLOC_CAP_SPIRAM);
+    if (!s_audio.input_buffer_raw) {
+        ESP_LOGE(TAG, "Failed to allocate raw input buffer");
+        return ESP_ERR_NO_MEM;
+    }
+
+    // Processed input buffer: 16kHz mono (ESPHome compatible)
+    s_audio.input_buffer_processed = heap_caps_malloc(PROCESSED_BUFFER_SIZE, MALLOC_CAP_SPIRAM);
+    if (!s_audio.input_buffer_processed) {
+        ESP_LOGE(TAG, "Failed to allocate processed input buffer");
+        return ESP_ERR_NO_MEM;
+    }
+
+    // Legacy alias for backward compatibility
+    s_audio.input_buffer = s_audio.input_buffer_processed;
+
+    ESP_LOGI(TAG, "Buffers allocated in PSRAM:");
+    ESP_LOGI(TAG, "  Raw (48kHz stereo):    %d KB", RAW_BUFFER_SIZE / 1024);
+    ESP_LOGI(TAG, "  Processed (16kHz mono): %d KB", PROCESSED_BUFFER_SIZE / 1024);
 
     // Initialize I2S channels
     ret = init_i2s0_output();
@@ -401,7 +455,16 @@ esp_err_t audio_pipeline_init(void)
     s_audio.muted = false;
     s_audio.energy_threshold = -40.0f;  // dB threshold for VAD
     s_audio.state = AUDIO_STATE_IDLE;
-    s_audio.downsample_counter = 0;     // Initialize downsampling state
+    s_audio.downsample_counter = 0;
+
+    // Reset buffer positions
+    s_audio.raw_write_pos = 0;
+    s_audio.raw_read_pos = 0;
+    s_audio.processed_write_pos = 0;
+    s_audio.processed_read_pos = 0;
+    s_audio.input_write_pos = 0;
+    s_audio.input_read_pos = 0;
+
     s_audio.initialized = true;
 
     // Enable channels
@@ -411,8 +474,7 @@ esp_err_t audio_pipeline_init(void)
     xEventGroupSetBits(s_audio.event_group, AUDIO_READY_BIT);
 
     ESP_LOGI(TAG, "Audio pipeline initialized successfully");
-    ESP_LOGI(TAG, "  Input: %d Hz stereo -> Output: %d Hz mono",
-             CONFIG_I2S1_INPUT_SAMPLE_RATE, CONFIG_I2S1_SAMPLE_RATE);
+    ESP_LOGI(TAG, "  Dual buffer mode: Raw 48kHz + Processed 16kHz");
     return ESP_OK;
 }
 
@@ -435,8 +497,11 @@ void audio_pipeline_deinit(void)
     if (s_audio.output_buffer) {
         free(s_audio.output_buffer);
     }
-    if (s_audio.input_buffer) {
-        free(s_audio.input_buffer);
+    if (s_audio.input_buffer_raw) {
+        free(s_audio.input_buffer_raw);
+    }
+    if (s_audio.input_buffer_processed) {
+        free(s_audio.input_buffer_processed);
     }
 
     // Delete primitives
@@ -473,49 +538,68 @@ void audio_pipeline_process(void)
     // Read from mic (I2S1) - 48kHz stereo input
     // ========================================
     // Buffer for raw stereo 48kHz data
-    // 512 bytes = 128 stereo frames = 256 samples
-    uint8_t rx_buf_stereo[512];
+    // 1024 bytes = 256 stereo frames (better for high-quality audio)
+    uint8_t rx_buf_stereo[1024];
     size_t bytes_read = 0;
 
     esp_err_t ret = i2s_channel_read(s_audio.i2s1_rx_handle, rx_buf_stereo,
                                       sizeof(rx_buf_stereo), &bytes_read, pdMS_TO_TICKS(10));
 
     if (ret == ESP_OK && bytes_read > 0) {
-        // ========================================
-        // Convert: 48kHz stereo -> 16kHz mono
-        // ========================================
-        // Input:  bytes_read bytes of stereo 16-bit = bytes_read/4 stereo frames
-        // Output: (bytes_read/4) / DOWNSAMPLE_RATIO mono samples
         size_t stereo_frames = bytes_read / (2 * INPUT_CHANNELS);  // 2 bytes per sample, 2 channels
 
-        // Output buffer for mono 16kHz data
-        // Max output size = input_frames / DOWNSAMPLE_RATIO * 2 bytes
-        int16_t rx_buf_mono[stereo_frames / DOWNSAMPLE_RATIO + 1];
+        if (xSemaphoreTake(s_audio.mutex, pdMS_TO_TICKS(10))) {
+            // ========================================
+            // 1. Store raw 48kHz stereo data (high quality)
+            // ========================================
+            size_t raw_space = (s_audio.raw_read_pos - s_audio.raw_write_pos - 1 + RAW_BUFFER_SIZE) % RAW_BUFFER_SIZE;
+            if (bytes_read <= raw_space) {
+                size_t first_chunk = RAW_BUFFER_SIZE - s_audio.raw_write_pos;
+                if (bytes_read <= first_chunk) {
+                    memcpy(s_audio.input_buffer_raw + s_audio.raw_write_pos, rx_buf_stereo, bytes_read);
+                } else {
+                    memcpy(s_audio.input_buffer_raw + s_audio.raw_write_pos, rx_buf_stereo, first_chunk);
+                    memcpy(s_audio.input_buffer_raw, rx_buf_stereo + first_chunk, bytes_read - first_chunk);
+                }
+                s_audio.raw_write_pos = (s_audio.raw_write_pos + bytes_read) % RAW_BUFFER_SIZE;
+            } else {
+                s_audio.raw_overruns++;
+            }
 
-        // Perform stereo-to-mono conversion with downsampling
-        size_t mono_samples = stereo_to_mono_downsample(
-            (const int16_t *)rx_buf_stereo,
-            rx_buf_mono,
-            stereo_frames
-        );
+            // ========================================
+            // 2. Convert & store 16kHz mono (ESPHome compatible)
+            // ========================================
+            int16_t rx_buf_mono[stereo_frames / DOWNSAMPLE_RATIO + 1];
+            size_t mono_samples = stereo_to_mono_downsample(
+                (const int16_t *)rx_buf_stereo,
+                rx_buf_mono,
+                stereo_frames
+            );
+            size_t mono_bytes = mono_samples * sizeof(int16_t);
 
-        size_t mono_bytes = mono_samples * sizeof(int16_t);
+            size_t proc_space = (s_audio.processed_read_pos - s_audio.processed_write_pos - 1 + PROCESSED_BUFFER_SIZE) % PROCESSED_BUFFER_SIZE;
+            if (mono_bytes <= proc_space) {
+                size_t first_chunk = PROCESSED_BUFFER_SIZE - s_audio.processed_write_pos;
+                if (mono_bytes <= first_chunk) {
+                    memcpy(s_audio.input_buffer_processed + s_audio.processed_write_pos, rx_buf_mono, mono_bytes);
+                } else {
+                    memcpy(s_audio.input_buffer_processed + s_audio.processed_write_pos, rx_buf_mono, first_chunk);
+                    memcpy(s_audio.input_buffer_processed, (uint8_t*)rx_buf_mono + first_chunk, mono_bytes - first_chunk);
+                }
+                s_audio.processed_write_pos = (s_audio.processed_write_pos + mono_bytes) % PROCESSED_BUFFER_SIZE;
 
-        // Update VAD with mono 16kHz data
-        if (mono_samples > 0) {
-            update_vad(rx_buf_mono, mono_samples);
-        }
-
-        // Store in input buffer (ring buffer logic)
-        if (mono_bytes > 0 && xSemaphoreTake(s_audio.mutex, pdMS_TO_TICKS(10))) {
-            size_t space = AUDIO_BUFFER_SIZE - s_audio.input_write_pos;
-            if (mono_bytes <= space) {
-                memcpy(s_audio.input_buffer + s_audio.input_write_pos, rx_buf_mono, mono_bytes);
-                s_audio.input_write_pos = (s_audio.input_write_pos + mono_bytes) % AUDIO_BUFFER_SIZE;
+                // Legacy alias sync
+                s_audio.input_write_pos = s_audio.processed_write_pos;
             } else {
                 s_audio.overruns++;
             }
+
             xSemaphoreGive(s_audio.mutex);
+
+            // Update VAD with mono data (outside mutex for performance)
+            if (mono_samples > 0) {
+                update_vad(rx_buf_mono, mono_samples);
+            }
         }
     }
 
@@ -641,6 +725,12 @@ esp_err_t audio_pipeline_record_stop(void)
     return ESP_OK;
 }
 
+/**
+ * @brief Read processed audio (16kHz mono) - for ESPHome/cloud STT
+ *
+ * This is the legacy API that reads from the processed buffer.
+ * Use this for ESPHome voice assistant integration.
+ */
 size_t audio_pipeline_read(uint8_t *data, size_t len, uint32_t timeout_ms)
 {
     if (!s_audio.initialized || !data || len == 0) return 0;
@@ -649,22 +739,90 @@ size_t audio_pipeline_read(uint8_t *data, size_t len, uint32_t timeout_ms)
         return 0;
     }
 
-    size_t available = (s_audio.input_write_pos - s_audio.input_read_pos + AUDIO_BUFFER_SIZE) % AUDIO_BUFFER_SIZE;
+    size_t available = (s_audio.processed_write_pos - s_audio.processed_read_pos + PROCESSED_BUFFER_SIZE) % PROCESSED_BUFFER_SIZE;
     size_t to_read = (len < available) ? len : available;
 
     if (to_read > 0) {
-        size_t first_chunk = AUDIO_BUFFER_SIZE - s_audio.input_read_pos;
+        size_t first_chunk = PROCESSED_BUFFER_SIZE - s_audio.processed_read_pos;
         if (to_read <= first_chunk) {
-            memcpy(data, s_audio.input_buffer + s_audio.input_read_pos, to_read);
+            memcpy(data, s_audio.input_buffer_processed + s_audio.processed_read_pos, to_read);
         } else {
-            memcpy(data, s_audio.input_buffer + s_audio.input_read_pos, first_chunk);
-            memcpy(data + first_chunk, s_audio.input_buffer, to_read - first_chunk);
+            memcpy(data, s_audio.input_buffer_processed + s_audio.processed_read_pos, first_chunk);
+            memcpy(data + first_chunk, s_audio.input_buffer_processed, to_read - first_chunk);
         }
-        s_audio.input_read_pos = (s_audio.input_read_pos + to_read) % AUDIO_BUFFER_SIZE;
+        s_audio.processed_read_pos = (s_audio.processed_read_pos + to_read) % PROCESSED_BUFFER_SIZE;
+
+        // Sync legacy alias
+        s_audio.input_read_pos = s_audio.processed_read_pos;
     }
 
     xSemaphoreGive(s_audio.mutex);
     return to_read;
+}
+
+/**
+ * @brief Read raw audio (48kHz stereo) - for local LLM/high-quality processing
+ *
+ * Returns unprocessed audio data at full quality.
+ * Use this for local voice recognition (Qwen2.5, Whisper, etc.)
+ *
+ * @param data Output buffer
+ * @param len Maximum bytes to read
+ * @param timeout_ms Timeout in milliseconds
+ * @return Number of bytes actually read
+ */
+size_t audio_pipeline_read_raw(uint8_t *data, size_t len, uint32_t timeout_ms)
+{
+    if (!s_audio.initialized || !data || len == 0) return 0;
+
+    if (xSemaphoreTake(s_audio.mutex, pdMS_TO_TICKS(timeout_ms)) != pdTRUE) {
+        return 0;
+    }
+
+    size_t available = (s_audio.raw_write_pos - s_audio.raw_read_pos + RAW_BUFFER_SIZE) % RAW_BUFFER_SIZE;
+    size_t to_read = (len < available) ? len : available;
+
+    if (to_read > 0) {
+        size_t first_chunk = RAW_BUFFER_SIZE - s_audio.raw_read_pos;
+        if (to_read <= first_chunk) {
+            memcpy(data, s_audio.input_buffer_raw + s_audio.raw_read_pos, to_read);
+        } else {
+            memcpy(data, s_audio.input_buffer_raw + s_audio.raw_read_pos, first_chunk);
+            memcpy(data + first_chunk, s_audio.input_buffer_raw, to_read - first_chunk);
+        }
+        s_audio.raw_read_pos = (s_audio.raw_read_pos + to_read) % RAW_BUFFER_SIZE;
+    }
+
+    xSemaphoreGive(s_audio.mutex);
+    return to_read;
+}
+
+/**
+ * @brief Get raw audio buffer info
+ *
+ * @param sample_rate Output: sample rate in Hz (48000)
+ * @param channels Output: number of channels (2 = stereo)
+ * @param bit_depth Output: bits per sample (16)
+ */
+void audio_pipeline_get_raw_format(uint32_t *sample_rate, uint8_t *channels, uint8_t *bit_depth)
+{
+    if (sample_rate) *sample_rate = CONFIG_I2S1_INPUT_SAMPLE_RATE;
+    if (channels) *channels = INPUT_CHANNELS;
+    if (bit_depth) *bit_depth = 16;
+}
+
+/**
+ * @brief Get processed audio buffer info
+ *
+ * @param sample_rate Output: sample rate in Hz (16000)
+ * @param channels Output: number of channels (1 = mono)
+ * @param bit_depth Output: bits per sample (16)
+ */
+void audio_pipeline_get_processed_format(uint32_t *sample_rate, uint8_t *channels, uint8_t *bit_depth)
+{
+    if (sample_rate) *sample_rate = CONFIG_I2S1_SAMPLE_RATE;
+    if (channels) *channels = 1;
+    if (bit_depth) *bit_depth = 16;
 }
 
 bool audio_pipeline_voice_detected(void)

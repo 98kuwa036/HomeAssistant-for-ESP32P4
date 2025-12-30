@@ -191,13 +191,47 @@ esp_err_t audio_pipeline_record_start(void);
 esp_err_t audio_pipeline_record_stop(void);
 
 /**
- * @brief Read audio data from input buffer
+ * @brief Read audio data from input buffer (processed: 16kHz mono)
+ *
+ * Returns downsampled and mono-mixed audio suitable for ESPHome/Home Assistant.
+ *
  * @param data Buffer to store audio data
  * @param len Maximum bytes to read
  * @param timeout_ms Read timeout
  * @return Number of bytes read
  */
 size_t audio_pipeline_read(uint8_t *data, size_t len, uint32_t timeout_ms);
+
+/**
+ * @brief Read raw audio data from input buffer (48kHz stereo)
+ *
+ * Returns high-quality raw audio for local LLM processing or high-fidelity
+ * applications. No downsampling or channel mixing applied.
+ *
+ * @param data Buffer to store audio data
+ * @param len Maximum bytes to read
+ * @param timeout_ms Read timeout
+ * @return Number of bytes read
+ */
+size_t audio_pipeline_read_raw(uint8_t *data, size_t len, uint32_t timeout_ms);
+
+/**
+ * @brief Get raw audio format information
+ *
+ * @param sample_rate Pointer to store sample rate (48000 Hz typical)
+ * @param channels Pointer to store channel count (2 for stereo)
+ * @param bit_depth Pointer to store bit depth (16)
+ */
+void audio_pipeline_get_raw_format(uint32_t *sample_rate, uint8_t *channels, uint8_t *bit_depth);
+
+/**
+ * @brief Get processed audio format information
+ *
+ * @param sample_rate Pointer to store sample rate (16000 Hz for ESPHome)
+ * @param channels Pointer to store channel count (1 for mono)
+ * @param bit_depth Pointer to store bit depth (16)
+ */
+void audio_pipeline_get_processed_format(uint32_t *sample_rate, uint8_t *channels, uint8_t *bit_depth);
 
 // --- Voice Activity ---
 
