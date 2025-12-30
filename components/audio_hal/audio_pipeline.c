@@ -21,6 +21,16 @@
 static const char *TAG = "audio_pipe";
 
 // ============================================================================
+// Audio Processing Configuration
+// ============================================================================
+
+// Downsampling ratio: 48kHz -> 16kHz = 3:1
+#define DOWNSAMPLE_RATIO    (CONFIG_I2S1_INPUT_SAMPLE_RATE / CONFIG_I2S1_SAMPLE_RATE)
+
+// Input is stereo (2 channels)
+#define INPUT_CHANNELS      2
+
+// ============================================================================
 // Internal State
 // ============================================================================
 
@@ -56,6 +66,9 @@ typedef struct {
     size_t input_write_pos;
     size_t input_read_pos;
 
+    // Downsampling state
+    uint32_t downsample_counter;
+
 } audio_pipeline_state_t;
 
 static audio_pipeline_state_t s_audio = {0};
@@ -64,6 +77,121 @@ static audio_pipeline_state_t s_audio = {0};
 #define AUDIO_READY_BIT     BIT0
 #define AUDIO_PLAYING_BIT   BIT1
 #define AUDIO_RECORDING_BIT BIT2
+
+// ============================================================================
+// USB VBUS Power Control
+// ============================================================================
+
+/**
+ * @brief Enable USB VBUS power for ReSpeaker
+ *
+ * ESP32-P4-Function-EV-Board requires GPIO to be set HIGH
+ * to enable 5V power to USB devices.
+ */
+static esp_err_t enable_usb_vbus(void)
+{
+#if CONFIG_USB_VBUS_EN_GPIO >= 0
+    ESP_LOGI(TAG, "Enabling USB VBUS power on GPIO%d", CONFIG_USB_VBUS_EN_GPIO);
+
+    gpio_config_t io_conf = {
+        .pin_bit_mask = (1ULL << CONFIG_USB_VBUS_EN_GPIO),
+        .mode = GPIO_MODE_OUTPUT,
+        .pull_up_en = GPIO_PULLUP_DISABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .intr_type = GPIO_INTR_DISABLE,
+    };
+
+    esp_err_t ret = gpio_config(&io_conf);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to configure USB VBUS GPIO: %s", esp_err_to_name(ret));
+        return ret;
+    }
+
+    // Set VBUS enable level (HIGH or LOW depending on board design)
+    ret = gpio_set_level(CONFIG_USB_VBUS_EN_GPIO, CONFIG_USB_VBUS_EN_LEVEL);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to set USB VBUS GPIO level: %s", esp_err_to_name(ret));
+        return ret;
+    }
+
+    ESP_LOGI(TAG, "USB VBUS power enabled (GPIO%d = %d)",
+             CONFIG_USB_VBUS_EN_GPIO, CONFIG_USB_VBUS_EN_LEVEL);
+
+    // Wait for USB device to power up
+    vTaskDelay(pdMS_TO_TICKS(500));
+#else
+    ESP_LOGI(TAG, "USB VBUS control disabled (external power assumed)");
+#endif
+    return ESP_OK;
+}
+
+// ============================================================================
+// Audio Processing: Stereo to Mono + Downsampling
+// ============================================================================
+
+/**
+ * @brief Convert stereo 16-bit samples to mono with downsampling
+ *
+ * Input:  Stereo 48kHz 16-bit (L, R, L, R, ...)
+ * Output: Mono 16kHz 16-bit
+ *
+ * Process:
+ * 1. Mix stereo to mono: (Left + Right) / 2
+ * 2. Downsample 48kHz -> 16kHz: take every 3rd sample
+ *
+ * @param input     Input buffer (stereo 48kHz)
+ * @param output    Output buffer (mono 16kHz)
+ * @param in_samples Number of stereo sample pairs in input
+ * @return Number of mono samples written to output
+ */
+static size_t stereo_to_mono_downsample(const int16_t *input, int16_t *output,
+                                         size_t in_samples)
+{
+    size_t out_idx = 0;
+
+    for (size_t i = 0; i < in_samples; i++) {
+        // Each stereo frame: [Left, Right]
+        int16_t left = input[i * 2];
+        int16_t right = input[i * 2 + 1];
+
+        // Mix to mono (average both channels)
+        int32_t mono = ((int32_t)left + (int32_t)right) / 2;
+
+        // Downsampling: only keep every DOWNSAMPLE_RATIO-th sample
+        s_audio.downsample_counter++;
+        if (s_audio.downsample_counter >= DOWNSAMPLE_RATIO) {
+            s_audio.downsample_counter = 0;
+            output[out_idx++] = (int16_t)mono;
+        }
+    }
+
+    return out_idx;
+}
+
+/**
+ * @brief Alternative: Extract left channel only with downsampling
+ *
+ * Simpler than mixing, may have slightly lower quality
+ */
+static size_t left_channel_downsample(const int16_t *input, int16_t *output,
+                                       size_t in_samples)
+{
+    size_t out_idx = 0;
+
+    for (size_t i = 0; i < in_samples; i++) {
+        // Extract left channel only (every other sample)
+        int16_t left = input[i * 2];
+
+        // Downsampling: only keep every DOWNSAMPLE_RATIO-th sample
+        s_audio.downsample_counter++;
+        if (s_audio.downsample_counter >= DOWNSAMPLE_RATIO) {
+            s_audio.downsample_counter = 0;
+            output[out_idx++] = left;
+        }
+    }
+
+    return out_idx;
+}
 
 // ============================================================================
 // I2S Configuration
@@ -136,9 +264,10 @@ static esp_err_t init_i2s1_input(void)
     );
 
     // Standard I2S config for ReSpeaker
-    // ReSpeaker XVF3800 outputs 16kHz 16-bit stereo after processing
+    // ReSpeaker USB outputs 48kHz 16-bit stereo
+    // We receive at 48kHz and downsample to 16kHz in software
     i2s_std_config_t std_cfg = {
-        .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(CONFIG_I2S1_SAMPLE_RATE),
+        .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(CONFIG_I2S1_INPUT_SAMPLE_RATE),
         .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(
             I2S_DATA_BIT_WIDTH_16BIT,
             I2S_SLOT_MODE_STEREO
@@ -162,8 +291,11 @@ static esp_err_t init_i2s1_input(void)
         TAG, "Failed to init I2S1 STD mode"
     );
 
-    ESP_LOGI(TAG, "I2S1 initialized: %d Hz, 16-bit, BCK=GPIO%d, WS=GPIO%d, DIN=GPIO%d",
+    ESP_LOGI(TAG, "I2S1 initialized: %d Hz stereo -> %d Hz mono (downsample %d:1)",
+             CONFIG_I2S1_INPUT_SAMPLE_RATE,
              CONFIG_I2S1_SAMPLE_RATE,
+             DOWNSAMPLE_RATIO);
+    ESP_LOGI(TAG, "  BCK=GPIO%d, WS=GPIO%d, DIN=GPIO%d",
              CONFIG_I2S1_BCK_GPIO, CONFIG_I2S1_WS_GPIO, CONFIG_I2S1_DIN_GPIO);
 
     return ESP_OK;
@@ -228,6 +360,14 @@ esp_err_t audio_pipeline_init(void)
 
     ESP_LOGI(TAG, "Initializing audio pipeline...");
 
+    // ========================================
+    // Step 1: Enable USB VBUS power for ReSpeaker
+    // ========================================
+    esp_err_t ret = enable_usb_vbus();
+    if (ret != ESP_OK) {
+        ESP_LOGW(TAG, "USB VBUS enable failed, continuing anyway");
+    }
+
     // Create synchronization primitives
     s_audio.event_group = xEventGroupCreate();
     s_audio.mutex = xSemaphoreCreateMutex();
@@ -244,7 +384,7 @@ esp_err_t audio_pipeline_init(void)
     }
 
     // Initialize I2S channels
-    esp_err_t ret = init_i2s0_output();
+    ret = init_i2s0_output();
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "I2S0 init failed");
         return ret;
@@ -261,6 +401,7 @@ esp_err_t audio_pipeline_init(void)
     s_audio.muted = false;
     s_audio.energy_threshold = -40.0f;  // dB threshold for VAD
     s_audio.state = AUDIO_STATE_IDLE;
+    s_audio.downsample_counter = 0;     // Initialize downsampling state
     s_audio.initialized = true;
 
     // Enable channels
@@ -270,6 +411,8 @@ esp_err_t audio_pipeline_init(void)
     xEventGroupSetBits(s_audio.event_group, AUDIO_READY_BIT);
 
     ESP_LOGI(TAG, "Audio pipeline initialized successfully");
+    ESP_LOGI(TAG, "  Input: %d Hz stereo -> Output: %d Hz mono",
+             CONFIG_I2S1_INPUT_SAMPLE_RATE, CONFIG_I2S1_SAMPLE_RATE);
     return ESP_OK;
 }
 
@@ -326,23 +469,49 @@ void audio_pipeline_process(void)
 {
     if (!s_audio.initialized) return;
 
-    // Read from mic (I2S1)
-    uint8_t rx_buf[512];
+    // ========================================
+    // Read from mic (I2S1) - 48kHz stereo input
+    // ========================================
+    // Buffer for raw stereo 48kHz data
+    // 512 bytes = 128 stereo frames = 256 samples
+    uint8_t rx_buf_stereo[512];
     size_t bytes_read = 0;
 
-    esp_err_t ret = i2s_channel_read(s_audio.i2s1_rx_handle, rx_buf, sizeof(rx_buf),
-                                      &bytes_read, pdMS_TO_TICKS(10));
+    esp_err_t ret = i2s_channel_read(s_audio.i2s1_rx_handle, rx_buf_stereo,
+                                      sizeof(rx_buf_stereo), &bytes_read, pdMS_TO_TICKS(10));
 
     if (ret == ESP_OK && bytes_read > 0) {
-        // Update VAD
-        update_vad((int16_t *)rx_buf, bytes_read / 2);
+        // ========================================
+        // Convert: 48kHz stereo -> 16kHz mono
+        // ========================================
+        // Input:  bytes_read bytes of stereo 16-bit = bytes_read/4 stereo frames
+        // Output: (bytes_read/4) / DOWNSAMPLE_RATIO mono samples
+        size_t stereo_frames = bytes_read / (2 * INPUT_CHANNELS);  // 2 bytes per sample, 2 channels
+
+        // Output buffer for mono 16kHz data
+        // Max output size = input_frames / DOWNSAMPLE_RATIO * 2 bytes
+        int16_t rx_buf_mono[stereo_frames / DOWNSAMPLE_RATIO + 1];
+
+        // Perform stereo-to-mono conversion with downsampling
+        size_t mono_samples = stereo_to_mono_downsample(
+            (const int16_t *)rx_buf_stereo,
+            rx_buf_mono,
+            stereo_frames
+        );
+
+        size_t mono_bytes = mono_samples * sizeof(int16_t);
+
+        // Update VAD with mono 16kHz data
+        if (mono_samples > 0) {
+            update_vad(rx_buf_mono, mono_samples);
+        }
 
         // Store in input buffer (ring buffer logic)
-        if (xSemaphoreTake(s_audio.mutex, pdMS_TO_TICKS(10))) {
+        if (mono_bytes > 0 && xSemaphoreTake(s_audio.mutex, pdMS_TO_TICKS(10))) {
             size_t space = AUDIO_BUFFER_SIZE - s_audio.input_write_pos;
-            if (bytes_read <= space) {
-                memcpy(s_audio.input_buffer + s_audio.input_write_pos, rx_buf, bytes_read);
-                s_audio.input_write_pos = (s_audio.input_write_pos + bytes_read) % AUDIO_BUFFER_SIZE;
+            if (mono_bytes <= space) {
+                memcpy(s_audio.input_buffer + s_audio.input_write_pos, rx_buf_mono, mono_bytes);
+                s_audio.input_write_pos = (s_audio.input_write_pos + mono_bytes) % AUDIO_BUFFER_SIZE;
             } else {
                 s_audio.overruns++;
             }
