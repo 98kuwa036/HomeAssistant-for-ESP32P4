@@ -113,9 +113,115 @@ Raspberry Pi Pico form factor board.
 
 ## Audio Hardware
 
-### ES8311 Audio Codec
+### Omni-P4 推奨構成 (Hi-Fi)
 
-The ES8311 is a low-power mono audio codec commonly used with ESP32-P4 boards.
+高音質を重視する Omni-P4 プロジェクト向けの推奨構成：
+
+| コンポーネント | 型番 | 特徴 |
+|--------------|------|------|
+| **マイクアレイ** | ReSpeaker USB Mic Array v2.0 | XVF3800、ビームフォーミング |
+| **DAC** | ES9038Q2M | 32bit/384kHz、超低歪み |
+| **スピーカー** | Peerless PLS-50N25AL02 | 2インチ、ネオジム、4Ω |
+
+### ReSpeaker USB Mic Array v2.0
+
+XMOS XVF3800 ベースの高性能マイクアレイ。USB Audio Class 対応。
+
+**Features:**
+- 4マイクアレイ（円形配置）
+- 48kHz / 16bit ステレオ出力
+- ハードウェアビームフォーミング
+- ノイズ抑制・エコーキャンセル
+- 12個 RGB LED リング
+- USB Audio Class 1.0
+
+**ESP32-P4 接続 (USB Host):**
+```
+ESP32-P4-Function-EV-Board    ReSpeaker USB
+─────────────────────────     ─────────────
+USB_HOST_DP (GPIO24)    -->   USB D+
+USB_HOST_DM (GPIO25)    -->   USB D-
+USB_VBUS_EN (GPIO44)    -->   5V (via MOSFET)
+GND                     -->   GND
+```
+
+**Dual Buffer Audio Pipeline:**
+```
+ReSpeaker (48kHz Stereo)
+         │
+         ▼
+┌─────────────────────────┐
+│  Audio Pipeline         │
+├─────────────────────────┤
+│  RAW Buffer (64KB)      │──► Local LLM (高音質)
+│  48kHz Stereo           │
+├─────────────────────────┤
+│  Processed Buffer (16KB)│──► ESPHome/HA
+│  16kHz Mono             │    (Whisper対応)
+└─────────────────────────┘
+```
+
+### ES9038Q2M DAC
+
+ESS Technology の高性能 DAC チップ搭載モジュール。
+
+**Features:**
+- 32bit / 384kHz 対応
+- THD+N: -120dB
+- DNR: 129dB
+- I2S / DSD 入力
+- 低ジッタークロック内蔵
+
+**ESP32-P4 接続 (I2S0):**
+```
+ESP32-P4              ES9038Q2M Module
+────────              ────────────────
+GPIO11 (MCLK)   -->   MCLK (Master Clock)
+GPIO12 (BCK)    -->   BCK (Bit Clock)
+GPIO13 (WS)     -->   LRCK (Word Select)
+GPIO14 (DOUT)   -->   DIN (Data Input)
+3.3V            -->   VCC
+GND             -->   GND
+```
+
+**推奨設定:**
+```c
+// I2S0 Configuration for ES9038Q2M
+#define I2S0_SAMPLE_RATE    48000   // or 96000, 192000
+#define I2S0_BIT_WIDTH      32
+#define I2S0_MCLK_MULTIPLE  256     // MCLK = 256 * Fs
+```
+
+### Peerless PLS-50N25AL02 スピーカー
+
+高品質2インチ ネオジムフルレンジスピーカー。
+
+**Specifications:**
+- サイズ: 50mm (2インチ)
+- インピーダンス: 4Ω
+- 許容入力: 10W (RMS)
+- 周波数特性: 120Hz - 20kHz
+- 感度: 82dB/W/m
+- マグネット: ネオジム
+
+**アンプ接続:**
+推奨アンプ: PAM8403 (3W x 2) または TPA3116D2 (15W x 2)
+
+```
+ES9038Q2M             PAM8403              Speaker
+─────────             ───────              ───────
+LOUT  ───────────►    LIN      LOUT+ ───► (+)
+                               LOUT- ───► (-)
+ROUT  ───────────►    RIN      ROUT+ ───► (+)
+                               ROUT- ───► (-)
+                      VCC ◄─── 5V
+                      GND ◄─── GND
+```
+
+### ES8311 Audio Codec (レガシー)
+
+ES8311 は ESP32-P4-Function-EV-Board に標準搭載されているコーデック。
+ESPHome 基本構成で使用。
 
 **Features:**
 - 8kHz to 96kHz sample rates

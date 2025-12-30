@@ -1,19 +1,34 @@
-# Home Assistant Voice Assistant for ESP32-P4-Function-EV-Board
+# Omni-P4: Home Assistant Voice Assistant for ESP32-P4
 
 ESP32-P4-Function-EV-Board を使用した Home Assistant 音声アシスタント実装です。
-Raspberry Pi 4B + Google AI Studio (Gemma 3) のクラウドオフロード構成に最適化されています。
+HP ProDesk 600 G4 + Proxmox VE + ローカルLLM (Qwen2.5 3B) 構成に最適化されています。
 
 > **Beta Version**: ESP32-P4のESPHomeサポートは2025年6月から開始されており、一部の機能はまだ開発中です。
 
 ## Target Hardware
 
+### ESP32-P4 端末 (Voice Satellite)
+
 | コンポーネント | 詳細 |
 |--------------|------|
 | **開発ボード** | [ESP32-P4-Function-EV-Board](https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32p4/esp32-p4-function-ev-board/) v1.5 |
 | **CPU** | ESP32-P4 Dual-core RISC-V @ 400MHz |
-| **Audio Codec** | ES8311 + NS4150B Amplifier |
+| **マイク** | ReSpeaker USB Mic Array v2.0 (XVF3800, USB Audio Class) |
+| **DAC** | ES9038Q2M (I2S, 32bit/384kHz) |
+| **スピーカー** | Peerless PLS-50N25AL02 |
 | **WiFi/BLE** | ESP32-C6-MINI-1 (WiFi 6) |
 | **Memory** | 32MB PSRAM, 16MB Flash |
+
+### サーバー (Home Assistant + LLM)
+
+| コンポーネント | 詳細 |
+|--------------|------|
+| **ハードウェア** | HP ProDesk 600 G4 Mini |
+| **CPU** | Intel Core i5-8500 (6C/6T, 3.0-4.1GHz) |
+| **メモリ** | 16GB DDR4 (8GB x 2) |
+| **仮想化** | Proxmox VE 8.x |
+| **コンテナ1** | HAOS (Home Assistant OS) |
+| **コンテナ2** | Ubuntu Server 24.04 (Ollama + Qwen2.5) |
 
 ## Features
 
@@ -30,27 +45,41 @@ Raspberry Pi 4B + Google AI Studio (Gemma 3) のクラウドオフロード構�
 ## System Architecture
 
 ```
-┌──────────────────────────────┐
-│  ESP32-P4-Function-EV-Board  │
-│  ┌────────┐    ┌──────────┐  │
-│  │ES8311  │    │ESP32-C6  │  │
-│  │Codec   │    │WiFi 6    │  │
-│  └────────┘    └──────────┘  │
-└──────────────┬───────────────┘
-               │ WiFi
-               ▼
-┌──────────────────────────────┐
-│     Raspberry Pi 4B          │
-│     Home Assistant           │
-└──────────────┬───────────────┘
-               │ Internet
-               ▼
-┌──────────────────────────────┐
-│      Google Cloud Services   │
-│  - AI Studio (Gemma 3)       │
-│  - Cloud Speech-to-Text      │
-│  - Cloud Text-to-Speech      │
-└──────────────────────────────┘
+┌───────────────────────────────────────────────────────────────┐
+│              ESP32-P4-Function-EV-Board (Voice Satellite)     │
+│  ┌────────────────┐  ┌────────────┐  ┌──────────────────────┐ │
+│  │ ReSpeaker USB  │  │ ES9038Q2M  │  │ ESP32-C6-MINI-1      │ │
+│  │ XVF3800        │  │ Hi-Res DAC │  │ WiFi 6 + BLE 5       │ │
+│  │ Beamforming    │  │ 32bit/384k │  │                      │ │
+│  └───────┬────────┘  └─────┬──────┘  └──────────┬───────────┘ │
+│          │ USB Host        │ I2S               │              │
+│          └────────┬────────┘                   │              │
+│                   │                            │              │
+│  ┌────────────────▼────────────────────────────▼────────────┐ │
+│  │           Audio Pipeline (Dual Buffer)                    │ │
+│  │   RAW: 48kHz Stereo ──────► Local LLM (高音質)           │ │
+│  │   Processed: 16kHz Mono ──► ESPHome/HA                   │ │
+│  └──────────────────────────────────────────────────────────┘ │
+└───────────────────────────────┬───────────────────────────────┘
+                                │ WiFi (Same LAN)
+                                ▼
+┌───────────────────────────────────────────────────────────────┐
+│                   HP ProDesk 600 G4 Mini                      │
+│                   Proxmox VE 8.x                              │
+│  ┌─────────────────────────┐  ┌─────────────────────────────┐ │
+│  │  VM: Home Assistant OS  │  │  LXC: Ubuntu Server 24.04   │ │
+│  │  - ESPHome Integration  │  │  - Ollama (Qwen2.5 3B)      │ │
+│  │  - Assist Pipeline      │  │  - Immich (Photo AI)        │ │
+│  │  - Whisper (STT)        │  │  - Open WebUI               │ │
+│  │  - Piper (TTS)          │  │  - rclone (Google Drive)    │ │
+│  └─────────────────────────┘  └─────────────────────────────┘ │
+└───────────────────────────────────────────────────────────────┘
+                                │
+                                ▼ (Optional: Nature Remo)
+┌───────────────────────────────────────────────────────────────┐
+│                      Nature Remo mini                         │
+│                  (Local API for IR Control)                   │
+└───────────────────────────────────────────────────────────────┘
 ```
 
 ## Pin Configuration
@@ -69,11 +98,20 @@ Raspberry Pi 4B + Google AI Studio (Gemma 3) のクラウドオフロード構�
 
 ## Requirements
 
+### サーバー要件
+- **HP ProDesk 600 G4** (または同等のx86-64マシン)
+- **Proxmox VE** 8.x
+- **Home Assistant OS** 2024.x以降
+- **Ubuntu Server** 24.04 LTS
+
+### ESP32-P4 要件
 - **ESPHome** 2025.6.0以降
-- **Home Assistant** 2023.5以降
-- **Raspberry Pi 4B** (4GB以上推奨)
-- **Google AI Studio** APIキー
-- **Google Cloud** STT/TTS API
+- **ESP-IDF** v5.3以降 (ReSpeaker USB構成)
+
+### LLM/音声処理
+- **Ollama** + **Qwen2.5 3B** (ローカルLLM)
+- **Whisper** (ローカルSTT)
+- **Piper** (ローカルTTS)
 
 ## Quick Start
 
@@ -105,7 +143,7 @@ esphome run esphome/configs/esp32p4-function-ev-board.yaml
 
 ### 3. Configure Home Assistant
 
-[Raspberry Pi 4B + Google AI Studio 構成ガイド](docs/raspberry-pi-setup.md) を参照してください。
+[HP ProDesk 600 G4 + Proxmox VE 構成ガイド](docs/proxmox-setup.md) を参照してください。
 
 ## Development Approaches
 
@@ -183,11 +221,12 @@ HomeAssistant-for-ESP32P4/
 
 ## Documentation
 
+- **[HP ProDesk 600 G4 + Proxmox VE Setup](docs/proxmox-setup.md)** - サーバー構成ガイド
 - **[ESP-IDF 開発環境セットアップ](docs/esp-idf-setup.md)** - ReSpeaker USB 構成向け
-- **[ReSpeaker USB + PAM8403 Setup](docs/respeaker-setup.md)** - ReSpeaker構成ガイド
-- **[Raspberry Pi 4B + Google AI Setup](docs/raspberry-pi-setup.md)** - HA サーバー構成
+- **[ReSpeaker USB + ES9038Q2M Setup](docs/respeaker-setup.md)** - オーディオ構成ガイド
 - [Hardware Guide](docs/hardware-guide.md) - ハードウェア詳細
 - [Changelog](docs/CHANGELOG.md) - 変更履歴
+- [Raspberry Pi Setup (Legacy)](docs/raspberry-pi-setup.md) - 旧RPi4B構成（参考用）
 
 ## Troubleshooting
 
@@ -210,8 +249,10 @@ HomeAssistant-for-ESP32P4/
 
 - [ESP32-P4-Function-EV-Board User Guide](https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32p4/esp32-p4-function-ev-board/user_guide.html)
 - [ESPHome Voice Assistant](https://esphome.io/components/voice_assistant.html)
-- [Google AI Studio](https://aistudio.google.com/)
-- [Google Cloud Speech-to-Text](https://cloud.google.com/speech-to-text)
+- [Proxmox VE Documentation](https://pve.proxmox.com/wiki/Main_Page)
+- [Ollama Documentation](https://ollama.ai/docs)
+- [Home Assistant Assist](https://www.home-assistant.io/voice_control/)
+- [ReSpeaker USB Mic Array](https://wiki.seeedstudio.com/ReSpeaker_Mic_Array_v2.0/)
 
 ## License
 
