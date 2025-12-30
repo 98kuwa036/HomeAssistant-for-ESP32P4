@@ -47,47 +47,7 @@ menu "Omni-P4 Configuration"
                 range 16 32
         endmenu
 
-        menu "I2S1 - Mic Input (ReSpeaker XVF3800)"
-            depends on OMNI_P4_AUDIO_ENABLED
-
-            config I2S1_BCK_GPIO
-                int "I2S1 BCK (Bit Clock) GPIO"
-                default 15
-                range 0 54
-
-            config I2S1_WS_GPIO
-                int "I2S1 WS (Word Select/LRCK) GPIO"
-                default 16
-                range 0 54
-
-            config I2S1_DIN_GPIO
-                int "I2S1 Data In GPIO"
-                default 17
-                range 0 54
-
-            config I2S1_MCLK_GPIO
-                int "I2S1 MCLK GPIO"
-                default 18
-                range 0 54
-
-            config I2S1_SAMPLE_RATE
-                int "I2S1 Sample Rate (Hz)"
-                default 16000
-                range 8000 48000
-                help
-                    Target sample rate for ESPHome (16000 Hz recommended).
-                    Audio from USB mic (48kHz) will be downsampled to this rate.
-
-            config I2S1_INPUT_SAMPLE_RATE
-                int "ReSpeaker USB Input Sample Rate (Hz)"
-                default 48000
-                range 16000 48000
-                help
-                    Sample rate of the ReSpeaker USB audio output.
-                    Typically 48000 Hz for USB Audio Class.
-        endmenu
-
-        menu "USB Host (ReSpeaker Power)"
+        menu "USB Audio Input (ReSpeaker USB Mic Array)"
             depends on OMNI_P4_AUDIO_ENABLED
 
             config USB_VBUS_EN_GPIO
@@ -95,7 +55,7 @@ menu "Omni-P4 Configuration"
                 default 44
                 range -1 54
                 help
-                    GPIO to enable USB VBUS power for ReSpeaker.
+                    GPIO to enable USB VBUS power for ReSpeaker USB Mic Array.
                     Set to -1 to disable (external power supply).
                     ESP32-P4-Function-EV-Board: GPIO44 (USB_VBUS_EN)
 
@@ -105,6 +65,21 @@ menu "Omni-P4 Configuration"
                 range 0 1
                 help
                     Active level for VBUS enable (1=HIGH, 0=LOW).
+
+            config USB_AUDIO_SAMPLE_RATE
+                int "USB Audio Sample Rate (Hz)"
+                default 48000
+                help
+                    Sample rate of the ReSpeaker USB audio output.
+                    ReSpeaker USB Mic Array v2.0 outputs 48000 Hz.
+
+            config PROCESSED_SAMPLE_RATE
+                int "Processed Audio Sample Rate (Hz)"
+                default 16000
+                range 8000 48000
+                help
+                    Target sample rate for ESPHome/Whisper (16000 Hz recommended).
+                    Audio from USB mic (48kHz) will be downsampled to this rate.
         endmenu
 
         config DAC_I2C_ADDR
