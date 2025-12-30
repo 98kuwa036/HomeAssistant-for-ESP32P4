@@ -144,6 +144,73 @@ static void usb_host_lib_task(void *arg)
 }
 
 // ============================================================================
+// Audio Downsampling (48kHz stereo → 16kHz mono)
+// ============================================================================
+
+// Downsampling configuration
+#define USB_INPUT_SAMPLE_RATE       48000
+#define USB_OUTPUT_SAMPLE_RATE      16000
+#define DOWNSAMPLE_RATIO            (USB_INPUT_SAMPLE_RATE / USB_OUTPUT_SAMPLE_RATE)  // 3
+
+// Static buffer for downsampled audio (max USB packet is typically 1024 bytes)
+// After downsampling: stereo 48kHz → mono 16kHz = 1/6 size
+#define DOWNSAMPLE_BUFFER_SIZE      1024
+static int16_t s_downsample_buffer[DOWNSAMPLE_BUFFER_SIZE];
+
+/**
+ * @brief Convert 48kHz stereo to 16kHz mono
+ *
+ * Process:
+ *   1. Extract left channel only (stereo → mono)
+ *   2. Take every 3rd sample (48kHz → 16kHz)
+ *
+ * @param input      Input buffer (48kHz, 16-bit, stereo)
+ * @param output     Output buffer (16kHz, 16-bit, mono)
+ * @param in_bytes   Input size in bytes
+ * @return Output size in bytes
+ */
+static size_t downsample_48k_stereo_to_16k_mono(const int16_t *input, int16_t *output, size_t in_bytes)
+{
+    // Input: 48kHz stereo = 4 bytes per sample (2 bytes L + 2 bytes R)
+    // Output: 16kHz mono = 2 bytes per sample
+    size_t stereo_frames = in_bytes / (2 * sizeof(int16_t));  // Number of stereo sample pairs
+    size_t out_idx = 0;
+
+    for (size_t i = 0; i < stereo_frames; i++) {
+        // Downsample: take every 3rd frame (48kHz → 16kHz)
+        if (i % DOWNSAMPLE_RATIO == 0) {
+            // Extract left channel only (index i*2 is left, i*2+1 is right)
+            output[out_idx++] = input[i * 2];
+        }
+    }
+
+    return out_idx * sizeof(int16_t);
+}
+
+/**
+ * @brief Convert 48kHz mono to 16kHz mono
+ *
+ * @param input      Input buffer (48kHz, 16-bit, mono)
+ * @param output     Output buffer (16kHz, 16-bit, mono)
+ * @param in_bytes   Input size in bytes
+ * @return Output size in bytes
+ */
+static size_t downsample_48k_mono_to_16k_mono(const int16_t *input, int16_t *output, size_t in_bytes)
+{
+    size_t in_samples = in_bytes / sizeof(int16_t);
+    size_t out_idx = 0;
+
+    for (size_t i = 0; i < in_samples; i++) {
+        // Downsample: take every 3rd sample (48kHz → 16kHz)
+        if (i % DOWNSAMPLE_RATIO == 0) {
+            output[out_idx++] = input[i];
+        }
+    }
+
+    return out_idx * sizeof(int16_t);
+}
+
+// ============================================================================
 // UAC Host Callbacks
 // ============================================================================
 
@@ -156,14 +223,35 @@ static void uac_device_callback(uac_host_device_handle_t uac_device_handle,
 {
     switch (event) {
         case UAC_HOST_DEVICE_EVENT_RX_DONE: {
-            // Audio data received
+            // Audio data received from USB microphone
             uac_host_transfer_t transfer = {0};
             esp_err_t ret = uac_host_get_rx_transfer(uac_device_handle, &transfer);
             if (ret == ESP_OK && transfer.data && transfer.actual_num_bytes > 0) {
-                // Call user callback with received audio data
                 if (s_usb_audio.data_cb) {
-                    s_usb_audio.data_cb(transfer.data, transfer.actual_num_bytes,
-                                        s_usb_audio.user_ctx);
+                    const int16_t *in_data = (const int16_t *)transfer.data;
+                    size_t in_bytes = transfer.actual_num_bytes;
+                    size_t out_bytes;
+
+                    // Check if downsampling is needed (48kHz → 16kHz)
+                    if (s_usb_audio.device_info.sample_rate == USB_INPUT_SAMPLE_RATE) {
+                        // Downsample based on channel count
+                        if (s_usb_audio.device_info.channels >= 2) {
+                            // 48kHz stereo → 16kHz mono
+                            out_bytes = downsample_48k_stereo_to_16k_mono(
+                                in_data, s_downsample_buffer, in_bytes);
+                        } else {
+                            // 48kHz mono → 16kHz mono
+                            out_bytes = downsample_48k_mono_to_16k_mono(
+                                in_data, s_downsample_buffer, in_bytes);
+                        }
+
+                        // Call callback with downsampled 16kHz mono audio
+                        s_usb_audio.data_cb((const uint8_t *)s_downsample_buffer,
+                                            out_bytes, s_usb_audio.user_ctx);
+                    } else {
+                        // No downsampling needed, pass through
+                        s_usb_audio.data_cb(transfer.data, in_bytes, s_usb_audio.user_ctx);
+                    }
                 }
             }
             break;
