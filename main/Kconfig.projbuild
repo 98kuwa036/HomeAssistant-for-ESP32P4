@@ -47,31 +47,49 @@ menu "Omni-P4 Configuration"
                 range 16 32
         endmenu
 
-        menu "USB Audio Input (ReSpeaker USB Mic Array)"
+        menu "I2S1 - Microphone Input (INMP441/PDM)"
             depends on OMNI_P4_AUDIO_ENABLED
 
-            config USB_VBUS_EN_GPIO
-                int "USB VBUS Enable GPIO"
-                default 44
-                range -1 54
+            config I2S1_BCK_GPIO
+                int "I2S1 BCK (Bit Clock) GPIO"
+                default 15
+                range 0 54
                 help
-                    GPIO to enable USB VBUS power for ReSpeaker USB Mic Array.
-                    Set to -1 to disable (external power supply).
-                    ESP32-P4-Function-EV-Board: GPIO44 (USB_VBUS_EN)
+                    GPIO for I2S1 bit clock (SCK/BCK).
+                    INMP441: Connect to SCK pin.
 
-            config USB_VBUS_EN_LEVEL
-                int "USB VBUS Enable Active Level"
-                default 1
-                range 0 1
+            config I2S1_WS_GPIO
+                int "I2S1 WS (Word Select/LRCK) GPIO"
+                default 16
+                range 0 54
                 help
-                    Active level for VBUS enable (1=HIGH, 0=LOW).
+                    GPIO for I2S1 word select (WS/LRCK).
+                    INMP441: Connect to WS pin.
 
-            config USB_AUDIO_SAMPLE_RATE
-                int "USB Audio Sample Rate (Hz)"
+            config I2S1_DIN_GPIO
+                int "I2S1 Data In GPIO"
+                default 17
+                range 0 54
+                help
+                    GPIO for I2S1 data input (SD/DOUT from mic).
+                    INMP441: Connect to SD pin.
+
+            config MIC_SAMPLE_RATE
+                int "Microphone Sample Rate (Hz)"
                 default 48000
+                range 16000 48000
                 help
-                    Sample rate of the ReSpeaker USB audio output.
-                    ReSpeaker USB Mic Array v2.0 outputs 48000 Hz.
+                    Sample rate for microphone input.
+                    48000 Hz recommended for high quality.
+
+            config MIC_CHANNELS
+                int "Microphone Channels"
+                default 1
+                range 1 2
+                help
+                    Number of channels:
+                    1 = Mono (INMP441, SPH0645)
+                    2 = Stereo (ICS-43434, dual INMP441)
 
             config PROCESSED_SAMPLE_RATE
                 int "Processed Audio Sample Rate (Hz)"
@@ -79,7 +97,7 @@ menu "Omni-P4 Configuration"
                 range 8000 48000
                 help
                     Target sample rate for ESPHome/Whisper (16000 Hz recommended).
-                    Audio from USB mic (48kHz) will be downsampled to this rate.
+                    Audio from mic will be downsampled to this rate.
         endmenu
 
         config DAC_I2C_ADDR
